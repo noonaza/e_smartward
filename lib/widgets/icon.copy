@@ -1,0 +1,33 @@
+import 'package:flutter/material.dart';
+
+icon(
+  BuildContext context,
+  IconData? icon, {
+  Color? color,
+}) {
+  final width = MediaQuery.of(context).size.width;
+  double size = 24 / 1920;
+
+  return Icon(
+    icon,
+    size: width * size < 14 ? 14 : width * size,
+    color: color,
+  );
+}
+
+iconFigSize(
+  BuildContext context,
+  IconData? icon, {
+  required double maxSize,
+  required double minSize,
+  Color? color,
+}) {
+  final width = MediaQuery.of(context).size.width;
+  double size = maxSize / 1920;
+
+  return Icon(
+    icon,
+    size: width * size < minSize ? minSize : width * size,
+    color: color,
+  );
+}

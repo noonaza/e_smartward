@@ -1,0 +1,47 @@
+import 'package:flutter/material.dart';
+
+textStyleStatus(BuildContext context, Color? color) {
+  final width = MediaQuery.of(context).size.width;
+  double size = 16 / 1920;
+
+  return TextStyle(
+      fontSize: width * size < 12 ? 12 : width * size, color: color);
+}
+
+textStyleCustom(BuildContext context, {Color? color}) {
+  final width = MediaQuery.of(context).size.width;
+  double size = 16 / 1920;
+  return TextStyle(
+    fontSize: width * size < 10 ? 10 : width * size,
+    color: color,
+  );
+}
+
+textStyleHeader(BuildContext context, Color? color) {
+  final width = MediaQuery.of(context).size.width;
+
+  if (width <= 500) {
+    return TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.bold);
+  } else if (width <= 700) {
+    return TextStyle(fontSize: 16, color: color, fontWeight: FontWeight.bold);
+  } else if (width <= 900) {
+    return TextStyle(fontSize: 18, color: color, fontWeight: FontWeight.bold);
+  } else {
+    return TextStyle(fontSize: 20, color: color, fontWeight: FontWeight.bold);
+  }
+}
+
+textStyleMenu(BuildContext context, Color? color, FontWeight? fontWeight) {
+  final width = MediaQuery.of(context).size.width;
+
+  if (width <= 500) {
+    return TextStyle(fontSize: 8, color: color, fontWeight: fontWeight);
+  }
+  if (width <= 700) {
+    return TextStyle(fontSize: 10, color: color, fontWeight: fontWeight);
+  } else if (width <= 900) {
+    return TextStyle(fontSize: 12, color: color, fontWeight: fontWeight);
+  } else {
+    return TextStyle(fontSize: 14, color: color, fontWeight: fontWeight);
+  }
+}

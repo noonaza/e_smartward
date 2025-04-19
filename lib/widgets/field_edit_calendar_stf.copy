@@ -1,0 +1,182 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
+import 'package:just_the_tooltip/just_the_tooltip.dart';
+import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'package:table_calendar/table_calendar.dart';
+
+import 'icon.dart';
+import 'text_style.dart';
+
+class FieldEditCalendarStf extends StatefulWidget {
+  //> use Date ex PO Detail ExpireDate
+  String? dateString;
+  //> use range Dates ex PO Screen
+  String? typeDate;
+  String? checkDate;
+  TextEditingController? tEdit;
+  DateRangePickerController? sfController; //ควคุมวันที่ FromTo ** PO Screen
+  //> --
+  bool isReadOnly;
+  DateTime firstDay;
+  DateTime lastDay;
+  Color? colorReadOnlyTrue;
+  Color? colorReadOnlyFalse;
+  Function cb;
+  
+  
+
+
+  FieldEditCalendarStf({
+    Key? key,
+    this.dateString,
+    required this.isReadOnly,
+    this.typeDate,
+    this.checkDate,
+    required this.firstDay,
+    required this.lastDay,
+    this.colorReadOnlyTrue,
+    this.colorReadOnlyFalse,
+    this.tEdit,
+    this.sfController,
+    required this.cb,
+  }) : super(key: key);
+
+  @override
+  State<FieldEditCalendarStf> createState() => _FieldEditCalendarStfState();
+}
+
+class _FieldEditCalendarStfState extends State<FieldEditCalendarStf> {
+  TextEditingController tEdit = TextEditingController();
+  FocusNode focusNode = FocusNode();
+  DateRangePickerController controller = DateRangePickerController();
+
+  DateTime dateSelect = DateTime.now();
+  bool isSelectDate = true;
+  late Color colorReadOnlyTrue;
+  late Color colorReadOnlyFalse;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.dateString != null) {
+      tEdit.text = widget.dateString!;
+      dateSelect = DateTime.parse(widget.dateString!);
+      controller.selectedDate = dateSelect;
+    } else {
+      //asdfsdfsadf
+      // tEdit.text = widget.dateString;
+      // dateSelect = DateTime.parse(widget.dateString);
+      // controller.selectedDate = dateSelect;
+    }
+
+    colorReadOnlyTrue = widget.colorReadOnlyTrue ?? Colors.grey;
+    colorReadOnlyFalse = widget.colorReadOnlyFalse ?? Colors.white;
+  }
+
+  Widget build(BuildContext context) {
+    return TextFormField(
+      readOnly: true, //widget.isReadOnly,
+      textAlign: TextAlign.center,
+      style: textStyleCustom(
+        context,
+      ),
+      focusNode: focusNode,
+      controller: widget.tEdit ?? tEdit,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: widget.isReadOnly ? colorReadOnlyTrue : colorReadOnlyFalse,
+        border: const OutlineInputBorder(borderSide: BorderSide.none),
+        suffixIcon: isSelectDate == true && widget.isReadOnly == false
+            ? JustTheTooltip(
+                isModal: true,
+                content: SizedBox(
+                    height: 300,
+                    width: 300,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: SfDateRangePicker(
+                        minDate: widget.firstDay,
+                        maxDate: widget.lastDay,
+                        controller: widget.sfController ?? controller,
+                        initialDisplayDate: widget.sfController == null ?controller.selectedDate: widget.sfController!.selectedDate,
+                        selectionColor: Colors.blue[900],
+                        monthCellStyle: const DateRangePickerMonthCellStyle(
+                            weekendTextStyle: TextStyle(color: Colors.red)),
+                        monthViewSettings:
+                            const DateRangePickerMonthViewSettings(
+                                dayFormat: 'EEE'),
+                        toggleDaySelection: true,
+                        showNavigationArrow: true,
+                        onSelectionChanged: _onSelectionRec,
+                        selectionMode: DateRangePickerSelectionMode.single,
+                      ),
+                    )),
+                child: icon(context, Icons.calendar_month))
+            : icon(context, Icons.calendar_month),
+      ),
+
+      onChanged: (value) {
+        if (value.isEmpty) {
+          tEdit.text = '0';
+        }
+        widget.cb(tEdit.text);
+        setState(() {});
+      },
+    );
+  }
+
+  void _onSelectionRec(DateRangePickerSelectionChangedArgs args) {
+    if (args.value is DateTime) {
+      if (widget.typeDate != null && widget.checkDate != null) {
+        final dateCheck = DateTime.parse(widget.checkDate!);
+        final iDateCheck = dateCheck.millisecondsSinceEpoch;
+        final iDateSelect = args.value.millisecondsSinceEpoch;
+
+        if (widget.typeDate == 'fromDate') {
+          if (iDateSelect > iDateCheck) {
+            widget.tEdit == null
+                ? tEdit.text = DateFormat('yyyy-MM-dd').format(dateCheck)
+                : widget.tEdit!.text =
+                    tEdit.text = DateFormat('yyyy-MM-dd').format(dateCheck);
+          } else {
+            widget.tEdit == null
+                ? tEdit.text = DateFormat('yyyy-MM-dd').format(args.value)
+                : widget.tEdit!.text =
+                    tEdit.text = DateFormat('yyyy-MM-dd').format(args.value);
+          }
+        } else {
+          if (iDateSelect < iDateCheck) {
+            widget.tEdit == null
+                ? tEdit.text = DateFormat('yyyy-MM-dd').format(dateCheck)
+                : widget.tEdit!.text =
+                    tEdit.text = DateFormat('yyyy-MM-dd').format(dateCheck);
+          } else {
+            widget.tEdit == null
+                ? tEdit.text = DateFormat('yyyy-MM-dd').format(args.value)
+                : widget.tEdit!.text =
+                    tEdit.text = DateFormat('yyyy-MM-dd').format(args.value);
+          }
+        }
+      } else {
+        widget.tEdit == null
+            ? tEdit.text = DateFormat('yyyy-MM-dd').format(args.value)
+            : widget.tEdit!.text =
+                tEdit.text = DateFormat('yyyy-MM-dd').format(args.value);
+      }
+      isSelectDate = false;
+      setState(() {});
+      widget.cb(tEdit.text);
+      Future.delayed(
+        const Duration(milliseconds: 100),
+        () {
+          isSelectDate = true;
+          setState(() {});
+        },
+      );
+    }
+    //Navigator.pop(context);
+  }
+}

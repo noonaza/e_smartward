@@ -1,0 +1,69 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
+
+import 'text_style.dart';
+
+class FieldEditTxtStf extends StatefulWidget {
+  String data;
+  bool isReadOnly;
+  String? type;
+  String? hintText;
+  Function cb;
+  Function? enterKey;
+
+  FieldEditTxtStf({
+    Key? key,
+    required this.data,
+    required this.isReadOnly,
+    this.type,
+    this.hintText,
+    required this.cb,
+    this.enterKey,
+  }) : super(key: key);
+
+  @override
+  State<FieldEditTxtStf> createState() => _FieldEditTxtStfState();
+}
+
+class _FieldEditTxtStfState extends State<FieldEditTxtStf> {
+  TextEditingController tEdit = TextEditingController();
+  FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    tEdit.text = widget.data;
+  }
+
+  Widget build(BuildContext context) {
+    return TextFormField(
+      readOnly: widget.isReadOnly,
+      textAlign: TextAlign.center,
+      style: textStyleCustom(
+        context,
+      ),
+      focusNode: _focusNode,
+      controller: tEdit,
+      decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: textStyleCustom(
+            context,
+          ),
+          filled: true,
+          fillColor: widget.isReadOnly ? Colors.grey : Colors.white,
+          border: const OutlineInputBorder(borderSide: BorderSide.none)),
+      onChanged: (value) {
+        if (value.isEmpty) {
+          tEdit.text = '0';
+        }
+        widget.cb(tEdit.text);
+        setState(() {});
+      },
+      onFieldSubmitted: (value) {
+        if (widget.enterKey != null) {
+          widget.enterKey!(value);
+        }
+      },
+    );
+  }
+}

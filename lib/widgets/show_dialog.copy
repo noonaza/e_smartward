@@ -1,0 +1,125 @@
+import 'package:e_smartward/widgets/text.dart';
+
+import 'package:flutter/material.dart';
+
+
+
+class dialog {
+  static load(BuildContext context) {
+    return showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: SizedBox(
+            width: 260,
+            height: 100,
+            child: Card(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: Image.asset('images/loading.gif'),
+                  ),
+                  text(context, 'ระบบกำลังดึงข้อมูล')
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static save(BuildContext context) {
+    return showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: SizedBox(
+            width: 260,
+            height: 100,
+            child: Card(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: Image.asset('images/boxes.gif'), //no-data.gif
+                  ),
+                  text(context, 'ระบบกำลังบันทึกข้อมูล')
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static cancel(BuildContext context) {
+    return showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: SizedBox(
+            width: 260,
+            height: 100,
+            child: Card(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: Image.asset('images/no-data.gif'), //
+                  ),
+                  text(context, 'ระบบกำลังบันทึกการยกเลิก')
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static comment(BuildContext context, String label, {String? image, double? width ,double? height , bool? isClosePopup}) {
+    return showDialog(
+      barrierDismissible: isClosePopup??false,
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: SizedBox(
+            width: width??260,
+            height: height??100,
+            child: Card(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: image == null
+                        ? Image.asset('images/no-data.gif')
+                        : Image.asset('images/${image}'), //?? "alertList.gif"
+                  ),
+                  text(context, label)
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

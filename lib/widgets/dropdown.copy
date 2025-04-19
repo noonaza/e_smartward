@@ -1,0 +1,107 @@
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/material.dart';
+
+import 'text_style.dart';
+
+class Dropdown {
+  static lModel({
+    required String? value,
+    required List<DropdownMenuItem<String>>? items,
+    required Function onChanged,
+    required TextEditingController tController,
+    required bool isSelect,
+    required String validator,
+    required BuildContext context,
+    required double width,
+    double height = 40,
+    String? hintLabel,
+    String? labelInSearch,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4), color: Colors.white),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton2(
+          isExpanded: true,
+          hint: Text(hintLabel ?? '- ไม่มีข้อมูล -',
+              style: textStyleCustom(
+                context,
+              )
+
+              // const TextStyle(
+              //     fontSize: 14, color: Colors.grey //Theme.of(context).hintColor,
+              //     ),
+              ),
+          items: items,
+          value: value,
+          onChanged: (value) {
+            onChanged(value);
+          },
+
+          buttonStyleData: ButtonStyleData(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            height: height,
+            width: width,
+          ),
+
+          dropdownStyleData: const DropdownStyleData(
+            maxHeight: 200,
+          ),
+          menuItemStyleData: MenuItemStyleData(
+            height: height,
+          ),
+          dropdownSearchData: DropdownSearchData(
+            searchInnerWidgetHeight: height,
+            searchController: tController,
+            searchInnerWidget: Padding(
+              padding: const EdgeInsets.only(
+                top: 8,
+                bottom: 4,
+                right: 8,
+                left: 8,
+              ),
+              child: TextFormField(
+                controller: tController,
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  hintText: labelInSearch ?? '- ค้นหา -',
+                  hintStyle: const TextStyle(fontSize: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+            searchMatchFn: (item, searchValue) {
+              print('item.value >> ${item.value.toString().toLowerCase()}');
+              print('searchValue >> ${searchValue.toString().toLowerCase()}');
+              return item.value
+                  .toString()
+                  .toLowerCase()
+                  .contains(searchValue.toLowerCase());
+            },
+          ),
+          //This to clear the search value when you close the menu
+          onMenuStateChange: (isOpen) {
+            if (!isOpen) {
+              tController.clear();
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  static field({required String type}) {}
+}
+
+class DropdownFinDim {
+  static Tax_Branch() {}
+  static Cost_Center() {}
+  static Budget() {}
+  static Branch() {}
+}

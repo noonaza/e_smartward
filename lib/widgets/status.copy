@@ -1,0 +1,32 @@
+import 'package:e_smartward/widgets/text.dart';
+
+import 'package:flutter/material.dart';
+
+import 'text_style.dart';
+
+labelStatus(BuildContext context, String label) {
+  final width = MediaQuery.of(context).size.width;
+  Color color = label == 'Open'
+      ? Colors.blue.shade300
+      : label == 'Approve' || label == 'Confirmed' || label == 'Open order'
+          ? Colors.green.shade300
+          : Colors.grey;
+
+  if (width < 600) {
+    return Center(
+      child: text(context, label, color: color),
+    );
+  } else {
+    return 
+    
+    Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        color: color,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Center(
+            child: text(context, label, color: Colors.white),
+          ),
+        ));
+  }
+}

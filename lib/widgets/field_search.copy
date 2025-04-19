@@ -1,0 +1,177 @@
+import 'package:e_smartward/widgets/icon.copy';
+import 'package:e_smartward/widgets/text.dart';
+import 'package:flutter/material.dart';
+
+import 'package:just_the_tooltip/just_the_tooltip.dart';
+import 'package:table_calendar/table_calendar.dart';
+
+import 'dropdown.dart';
+import 'text_style.dart';
+
+fieldSearchTextEdit(
+  BuildContext context, {
+  required String label,
+  required TextEditingController tEdit,
+  required double width,
+  required Function cb,
+}) {
+  return SizedBox(
+    width: width,
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        text(context, label),
+        TextFormField(
+          textAlign: TextAlign.center,
+          style: textStyleCustom(context, ),
+          decoration: InputDecoration(
+              floatingLabelAlignment: FloatingLabelAlignment.center,
+              labelStyle: textStyleCustom(context, )),
+          controller: tEdit,
+          onChanged: (value) {
+            cb(value);
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+fieldSearchCalendar(BuildContext context,
+    {required bool isModal_,
+    required String label,
+    required String dateSearch,
+    required DateTime fromDate,
+    required DateTime toDate,
+    required double width,
+    required Function cb,
+    required Function cbClean}) {
+  DateTime _selectedDay;
+  DateTime _toDay = fromDate;
+
+  if (dateSearch == 'ค้นหาตามวัน' || dateSearch == '') {
+    _selectedDay = fromDate;
+  } else {
+    _selectedDay = DateTime.parse(dateSearch);
+  }
+
+  return SizedBox(
+    width: width,
+    child: Column(
+      children: [
+        text(
+          context,
+          label,
+        ),
+        SizedBox(
+          height: 25,
+        ),
+        SizedBox(
+          child: isModal_
+              ? JustTheTooltip(
+                  isModal: isModal_,
+                  content: 
+                  SizedBox(
+                    height: 400,
+                    width: 360,
+                    child: Center(
+                        child: TableCalendar(
+                      firstDay: fromDate,
+                      lastDay: toDate,
+                      focusedDay: _toDay,
+                      calendarStyle: CalendarStyle(
+                        selectedTextStyle: const TextStyle(
+                            color: Color.fromARGB(255, 23, 36, 80),
+                            fontWeight: FontWeight.bold),
+                        selectedDecoration: const BoxDecoration(
+                            color: Color.fromARGB(255, 148, 172, 200),
+                            shape: BoxShape.circle),
+                        todayTextStyle: const TextStyle(
+                            color: Color.fromARGB(255, 148, 172, 200)),
+                        todayDecoration: BoxDecoration(
+                            border: Border.all(
+                                color: const Color.fromARGB(255, 23, 36, 80)),
+                            shape: BoxShape.circle),
+                        defaultTextStyle: const TextStyle(color: Colors.blue),
+                        weekendTextStyle: const TextStyle(color: Colors.pink),
+                      ),
+                      selectedDayPredicate: (day) {
+                        return isSameDay(_selectedDay, day);
+                      },
+                      onDaySelected: (selectedDay, focusedDay) {
+                        dateSearch = selectedDay.toString();
+
+                        cb(selectedDay);
+                      },
+                    )),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      SizedBox(
+                        width: 24,
+                      ),
+                      text(context, dateSearch, color: Colors.blue[900]),
+                      SizedBox(
+                          child: dateSearch == 'ค้นหาตามวัน' || dateSearch == ''
+                              ? SizedBox(
+                                  width: 24,
+                                )
+                              : InkWell(
+                                  onTap: () {
+                                    cbClean();
+                                  },
+                                  child: SizedBox(
+                                    child: icon(context, Icons.cancel,
+                                        color: Colors.red[300]),
+                                  ),
+                                ))
+                    ],
+                  ))
+              : text(context, dateSearch, color: Colors.blue[900]),
+        ),
+      ],
+    ),
+  );
+}
+
+fieldSearchDropdown(
+  BuildContext context, {
+  required String label,
+  required String value,
+  required List<String> lString,
+  required TextEditingController tEdit,
+  required double width,
+  required Function cb,
+}) {
+  return SizedBox(
+    width: width,
+    child: Column(
+      children: [
+        text(context, label),
+        const SizedBox(
+          height: 8,
+        ),
+        Dropdown.lModel(
+            context: context,
+            width: width,
+            value: value,
+            items: lString.map((lModel) {
+              return DropdownMenuItem<String>(
+                value: '${lModel}',
+                child: Center(
+                    child: Text('  ${lModel}',
+                        style: textStyleCustom(context, ))),
+              );
+            }).toList(),
+            onChanged: (p0) {
+              value = p0;
+              cb(value);
+            },
+            tController: tEdit,
+            isSelect: false,
+            validator: 'validator'),
+      ],
+    ),
+  );
+}

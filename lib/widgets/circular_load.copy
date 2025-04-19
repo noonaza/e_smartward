@@ -1,0 +1,11 @@
+import 'package:flutter/material.dart';
+
+circularLoad({
+  Color? color,
+}) {
+  return Center(
+    child: CircularProgressIndicator(
+      color: color ?? Colors.blue[900],
+    ),
+  );
+}

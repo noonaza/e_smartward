@@ -1,0 +1,37 @@
+import 'package:action_slider/action_slider.dart';
+import 'package:e_smartward/widgets/icon.copy';
+import 'package:e_smartward/widgets/text.dart';
+import 'package:flutter/material.dart';
+
+actionSlider(BuildContext context, String label,
+    {required double width,
+    required double height,
+    Color? togglecolor,
+    IconData? icons,
+    Color? iconColor,
+    Color? backgroundColor,
+    bool isRtl = true,
+    required ActionSliderController asController,
+    TextDirection? direction = TextDirection.ltr,
+    required dynamic Function(ActionSliderController) action}) {
+  return ActionSlider.standard(
+      sliderBehavior: SliderBehavior.stretch,
+      width: width, // * 0.25,
+      controller: asController,
+      height: height < 32 ? 32 : height.roundToDouble(),
+      backgroundColor: backgroundColor ?? Colors.white,
+      icon: icons == null
+          ? Image.asset(
+              "assets/gif/index3.gif",
+              width: 20.0,
+              height: 20.0,
+            )
+          : iconFigSize(context, icons,
+              color: iconColor ?? Colors.white, maxSize: 20, minSize: 14),
+      toggleColor: togglecolor ?? Colors.blue[900],
+      direction: isRtl ? TextDirection.ltr : TextDirection.rtl,
+      action: (controller) async {
+        action(controller);
+      },
+      child: text(context, label, color: togglecolor ?? Colors.blue[900]));
+}

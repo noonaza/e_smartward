@@ -1,0 +1,252 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:just_the_tooltip/just_the_tooltip.dart';
+import 'field_edit_calendar_stf.dart';
+import 'field_edit_num_stf.dart';
+import 'icon.dart';
+import 'text.dart';
+import 'text_style.dart';
+
+class CardReceiptDetailStf extends StatefulWidget {
+  String statusReceipt;
+  AxPoReceiptDetailModel mPOReceiptDetail;
+  Function cb;
+  Function cbCancel;
+  List<AxOnhandModel> lOnhand;
+
+  int indexDetail;
+
+  CardReceiptDetailStf({
+    Key? key,
+    required this.statusReceipt,
+    required this.mPOReceiptDetail,
+    required this.cb,
+    required this.cbCancel,
+    required this.lOnhand,
+    required this.indexDetail,
+  }) : super(key: key);
+
+  @override
+  State<CardReceiptDetailStf> createState() => _CardReceiptDetailStfState();
+}
+
+class _CardReceiptDetailStfState extends State<CardReceiptDetailStf> {
+  DateTime dateExpire = DateTime.now();
+  TextEditingController tLot = TextEditingController();
+  FocusNode _focusNode = FocusNode();
+  double dMaxReceipt = 0.0;
+
+  double dMaxOnhand = 0.0;
+  double dMinOnhand = 0.0;
+  double dOnhand = 0.0;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    dMaxReceipt = widget.mPOReceiptDetail.dOrderQTY ?? 0.0;
+
+    if (widget.mPOReceiptDetail.batch == null) {
+      tLot.text = widget.mPOReceiptDetail.batch = Func.fbatch(
+        dateReceipt: DateTime.now(),
+        dateExpire: DateTime.parse(widget.mPOReceiptDetail.expireDate ??
+            DateTime(dateExpire.year, dateExpire.month + 6, dateExpire.day)
+                .toString()),
+      );
+      widget.mPOReceiptDetail.expireDate ??= DateFormat('yyyy-MM-dd').format(
+          DateTime(dateExpire.year, dateExpire.month + 6, dateExpire.day));
+    } else {
+      tLot.text = widget.mPOReceiptDetail.batch!;
+    }
+    if (widget.lOnhand.isNotEmpty) {
+      dMaxOnhand = widget.lOnhand.first.dMax??0.0;
+      dMinOnhand = widget.lOnhand.first.dMin??0.0;
+      dOnhand = widget.lOnhand.first.dOnhand??0.0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: [
+            SizedBox(
+              child: widget.statusReceipt == 'new'
+                  ? InkWell(
+                      onTap: () {
+                        widget.cbCancel(widget.indexDetail);
+                      },
+                      child: icon(context, Icons.delete_forever,
+                          color: Colors.red[200]),
+                    )
+                  : icon(context, Icons.delete_forever,
+                      color: Colors.transparent),
+            ),
+            SizedBox(
+                width: width * 0.10,
+                child: Center(
+                  child: text(context, widget.mPOReceiptDetail.itemCode ?? ''),
+                )),
+            Expanded(
+                child: Center(
+              child: text(context, widget.mPOReceiptDetail.description ?? ''),
+            )),
+            SizedBox(
+                width: width * 0.06,
+                
+                child: Center(
+                  child: text(context, widget.mPOReceiptDetail.unit ?? ''),
+                )),
+            SizedBox(
+                width: width * 0.06,
+                child: JustTheTooltip(
+                  content: SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: Column(children: [
+                      text(context,  'Max : ${Func.fInt(
+                            dValue: dMaxOnhand )}'),
+                            text(context,  'Min : ${Func.fInt(
+                            dValue: dMinOnhand )}')
+                    ],),
+                  ),
+                  child: Center(
+                    child: text(context,  Func.fInt(
+                            dValue: dOnhand )),
+                  ),
+                )),
+            SizedBox(
+                width: width * 0.06,
+              
+                child: Center(
+                  child: text(
+                      context,
+                      Func.fOccy(
+                          dValue: widget.mPOReceiptDetail.dUnitPrice ?? 0.0)),
+                )),
+            SizedBox(
+                width: width * 0.10,
+                child: Center(
+                  child: text(context, widget.mPOReceiptDetail.prNumber ?? ''),
+                )),
+            SizedBox(
+                width: width * 0.12,
+                child: StatefulBuilder(
+                  builder: (context, setStateCalendar) {
+                    return Center(
+                        child: TextFormField(
+                      readOnly: widget.statusReceipt != 'new',
+                      textAlign: TextAlign.center,
+                      style: textStyleCustom(
+                        context,
+                      ),
+                      focusNode: _focusNode,
+                      controller: tLot,
+                      decoration: InputDecoration(
+                          filled: true,
+                          fillColor: widget.statusReceipt != 'new'
+                              ? Colors.grey
+                              : Colors.blue[50],
+                          border: const OutlineInputBorder(
+                              borderSide: BorderSide.none)),
+                      onChanged: (value) {
+                        if (value.isEmpty) {
+                          tLot.text = '0';
+                        }
+
+                        setState(() {});
+                      },
+                    ));
+                  },
+                )),
+            SizedBox(
+                width: width * 0.10,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Center(
+                    child: FieldEditCalendarStf(
+                        dateString: DateFormat('yyyy-MM-dd').format(DateTime.parse(
+                            widget.mPOReceiptDetail.expireDate ??
+                                DateTime(dateExpire.year, dateExpire.month + 6,
+                                        dateExpire.day)
+                                    .toString())),
+                        isReadOnly: widget.statusReceipt != 'new',
+                        colorReadOnlyFalse: Colors.blue[50],
+                        firstDay: dateExpire,
+                        lastDay: DateTime(dateExpire.year + 10,
+                            dateExpire.month, dateExpire.day),
+                        cb: (p0) {
+                          print('p0 >> ${p0}');
+                          widget.mPOReceiptDetail.expireDate = p0;
+
+                          print(
+                              'expireDate >> ${widget.mPOReceiptDetail.expireDate}');
+
+                          tLot.text =
+                              widget.mPOReceiptDetail.batch = Func.fbatch(
+                            dateReceipt: DateTime.now(),
+                            dateExpire: DateTime.parse(
+                                widget.mPOReceiptDetail.expireDate!),
+                          );
+
+                          print('batch >> ${widget.mPOReceiptDetail.batch}');
+                          setState(() {});
+                        }),
+                  ),
+                )),
+            SizedBox(
+                width: width * 0.04,
+                child: Center(
+                  child: FieldEditNumStf(
+                      dMaxValue: dMaxReceipt,
+                      isReadOnly: widget.statusReceipt != 'new',
+                      colorReadOnlyFalse: Colors.blue[50],
+                      data: Func.fInt(
+                          dValue: widget.mPOReceiptDetail.dReceivedQTY ?? 0),
+                      cb: (p0) {
+                        // if (double.parse(p0) >= dMaxReceipt) {
+                        //   widget.mPOReceiptDetail.dReceivedQTY = dMaxReceipt;
+                        // } else {
+                        widget.mPOReceiptDetail.dReceivedQTY = double.parse(p0);
+                        // }
+
+                        widget.mPOReceiptDetail.dRemainingQTY =
+                            dMaxReceipt - double.parse(p0);
+
+                        final dLineAmount =
+                            widget.mPOReceiptDetail.dLineAmount =
+                                widget.mPOReceiptDetail.dReceivedQTY! *
+                                    widget.mPOReceiptDetail.dUnitPrice!;
+
+                        final dVatAmount = widget.mPOReceiptDetail.dVatAmount =
+                            dLineAmount * 0.07;
+
+                        widget.mPOReceiptDetail.dTotalAmount =
+                            dLineAmount + dVatAmount;
+
+                        print(' model >> ${widget.mPOReceiptDetail}');
+
+                        setState(() {});
+                        widget.cb();
+                      }),
+                )),
+            SizedBox(
+                width: width * 0.10,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: text(
+                      context,
+                      Func.fOccy(
+                          dValue: widget.mPOReceiptDetail.dLineAmount ?? 0.0)),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+}

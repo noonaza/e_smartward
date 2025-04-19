@@ -1,0 +1,44 @@
+import 'package:e_smartward/screen/login_screen.dart';
+import 'package:flutter/material.dart';
+
+class Alert {
+  static errorApi({
+    required int iCode,
+    required String message,
+    required BuildContext context,
+  }) {
+    if (iCode == 0) {
+      return 
+      
+      AlertDialog(
+        title: Text(message),
+        content: Text('Code Error : ${iCode}'),
+        actions: [
+          TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('ok'))
+        ],
+      );
+    } else if (iCode == 401) {
+      return AlertDialog(
+        title: Text(message),
+        content: Text('Code Error : ${iCode}'),
+        actions: [
+          TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              },
+              child: Text('ok'))
+        ],
+      );
+    } else {
+      //> 999
+      return const AlertDialog();
+    }
+  }
+}

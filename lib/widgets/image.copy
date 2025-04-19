@@ -1,0 +1,38 @@
+import 'package:flutter/material.dart';
+
+image(
+  BuildContext context,
+  String imagePath, {
+  double? maxSize,
+  double? minSize,
+}) {
+  final width = MediaQuery.of(context).size.width;
+  double size = (maxSize ?? 1920) / 1920;
+
+  // If minSize is provided, apply the constraints
+  double imageSize = width * size < (minSize ?? 14) ? (minSize ?? 14) : width * size;
+
+  return Image.asset(
+    imagePath,
+    width: imageSize,
+    height: imageSize,
+  );
+}
+
+imageFigSize(
+  BuildContext context,
+  String imagePath, {
+  required double maxSize,
+  required double minSize,
+}) {
+  final width = MediaQuery.of(context).size.width;
+  double size = maxSize / 1920;
+
+  double imageSize = width * size < minSize ? minSize : width * size;
+
+  return Image.asset(
+    imagePath,
+    width: imageSize,
+    height: imageSize,
+  );
+}

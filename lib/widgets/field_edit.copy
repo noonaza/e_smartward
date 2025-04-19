@@ -1,0 +1,107 @@
+import 'package:e_smartward/widgets/text_style.dart';
+import 'package:flutter/material.dart';
+
+fieldEdit(
+  BuildContext context, {
+  required double width,
+  required double height,
+  required TextEditingController tEdit,
+  String? label,
+  Widget? prefixWidget,
+  Widget? suffixWidget,
+  Color? labelColor,
+  Color? backgroundColor = Colors.transparent,
+  Color? tEditColor,
+  bool readOnly = true,
+  TextAlign textAlign = TextAlign.start,
+  InputBorder? border = const OutlineInputBorder(),
+  InputBorder? focusedBorder = const OutlineInputBorder(),
+  Function(String)? onChanged,
+}) {
+  return Padding(
+    padding: const EdgeInsets.all(4.0),
+    child: SizedBox(
+        width: width,
+        height: height < 50
+            ? 50
+            // : height > 48
+            //     ? 48
+            : height,
+        child: TextFormField(
+          textAlign: textAlign,
+          style: textStyleCustom(context, color: tEditColor),
+          readOnly: readOnly,
+          controller: tEdit,
+          decoration: InputDecoration(
+              //contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+              filled: true,
+              fillColor: backgroundColor,
+              labelText: label,
+              labelStyle: textStyleCustom(context, color: labelColor),
+              prefixIcon: prefixWidget,
+              suffixIcon: suffixWidget,
+              border: border,
+              focusedBorder: focusedBorder
+              //labelStyle: const TextStyle(color: Colors.deepPurple)),
+              ),
+          onChanged: (value) {
+            onChanged!(value);
+          },
+        )),
+  );
+}
+
+fieldEditList(
+  BuildContext context, {
+  required double width,
+  required double height,
+  required String data,
+  String? label,
+  Widget? prefixWidget,
+  Widget? suffixWidget,
+  Color? labelColor,
+  Color? backgroundColor = Colors.transparent,
+  Color? tEditColor,
+  bool readOnly = true,
+  TextAlign textAlign = TextAlign.start,
+  InputBorder? border = const OutlineInputBorder(),
+  InputBorder? focusedBorder = const OutlineInputBorder(),
+  Function? onChanged,
+}) {
+  TextEditingController tEdit = TextEditingController();
+  FocusNode _focusNode = FocusNode();
+
+  return Padding(
+    padding: const EdgeInsets.all(4.0),
+    child: SizedBox(
+        width: width,
+        height: height < 32
+            ? 32
+            : height > 48
+                ? 48
+                : height,
+        child: TextFormField(
+          focusNode: _focusNode,
+          textAlign: textAlign,
+          style: textStyleCustom(context, color: tEditColor),
+          readOnly: readOnly,
+          controller: tEdit,
+          decoration: InputDecoration(
+              //contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+              filled: true,
+              fillColor: backgroundColor,
+              labelText: label,
+              labelStyle: textStyleCustom(context, color: labelColor),
+              prefixIcon: prefixWidget,
+              suffixIcon: suffixWidget,
+              border: border,
+              focusedBorder: focusedBorder
+              //labelStyle: const TextStyle(color: Colors.deepPurple)),
+              ),
+          onChanged: (value) {
+            int cursorPosition = tEdit.selection.baseOffset;
+            onChanged!(value, _focusNode, cursorPosition, tEdit);
+          },
+        )),
+  );
+}

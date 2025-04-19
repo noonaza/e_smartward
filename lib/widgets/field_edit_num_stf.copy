@@ -1,0 +1,76 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'text_style.dart';
+
+class FieldEditNumStf extends StatefulWidget {
+  String data;
+  bool isReadOnly;
+  double? dMaxValue;
+  Function cb;
+  Color? colorReadOnlyTrue;
+  Color? colorReadOnlyFalse;
+
+  FieldEditNumStf({
+    Key? key,
+    required this.data,
+    required this.isReadOnly,
+    this.dMaxValue,
+    required this.cb,
+    this.colorReadOnlyTrue,
+    this.colorReadOnlyFalse,
+  }) : super(key: key);
+
+  @override
+  State<FieldEditNumStf> createState() => _FieldEditNumStfState();
+}
+
+class _FieldEditNumStfState extends State<FieldEditNumStf> {
+  TextEditingController tEdit = TextEditingController();
+  FocusNode _focusNode = FocusNode();
+  late Color colorReadOnlyTrue;
+  late Color colorReadOnlyFalse;
+
+  @override
+  void initState() {
+    super.initState();
+    tEdit.text = widget.data;
+    colorReadOnlyTrue = widget.colorReadOnlyTrue ?? Colors.grey;
+    colorReadOnlyFalse = widget.colorReadOnlyFalse ?? Colors.white;
+  }
+
+  Widget build(BuildContext context) {
+    return TextFormField(
+      readOnly: widget.isReadOnly,
+      textAlign: TextAlign.center,
+      style: textStyleCustom(
+        context,
+      ),
+      focusNode: _focusNode,
+      controller: tEdit,
+      decoration: InputDecoration(
+          filled: true,
+          fillColor: widget.isReadOnly ? colorReadOnlyTrue : colorReadOnlyFalse,
+          border: const OutlineInputBorder(borderSide: BorderSide.none)),
+      keyboardType: TextInputType.number,
+      inputFormatters: <TextInputFormatter>[
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+        FilteringTextInputFormatter.digitsOnly
+      ],
+      onChanged: (value) {
+        if (value.isEmpty) {
+          tEdit.text = '0';
+        }
+        if (widget.dMaxValue != null) {
+          if (double.parse(tEdit.text) >= widget.dMaxValue!) {
+            tEdit.text = widget.dMaxValue.toString();
+          }
+        }
+
+        setState(() {});
+        widget.cb(tEdit.text);
+      },
+    );
+  }
+}
