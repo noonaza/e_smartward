@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/screen/admit_screen.dart';
+import 'package:e_smartward/screen/menu_screen.dart';
+import 'package:e_smartward/screen/round_ward_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -230,6 +232,14 @@ class _LoginScreenState extends State<LoginScreen> {
           lUserLogin.add(newLogin);
           headers_ = TlConstant.headers(token: newLogin.access_token!);
           print(token);
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //       builder: (context) => MenuScreen(
+          //             headers: headers_,
+          //           )),
+          // );
+
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -240,6 +250,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       lDataCard: [],
                     )),
           );
+
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //       builder: (context) => RoundWardScreen(
+          //             lUserLogin: lUserLogin,
+          //             headers: headers_,
+          //             lDataCard: [],
+          //           )),
+          // );
         }
       } else if (response.data['code'] == 401) {
         showDialog(

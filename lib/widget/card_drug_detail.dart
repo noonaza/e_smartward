@@ -1,4 +1,6 @@
 import 'package:e_smartward/Model/list_data_card.dart';
+import 'package:e_smartward/Model/list_data_obs.dart';
+import 'package:e_smartward/widget/row_time.dart';
 import 'package:e_smartward/widgets/text.copy';
 import 'package:flutter/material.dart';
 
@@ -8,6 +10,7 @@ class DrugListWidget extends StatefulWidget {
   final Function(ListDataCardModel drug) onEdit;
   final void Function(int index) onDelete;
   final VoidCallback onAdd;
+  final List<ListDataObsDetailModel> lSettingTime;
 
   const DrugListWidget({
     super.key,
@@ -16,6 +19,7 @@ class DrugListWidget extends StatefulWidget {
     required this.onDelete,
     required this.onAdd,
     required this.headers,
+    required this.lSettingTime,
   });
   @override
   State<DrugListWidget> createState() => _DrugListWidgetState();
@@ -49,8 +53,6 @@ class _DrugListWidgetState extends State<DrugListWidget> {
                         final String? drugDose = drug.dose_qty;
                         final String drugUnitName = drug.dose_unit_name ?? "-";
                         final String? drugtype = drug.drug_type_name;
-                        final List<String> drugtime =
-                            (drug.order_time ?? '').split(',');
 
                         return GestureDetector(
                           onTap: () => widget.onEdit(drug),
@@ -87,39 +89,47 @@ class _DrugListWidgetState extends State<DrugListWidget> {
                                           text(context, "ประเภท : $drugtype",
                                               color: Colors.blue),
                                           const SizedBox(height: 4),
-                                          Wrap(
-                                            children:
-                                                drugtime.map<Widget>((time) {
-                                              return Padding(
-                                                padding:
-                                                    const EdgeInsets.all(4.0),
-                                                child: Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 5,
-                                                      vertical: 5),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color.fromARGB(
-                                                        255, 33, 150, 243),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            20),
-                                                    border: Border.all(
-                                                      color:
-                                                          const Color.fromARGB(
-                                                              255,
-                                                              33,
-                                                              150,
-                                                              243),
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                  child: text(context, time,
-                                                      color: Colors.white),
-                                                ),
-                                              );
-                                            }).toList(),
+                                          SizedBox(
+                                            child: RowTime(
+                                              drug_instruction:
+                                                  drug.drug_instruction ?? '',
+                                              lSettingTime: widget.lSettingTime,
+                                              chipColor: Colors.blue,
+                                            ),
                                           ),
+                                          // Wrap(
+                                          //   children:
+                                          //       drugtime.map<Widget>((time) {
+                                          //     return Padding(
+                                          //       padding:
+                                          //           const EdgeInsets.all(4.0),
+                                          //       child: Container(
+                                          //         padding: const EdgeInsets
+                                          //             .symmetric(
+                                          //             horizontal: 5,
+                                          //             vertical: 5),
+                                          //         decoration: BoxDecoration(
+                                          //           color: const Color.fromARGB(
+                                          //               255, 33, 150, 243),
+                                          //           borderRadius:
+                                          //               BorderRadius.circular(
+                                          //                   20),
+                                          //           border: Border.all(
+                                          //             color:
+                                          //                 const Color.fromARGB(
+                                          //                     255,
+                                          //                     33,
+                                          //                     150,
+                                          //                     243),
+                                          //             width: 2,
+                                          //           ),
+                                          //         ),
+                                          //         child: text(context, time,
+                                          //             color: Colors.white),
+                                          //       ),
+                                          //     );
+                                          //   }).toList(),
+                                          // ),
                                         ],
                                       ),
                                     ),

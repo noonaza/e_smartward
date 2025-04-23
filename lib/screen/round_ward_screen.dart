@@ -1,16 +1,33 @@
-import 'package:e_smartward/widget/header.dart';
-import 'package:e_smartward/widgets/text.copy';
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:e_smartward/widget/card_pet.dart';
+import 'package:e_smartward/widget/header.dart';
+import 'package:e_smartward/widgets/text.copy';
 
+// ignore: must_be_immutable
 class RoundWardScreen extends StatefulWidget {
-  const RoundWardScreen({super.key});
+  final List<Map<String, dynamic>> lDataCard;
+  Map<String, String> headers;
+  List<ListUserModel> lUserLogin = [];
+  String? hnNumber;
+  RoundWardScreen({
+    super.key,
+    required this.lDataCard,
+    required this.headers,
+    required this.lUserLogin,
+  });
 
   @override
   _RoundWardScreenState createState() => _RoundWardScreenState();
 }
 
 class _RoundWardScreenState extends State<RoundWardScreen> {
+  // ignore: deprecated_member_use
+
+  late TextTheme textTheme;
+  List<ListUserModel> lUserLogin = [];
   int iMenu = 1;
   List<String> listCard = [
     'AN-2025-03-03',
@@ -34,7 +51,6 @@ class _RoundWardScreenState extends State<RoundWardScreen> {
   @override
   void initState() {
     super.initState();
-
     Future.delayed(
       const Duration(milliseconds: 500),
       () async {
@@ -108,7 +124,6 @@ class _RoundWardScreenState extends State<RoundWardScreen> {
                                 context,
                                 'Site : ',
                                 color: Colors.teal,
-                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                               SizedBox(
@@ -131,7 +146,6 @@ class _RoundWardScreenState extends State<RoundWardScreen> {
                                 context,
                                 'Ward : ',
                                 color: Colors.teal,
-                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                               SizedBox(
@@ -186,68 +200,24 @@ class _RoundWardScreenState extends State<RoundWardScreen> {
                       text(
                         context,
                         'วันที่ : ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
-                        fontSize: 14,
                         fontWeight: FontWeight.normal,
                         color: Colors.teal,
                       ),
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        String itemText = items[index];
-                        String formattedText = itemText.replaceAll(',', '\n');
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                          child: Stack(
-                            alignment: Alignment.centerLeft,
-                            children: [
-                              SizedBox(
-                                child: ElevatedButton(
-                                  onPressed: () {},
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    side: const BorderSide(
-                                        color: Colors.teal, width: 2),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 20, horizontal: 16),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 50.0),
-                                    child: text(
-                                      context,
-                                      color: Colors.teal,
-                                      formattedText,
-                                      textAlign: TextAlign.start,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Positioned(
-                                left: 8,
-                                child: CircleAvatar(
-                                  radius: 25,
-                                  backgroundImage:
-                                      AssetImage('assets/images/ward.png'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
+                // Row(
+                //   children: [
+                //     Expanded(
+                //       child: CardPet(
+                //         lUserLogin: lUserLogin,
+                //         headers: widget.headers,
+                //         cb: () async {},
+                //         hnNumber: '',
+                //       ),
+                //     ),
+                //   ],
+                // ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: SizedBox(

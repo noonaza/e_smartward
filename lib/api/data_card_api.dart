@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:e_smartward/Model/list_data_obs.dart';
 import 'package:flutter/material.dart';
-
 import '../Model/list_data_card.dart';
 import '../util/tlconstant.dart';
 import '../widget/show_dialog.dart';
@@ -57,7 +58,7 @@ class DataCardApi {
               order_time: item['order_time'],
               patient_age: item['patient_age'],
               start_date_use: item['start_date_use'],
-              start_end_date: item['start_end_date'],
+              end_date_use: item['end_date_use'],
             );
           }).toList();
 
@@ -72,5 +73,109 @@ class DataCardApi {
       dialog.Error(context, 'Failed to load data. Please try again.');
     }
     return lDataCard;
+  }
+
+  Future<List<ListDataObsDetailModel>> loadObs(BuildContext context,
+      {required String? code,
+      required String? setKey,
+      required Map<String, String> headers_}) async {
+    List<ListDataObsDetailModel> lDataObs = [];
+    String api = '${TlConstant.syncApi}/get_setting';
+    final dio = Dio();
+
+    try {
+      final response = await dio.post(
+        api,
+        data: {
+          'code': code,
+          'set_key': setKey,
+        },
+        options: Options(headers: headers_),
+      );
+
+      if (response.data['code'] == 1) {
+        if (response.data['body'] is List) {
+          lDataObs = (response.data['body'] as List).map((item) {
+            final setValue = item['set_value'];
+            final rawObs = setValue['obs'];
+            final obs = rawObs.toString().split(':').first;
+            final rawCol = setValue['col'];
+            final col = rawCol.toString().split(':').first;
+
+            return ListDataObsDetailModel(
+              id: item['id'],
+              code: item['code'],
+              set_name: item['set_name'],
+              set_value: jsonEncode({'obs': obs, 'col': col}),
+              create_by: item['create_by'],
+              create_date: item['create_date'],
+              update_by: item['update_by'],
+              update_date: item['update_date'],
+              delete_by: item['delete_by'],
+              delete_date: item['delete_date'],
+              set_key: item['set_key'],
+            );
+          }).toList();
+          // print('listDataObs: $lDataObs');
+        }
+      } else if (response.data['code'] == 401) {
+        dialog.token(context, response.data['message']);
+      } else {
+        dialog.Error(context, response.data['message']);
+      }
+    } catch (e) {
+      dialog.Error(context, 'Failed to load data. Please try again.');
+    }
+
+    return lDataObs;
+  }
+   Future<List<ListDataObsDetailModel>> loadSettingTime(BuildContext context,
+      {
+      required Map<String, String> headers_}) async {
+    List<ListDataObsDetailModel> lDataObs = [];
+    String api = '${TlConstant.syncApi}/get_setting';
+    final dio = Dio();
+
+    try {
+      final response = await dio.post(
+        api,
+        data: {
+          'code': null,
+          'set_key': null,
+        },
+        options: Options(headers: headers_),
+      );
+
+      if (response.data['code'] == 1) {
+        if (response.data['body'] is List) {
+          lDataObs = (response.data['body'] as List).map((item) {
+            
+              
+            return ListDataObsDetailModel(
+              id: item['id'],
+              code: item['code'],
+              set_name: item['set_name'],
+              set_value: item['set_value'].toString(),
+              create_by: item['create_by'],
+              create_date: item['create_date'],
+              update_by: item['update_by'],
+              update_date: item['update_date'],
+              delete_by: item['delete_by'],
+              delete_date: item['delete_date'],
+              set_key: item['set_key'],
+            );
+          }).toList();
+          // print('listDataObs: $lDataObs');
+        }
+      } else if (response.data['code'] == 401) {
+        dialog.token(context, response.data['message']);
+      } else {
+        dialog.Error(context, response.data['message']);
+      }
+    } catch (e) {
+      dialog.Error(context, 'Failed to load data. Please try again.');
+    }
+
+    return lDataObs;
   }
 }

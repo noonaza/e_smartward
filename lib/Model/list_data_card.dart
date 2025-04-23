@@ -21,7 +21,7 @@ class ListDataCardModel {
   String? caution;
   String? drug_description;
   String? start_date_use;
-  String? start_end_date;
+  String? end_date_use;
   String? order_eid;
   String? order_date;
   String? order_time;
@@ -45,7 +45,7 @@ class ListDataCardModel {
     this.caution,
     this.drug_description,
     this.start_date_use,
-    this.start_end_date,
+    this.end_date_use,
     this.order_eid,
     this.order_date,
     this.order_time,
@@ -98,7 +98,7 @@ class ListDataCardModel {
       caution: caution ?? this.caution,
       drug_description: drug_description ?? this.drug_description,
       start_date_use: start_date_use ?? this.start_date_use,
-      start_end_date: start_end_date ?? this.start_end_date,
+      end_date_use: start_end_date ?? this.end_date_use,
       order_eid: order_eid ?? this.order_eid,
       order_date: order_date ?? this.order_date,
       order_time: order_time ?? this.order_time,
@@ -126,7 +126,7 @@ class ListDataCardModel {
       'caution': caution,
       'drug_description': drug_description,
       'start_date_use': start_date_use,
-      'start_end_date': start_end_date,
+      'start_end_date': end_date_use,
       'order_eid': order_eid,
       'order_date': order_date,
       'order_time': order_time,
@@ -175,7 +175,7 @@ class ListDataCardModel {
       start_date_use: map['start_date_use'] != null
           ? map['start_date_use'] as String
           : null,
-      start_end_date: map['start_end_date'] != null
+      end_date_use: map['start_end_date'] != null
           ? map['start_end_date'] as String
           : null,
       order_eid: map['order_eid'] != null ? map['order_eid'] as String : null,
@@ -193,7 +193,7 @@ class ListDataCardModel {
 
   @override
   String toString() {
-    return 'ListDataCardModel(visit_id: $visit_id, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, item_name: $item_name, item_qty: $item_qty, dose_qty: $dose_qty, dose_unit_name: $dose_unit_name, base_drug_usage_code: $base_drug_usage_code, drug_instruction: $drug_instruction, fix_item_type_id: $fix_item_type_id, item_type_name: $item_type_name, drug_type_id: $drug_type_id, patient_age: $patient_age, drug_type_name: $drug_type_name, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, start_date_use: $start_date_use, start_end_date: $start_end_date, order_eid: $order_eid, order_date: $order_date, order_time: $order_time)';
+    return 'ListDataCardModel(visit_id: $visit_id, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, item_name: $item_name, item_qty: $item_qty, dose_qty: $dose_qty, dose_unit_name: $dose_unit_name, base_drug_usage_code: $base_drug_usage_code, drug_instruction: $drug_instruction, fix_item_type_id: $fix_item_type_id, item_type_name: $item_type_name, drug_type_id: $drug_type_id, patient_age: $patient_age, drug_type_name: $drug_type_name, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, start_date_use: $start_date_use, start_end_date: $end_date_use, order_eid: $order_eid, order_date: $order_date, order_time: $order_time)';
   }
 
   @override
@@ -219,7 +219,7 @@ class ListDataCardModel {
         other.caution == caution &&
         other.drug_description == drug_description &&
         other.start_date_use == start_date_use &&
-        other.start_end_date == start_end_date &&
+        other.end_date_use == end_date_use &&
         other.order_eid == order_eid &&
         other.order_date == order_date &&
         other.order_time == order_time;
@@ -246,7 +246,7 @@ class ListDataCardModel {
         caution.hashCode ^
         drug_description.hashCode ^
         start_date_use.hashCode ^
-        start_end_date.hashCode ^
+        end_date_use.hashCode ^
         order_eid.hashCode ^
         order_date.hashCode ^
         order_time.hashCode;

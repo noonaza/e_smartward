@@ -1,9 +1,6 @@
 import 'package:e_smartward/screen/login_screen.dart';
 import 'package:e_smartward/widgets/text.copy';
-
 import 'package:flutter/material.dart';
-
-
 
 class dialog {
   static load(BuildContext context) {

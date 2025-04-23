@@ -65,7 +65,9 @@ class Header {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => MenuScreen(),
+                                    builder: (context) => MenuScreen(
+                                      headers: {},
+                                    ),
                                   ),
                                 );
                               },

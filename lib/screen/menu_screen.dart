@@ -1,12 +1,20 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
+
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/screen/admit_screen.dart';
 import 'package:e_smartward/screen/round_ward_screen.dart';
 import 'package:e_smartward/widget/header.dart';
 import 'package:e_smartward/widgets/text.copy';
-import 'package:flutter/material.dart';
 
+// ignore: must_be_immutable
 class MenuScreen extends StatefulWidget {
-  const MenuScreen({super.key});
+  Map<String, String> headers;
+
+  MenuScreen({
+    super.key,
+    required this.headers,
+  });
 
   @override
   _MenuScreenState createState() => _MenuScreenState();
@@ -60,7 +68,7 @@ class _MenuScreenState extends State<MenuScreen> {
                                 MaterialPageRoute(
                                     builder: (context) => AdmitScreen(
                                           lUserLogin: lUserLogin,
-                                          headers: headers_,
+                                          headers: widget.headers,
                                           lDataCard: [],
                                           onDelete: (int index) {},
                                         )));
@@ -134,7 +142,11 @@ class _MenuScreenState extends State<MenuScreen> {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => RoundWardScreen()));
+                                    builder: (context) => RoundWardScreen(
+                                          lDataCard: [],
+                                          headers: widget.headers,
+                                          lUserLogin: lUserLogin,
+                                        )));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
