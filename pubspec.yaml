@@ -44,6 +44,7 @@ dependencies:
   flutter_gif: ^0.0.4
   awesome_dialog: ^3.2.0
   tab_container: ^3.5.3
+  flutter_advanced_switch: ^3.1.0
   
   
 

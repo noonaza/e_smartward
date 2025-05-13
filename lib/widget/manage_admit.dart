@@ -1,44 +1,41 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'package:dio/dio.dart';
+import 'package:e_smartward/api/manage_food_api.dart';
 import 'package:flutter/material.dart';
-
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
-import 'package:e_smartward/util/tlconstant.dart';
-import 'package:e_smartward/widget/show_dialog.dart';
 import 'package:e_smartward/widgets/text.copy';
 
 // ignore: must_be_immutable
-class CardPet extends StatefulWidget {
+class ManageAdmit extends StatefulWidget {
   final List<ListUserModel> lUserLogin;
   final String hnNumber;
   final Map<String, String> headers;
   Function cb;
   
 
-  CardPet({
-    Key? key,
+  ManageAdmit({
+    super.key,
     required this.lUserLogin,
     required this.hnNumber,
     required this.headers,
     required this.cb,
   
-  }) : super(key: key);
+  });
 
   @override
-  State<CardPet> createState() => _CardPetState();
+  State<ManageAdmit> createState() => _ManageAdmitState();
 
   loadApiPetAdmit(String s) {}
 }
 
-class _CardPetState extends State<CardPet> {
+class _ManageAdmitState extends State<ManageAdmit> {
   List<ListPetModel> lPetAdmit = [];
 
   @override
   void initState() {
     super.initState();
     Future.delayed(Duration(milliseconds: 300), () async {
-      await loadApiPetAdmit(widget.hnNumber);
+      await ManageFoodApi().loadListAdmit(context,headers_: widget.headers);
     });
   }
 
@@ -99,52 +96,5 @@ class _CardPetState extends State<CardPet> {
         ),
       ),
     );
-  }
-
-  loadApiPetAdmit(String hnNumber) async {
-    String api = '${TlConstant.syncApi}/get_data_admit';
-    final dio = Dio();
-
-    try {
-      final response = await dio.post(
-        api,
-        data: {
-          'hn_number': hnNumber,
-        },
-        options: Options(
-          headers: widget.headers,
-        ),
-      );
-
-      if (response.data['code'] == 1) {
-        if (response.data['body'] is List) {
-          setState(() {
-            lPetAdmit = (response.data['body'] as List).map((item) {
-            
-              return ListPetModel(
-                an: item['an'],
-                base_site_branch_id: item['base_site_branch_id'],
-                bed_number: item['bed_number'],
-                hn: hnNumber,
-                owner_name: item['owner_name'],
-                pet_name: item['pet_name'],
-                pet_type: item['pet_type'],
-                room_type: item['room_type'],
-                visit_id: item['visit_id'],
-                ward: item['ward'],
-              );
-            }).toList();
-            widget.cb(lPetAdmit);
-            print('listPet: $lPetAdmit');
-          });
-        }
-      } else if (response.data['code'] == 401) {
-        dialog.token(context, response.data['message']);
-      } else {
-        dialog.Error(context, response.data['message']);
-      }
-    } catch (e) {
-      dialog.Error(context, 'Failed to load data. Please try again.');
-    }
   }
 }

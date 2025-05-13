@@ -1,17 +1,17 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:action_slider/action_slider.dart';
-import 'package:dio/dio.dart';
-import 'package:e_smartward/Model/list_data_card.dart';
-import 'package:e_smartward/Model/list_data_obs.dart';
-import 'package:e_smartward/api/data_card_api.dart';
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:e_smartward/Model/list_data_card_model.dart';
+import 'package:e_smartward/Model/list_data_obs_model.dart';
+import 'package:e_smartward/api/admit_api.dart';
+import 'package:e_smartward/dialog/create_food_dialog.dart';
 import 'package:e_smartward/dialog/create_obs_dialog.dart';
-import 'package:e_smartward/util/tlconstant.dart';
+import 'package:e_smartward/dialog/edit_obs_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/dialog/create_drug_dialog.dart';
-import 'package:e_smartward/dialog/create_food_dialog.dart';
 import 'package:e_smartward/dialog/edit_Food_dialog.dart';
 import 'package:e_smartward/dialog/edit_drug_dialog.dart';
 import 'package:e_smartward/widget/action_slider.dart';
@@ -21,12 +21,13 @@ import 'package:e_smartward/widget/card_obs_detail.dart';
 import 'package:e_smartward/widget/card_pet.dart';
 import 'package:e_smartward/widget/header.dart';
 import 'package:e_smartward/widget/text.dart';
+import 'package:lottie/lottie.dart';
 
 // ignore: must_be_immutable
 class AdmitScreen extends StatefulWidget {
   final List<Map<String, dynamic>> lDataCard;
   Map<String, String> headers;
-  List<ListUserModel> lUserLogin = [];
+  List<ListUserModel> lUserLogin;
   final void Function(int index) onDelete;
 
   AdmitScreen({
@@ -42,10 +43,10 @@ class AdmitScreen extends StatefulWidget {
 }
 
 class _AdmitScreenState extends State<AdmitScreen> {
-  List<ListUserModel> lUserLogin = [];
   List<ListDataCardModel> lDataCardDrug = [];
   List<ListDataCardModel> lDataCardFood = [];
-  List<ListDataObsDetailModel> lDataObs = [];
+
+  List<ListDataObsDetailModel> lDataCardObs = [];
   List<ListDataObsDetailModel> lSettingTime = [];
   List<String> selectedDrugTimes = [];
   List<ListPetModel> lPetAdmit = [];
@@ -55,6 +56,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
   String? visit_id;
   bool isLoaded = false;
   int reloadCard = 0;
+  bool isHideBtn = false;
 
   List<String> time = [
     'ทุกๆ 1 ชม.',
@@ -127,13 +129,16 @@ class _AdmitScreenState extends State<AdmitScreen> {
   @override
   void initState() {
     super.initState();
+    tHnNumber.text = 'CM-285962-03';
+
     Future.delayed(
       const Duration(milliseconds: 300),
       () async {
-        lSettingTime = await DataCardApi().loadSettingTime(
+        lSettingTime = await AdmitApi().loadSettingTime(
           context,
           headers_: widget.headers,
         );
+
         setState(() {});
       },
     );
@@ -141,6 +146,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     return Material(
       child: Container(
           width: double.infinity,
@@ -158,24 +164,19 @@ class _AdmitScreenState extends State<AdmitScreen> {
           ),
           child: Column(children: [
             Header.title(
-              title: '',
-              context: context,
-              onHover: (value) {},
-              onTap: () {},
-              isBack: true,
-            ),
+                title: '',
+                context: context,
+                onHover: (value) {},
+                onTap: () {},
+                isBack: true,
+                headers: widget.headers,
+                lUserLogin: widget.lUserLogin),
             Expanded(
               child: SingleChildScrollView(
                   child: Column(children: <Widget>[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      'assets/images/logoward.png',
-                      width: 50,
-                      height: 50,
-                    ),
-                    const SizedBox(width: 10),
                     text(context, "จัดการขึ้นวอร์ด",
                         color: const Color.fromARGB(255, 34, 136, 112),
                         fontSize: 16),
@@ -239,14 +240,14 @@ class _AdmitScreenState extends State<AdmitScreen> {
                                           lPetAdmit.clear();
                                           lDataCardDrug.clear();
                                           lDataCardFood.clear();
-                                          lDataObs.clear();
+                                          lDataCardObs.clear();
                                         } else {
                                           hnNumber = null;
                                           isLoaded = false;
                                           lPetAdmit.clear();
                                           lDataCardDrug.clear();
                                           lDataCardFood.clear();
-                                          lDataObs.clear();
+                                          lDataCardObs.clear();
                                         }
                                         reloadCard++;
                                       });
@@ -298,27 +299,67 @@ class _AdmitScreenState extends State<AdmitScreen> {
                         child: CardPet(
                           key: ValueKey(reloadCard),
                           hnNumber: hnNumber!,
-                          lUserLogin: lUserLogin,
+                          lUserLogin: widget.lUserLogin,
                           headers: widget.headers,
-                          cb: (visit_id_) async {
-                            visit_id = visit_id_;
-                            lDataCardDrug = await DataCardApi().load(context,
-                                type: 'ยา',
-                                visitId: visit_id ?? '',
-                                headers_: widget.headers);
-                            lDataCardFood = await DataCardApi().load(
+                          cb: (lPetAdmit_) async {
+                            lPetAdmit = lPetAdmit_;
+                            visit_id = lPetAdmit_.first.visit_id;
+
+                            lDataCardDrug = await AdmitApi().load(
+                              context,
+                              type: 'ยา',
+                              visitId: visit_id ?? '',
+                              headers_: widget.headers,
+                            );
+
+                            lDataCardFood = await AdmitApi().load(
                               context,
                               type: 'อาหาร',
                               visitId: visit_id ?? '',
                               headers_: widget.headers,
                             );
-                            lDataObs = await DataCardApi().loadObs(
+
+                            final lDataCardObs_ = await AdmitApi().load(
                               context,
-                              code: "OBSV-DEFAULT",
-                              setKey: "",
+                              type: 'OBS',
+                              visitId: visit_id ?? '',
                               headers_: widget.headers,
                             );
-                            setState(() {});
+
+                            lDataCardObs.clear();
+
+                            if (lDataCardObs_.isEmpty) {
+                              lDataCardObs = await AdmitApi().loadObs(
+                                context,
+                                code: "OBSV-DEFAULT",
+                                setKey: "",
+                                headers_: widget.headers,
+                              );
+                            } else {
+                              for (var ee in lDataCardObs_) {
+                                lDataCardObs.add(ListDataObsDetailModel(
+                                  id: ee.id,
+                                  code: "OBSV-DEFAULT",
+                                  set_name: ee.item_name,
+                                  remark: ee.remark,
+                                  set_value: ee.drug_instruction,
+                                  take_time: ee.take_time,
+                                ));
+                              }
+                            }
+                            final hasDrug = lDataCardDrug.any((e) =>
+                                e.id != null &&
+                                e.id.toString().trim().isNotEmpty);
+                            final hasFood = lDataCardFood.any((e) =>
+                                e.id != null &&
+                                e.id.toString().trim().isNotEmpty);
+                            final hasObs = lDataCardObs_.any((e) =>
+                                e.id != null &&
+                                e.id.toString().trim().isNotEmpty);
+
+                            setState(() {
+                              isHideBtn = hasDrug || hasFood || hasObs;
+                            });
                           },
                         ),
                       ),
@@ -341,21 +382,21 @@ class _AdmitScreenState extends State<AdmitScreen> {
                             });
                           },
                           onEdit: (drug) {
-                            EditDrugDialog.show(
-                                context,
-                                drug.item_name ?? '',
-                                drug.dose_qty ?? '',
-                                drug.drug_type_name ?? '',
-                                drug.drug_description ?? '',
-                                drug.note_to_team ?? '',
-                                drug.doctor_eid ?? ''
-                                // drugTimes: ['Morning', 'Afternoon', 'Night'],
-                                );
-                            print(drug.drug_description);
+                            final index = lDataCardDrug.indexOf(drug);
+                            EditDrugDialog.show(context, drug, index,
+                                (updatedDrug, index) {
+                              setState(() {
+                                lDataCardDrug[index] = updatedDrug;
+                              });
+                            });
                           },
                           onAdd: () {
-                            // createCardDetail();
-                            CreateDrugDialog.show(context);
+                            CreateDrugDialog.show(context, width: width,
+                                onAddDrug_: (ListDataCardModel drug) {
+                              setState(() {
+                                lDataCardDrug.add(drug);
+                              });
+                            }, headers: widget.headers);
                             (context);
                           },
                         ),
@@ -370,41 +411,53 @@ class _AdmitScreenState extends State<AdmitScreen> {
                             });
                           },
                           onEdit: (food) {
-                            EditFoodDialog.show(
-                                context,
-                                food.item_name ?? '',
-                                food.dose_qty ?? '',
-                                food.drug_description ?? '',
-                                food.note_to_team ?? '',
-                                food.doctor_eid ?? ''
-                                // foodTimes: ['Morning', 'Afternoon', 'Night'],
-                                );
+                            final index = lDataCardFood.indexOf(food);
+                            EditFoodDialog.show(context, food, index,
+                                (updatedFood, index) {
+                              setState(() {
+                                lDataCardFood[index] = updatedFood;
+                              });
+                            });
                           },
                           onAdd: () {
-                            CreateFoodDialog.show(context);
+                            CreateFoodDialog.show(context, width: width,
+                                onAddFood: (ListDataCardModel food) {
+                              setState(() {
+                                lDataCardFood.add(food);
+                              });
+                            }, headers: widget.headers);
                             (context);
                           },
                         ),
 
                         //!obs List
                         ObsListWidget(
-                          lDataObs: lDataObs,
+                          lSettingTime: lSettingTime,
+                          lDataObs: lDataCardObs,
                           headers: widget.headers,
                           onDelete: (index) {
                             setState(() {
-                              lDataObs.removeAt(index);
+                              lDataCardObs.removeAt(index);
                             });
                           },
                           onEdit: (obs) {
-                            // EditObsDialog.show(
-                            //     context,
-                            //     obs.code ??'',
-                            //     obs.set_name  ?? '',
-
-                            //     // foodTimes: ['Morning', 'Afternoon', 'Night'],
-                            //     );
+                            final index = lDataCardObs.indexOf(obs);
+                            EditObsDialog.show(context, obs, index,
+                                (updatedObs, index) {
+                              setState(() {
+                                lDataCardObs[index] = updatedObs;
+                              });
+                            });
                           },
-                          onAdd: () {},
+                          onAdd: () {
+                            CreateObsDialog.show(context, width: width,
+                                onAddObs: (obs) {
+                              setState(() {
+                                lDataCardObs.add(obs);
+                              });
+                            }, headers: widget.headers);
+                            (context);
+                          },
                           onCopy: () {},
                         ),
                       ],
@@ -413,297 +466,96 @@ class _AdmitScreenState extends State<AdmitScreen> {
                 ),
               ])),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  actionSlider(
-                    context,
-                    'ยืนยันการส่งขึ้นวอร์ด',
-                    width: 350.0,
-                    height: 30.0,
-                    togglecolor: Colors.green,
-                    icons: Icons.check,
-                    iconColor: Colors.white,
-                    asController: ActionSliderController(),
-                    action: (controller) {
-                      setState(() {});
-                    },
-                  )
-                ],
-              ),
-            )
+            if (hnNumber != null && isLoaded)
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Builder(builder: (context) {
+                      bool hasValidTakeTime(String? takeTime) {
+                        return takeTime != null &&
+                            takeTime
+                                .replaceAll('[', '')
+                                .replaceAll(']', '')
+                                .replaceAll("'", '')
+                                .trim()
+                                .isNotEmpty;
+                      }
+
+                      final allHaveTakeTime = lDataCardDrug
+                              .every((e) => hasValidTakeTime(e.take_time)) &&
+                          lDataCardFood
+                              .every((e) => hasValidTakeTime(e.take_time));
+
+                      return Visibility(
+                        visible: !isHideBtn,
+                        child: IgnorePointer(
+                          ignoring: !allHaveTakeTime,
+                          child: actionSlider(context, 'ยืนยันการส่งขึ้นวอร์ด',
+                              width: 350.0,
+                              height: 30.0,
+                              togglecolor:
+                                  allHaveTakeTime ? Colors.green : Colors.grey,
+                              icons: Icons.check,
+                              iconColor: Colors.white,
+                              asController: ActionSliderController(),
+                              action: (controller) async {
+                            final dialog = AwesomeDialog(
+                              context: context,
+                              customHeader: Lottie.asset(
+                                "assets/animations/Send1.json",
+                                repeat: true,
+                                width: 200,
+                                height: 100,
+                                fit: BoxFit.contain,
+                              ),
+                              dialogType: DialogType.noHeader,
+                              animType: AnimType.scale,
+                              dismissOnTouchOutside: false,
+                              dismissOnBackKeyPress: false,
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              body: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: const [
+                                  SizedBox(height: 10),
+                                  Text(
+                                    "กำลังส่งข้อมูลขึ้นวอร์ด กรุณารอสักครู่...",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                  SizedBox(height: 10),
+                                ],
+                              ),
+                            );
+
+                            dialog.show();
+
+                            await AdmitApi().CreateCard(
+                              context,
+                              headers_: widget.headers,
+                              mUser: widget.lUserLogin.first,
+                              mPetAdmit_: lPetAdmit.first,
+                              lDataCardDrug_: lDataCardDrug,
+                              lDataCardFood_: lDataCardFood,
+                              lDataObs_: lDataCardObs,
+                            );
+
+                            dialog.dismiss();
+
+                            setState(() {
+                              reloadCard++;
+                            });
+                          }),
+                        ),
+                      );
+                    })
+                  ],
+                ),
+              )
           ])),
     );
-  }
-
-  // void showCopyObsDialog(BuildContext context) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //           content: SingleChildScrollView(
-  //         scrollDirection: Axis.horizontal,
-  //         child: SizedBox(
-  //           width: MediaQuery.of(context).size.width / 1.2,
-  //           height: MediaQuery.of(context).size.height,
-  //           child: ListView.builder(
-  //             scrollDirection: Axis.horizontal,
-  //             itemCount: copyLists.length,
-  //             itemBuilder: (context, index) {
-  //               String cardDate = copyLists[index]["cardDate"];
-  //               List<dynamic> items = copyLists[index]["items"];
-
-  //               return Padding(
-  //                 padding: const EdgeInsets.only(left: 8, right: 8, top: 1),
-  //                 child: SingleChildScrollView(
-  //                   child: SizedBox(
-  //                     width: MediaQuery.of(context).size.width / 4,
-  //                     height: MediaQuery.of(context).size.height,
-  //                     child: Card(
-  //                       elevation: 5,
-  //                       shape: RoundedRectangleBorder(
-  //                         borderRadius: BorderRadius.circular(15),
-  //                       ),
-  //                       color: Color.fromARGB(255, 255, 208, 192),
-  //                       child: Padding(
-  //                         padding: const EdgeInsets.all(12.0),
-  //                         child: Column(
-  //                           crossAxisAlignment: CrossAxisAlignment.start,
-  //                           children: [
-  //                             FittedBox(
-  //                               alignment: Alignment.bottomRight,
-  //                               child: Row(
-  //                                 mainAxisAlignment: MainAxisAlignment.end,
-  //                                 children: [
-  //                                   text(
-  //                                     context,
-  //                                     cardDate,
-  //                                   ),
-  //                                   IconButton(
-  //                                     iconSize: 25,
-  //                                     color: Colors.redAccent,
-  //                                     icon: Icon(Icons.copy),
-  //                                     onPressed: () {
-  //                                       setState(() {
-  //                                         listObs = List.from(items);
-  //                                       });
-  //                                       Navigator.pop(context);
-  //                                     },
-  //                                   ),
-  //                                 ],
-  //                               ),
-  //                             ),
-  //                             SizedBox(height: 12),
-  //                             Column(
-  //                               children: items.map<Widget>((item) {
-  //                                 String category = item["category"];
-  //                                 String description = item["description"];
-  //                                 List<String> causetimes =
-  //                                     List<String>.from(item["times"]);
-
-  //                                 return Card(
-  //                                   elevation: 3,
-  //                                   shape: RoundedRectangleBorder(
-  //                                     borderRadius: BorderRadius.circular(10),
-  //                                   ),
-  //                                   color: Color.fromARGB(255, 240, 240, 240),
-  //                                   child: Padding(
-  //                                     padding: const EdgeInsets.all(8.0),
-  //                                     child: Column(
-  //                                       crossAxisAlignment:
-  //                                           CrossAxisAlignment.start,
-  //                                       children: [
-  //                                         text(
-  //                                           context,
-  //                                           category,
-  //                                         ),
-  //                                         SizedBox(height: 4),
-  //                                         text(
-  //                                           context,
-  //                                           description,
-  //                                         ),
-  //                                         SizedBox(height: 8),
-  //                                         Row(
-  //                                           children:
-  //                                               causetimes.map<Widget>((time) {
-  //                                             return Padding(
-  //                                               padding:
-  //                                                   const EdgeInsets.all(4.0),
-  //                                               child: Container(
-  //                                                 padding: const EdgeInsets
-  //                                                     .symmetric(
-  //                                                     horizontal: 12,
-  //                                                     vertical: 8),
-  //                                                 decoration: BoxDecoration(
-  //                                                   color: Color.fromARGB(
-  //                                                       255, 215, 116, 114),
-  //                                                   borderRadius:
-  //                                                       BorderRadius.circular(
-  //                                                           20),
-  //                                                   border: Border.all(
-  //                                                     color: Color.fromARGB(
-  //                                                         255, 215, 116, 114),
-  //                                                     width: 2,
-  //                                                   ),
-  //                                                 ),
-  //                                                 child: text(context, time,
-  //                                                     color: Colors.white),
-  //                                               ),
-  //                                             );
-  //                                           }).toList(),
-  //                                         ),
-  //                                       ],
-  //                                     ),
-  //                                   ),
-  //                                 );
-  //                               }).toList(),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ),
-  //               );
-  //             },
-  //           ),
-  //         ),
-  //       ));
-  //     },
-  //   );
-  // }
-
-  Future<void> createCardDetail() async {
-    final Map<String, dynamic> requestData = {
-      "hn_number": "R8-160993-04",
-      "an_number": "IR9-67-036974",
-      "visit_number": "824121113541314501",
-      "pet_name": "Cheesecake",
-      "tl_common_users_id": "4785",
-      "data_drug": [
-        {
-          "card_name": "TRAMADOL HCI 50MG (1X100) tab (TAB)",
-          "total_order": "9",
-          "unit": "เม็ด",
-          "dose": 1.5,
-          "take_name":
-              "รับประทานครั้งละ 1 เม็ด + 1 ชิ้นวันละ 2 ครั้ง หลังอาหาร  เช้า เย็น",
-          "take_time": ["08:00", "18:00"],
-          "start_date": "2024-12-17",
-          "end_date": "2024-12-20",
-          "stock_out": 0,
-          "remark": "test ยา",
-          "order_item_id": "824121716373914401",
-          "doctor_eid": "สพ.ญ.ออมอุสาห์ กัวหา",
-          "item_code": "T-MABR",
-          "note_team":
-              "รับประทานครั้งละ 1.5 เม็ด\r\nวันละ 2 ครั้ง หลังอาหาร  เช้า เย็น",
-          "caution": "",
-          "properties": "บรรเทาอาการปวด",
-          "verify_eid": "สพ.ญ.ออมอุสาห์ กัวหา",
-          "verify_date": "2024-12-17",
-          "verify_time": "16:37:39"
-        },
-        {
-          "card_name": "YunnanBaiyaoJiaonang/tab16's_เขียว (TAB)",
-          "total_order": "6",
-          "unit": "เม็ด",
-          "dose": 1,
-          "take_name":
-              "รับประทานครั้งละ 1 เม็ดวันละ 2 ครั้ง ก่อนอาหาร  เช้า เย็น",
-          "take_time": ["09:00", "17:00"],
-          "start_date": "2024-12-17",
-          "end_date": "2024-12-20",
-          "stock_out": 0,
-          "remark": "test ยา2",
-          "order_item_id": "824121716375363001",
-          "doctor_eid": "สพ.ญ.ออมอุสาห์ กัวหา",
-          "item_code": "T-YUNN-3",
-          "note_team": "",
-          "caution": "สำหรับน้ำหนัก 15-25 กก./cap.",
-          "properties": "ยาสมุนไพรจีน ช่วยห้ามเลือด บรรเทาอาการปวด ลดการอักเสบ",
-          "verify_eid": "สพ.ญ.ออมอุสาห์ กัวหา",
-          "verify_date": "2024-12-17",
-          "verify_time": "16:37:39"
-        }
-      ],
-      "data_food": [
-        {
-          "card_name": "Dog_Wet_RC_Gastrointestinal Low Fat_420g_24515",
-          "total_order": "2",
-          "unit": "กระป๋อง",
-          "dose": null,
-          "take_name": "",
-          "take_time": ["08:00", "18:00"],
-          "start_date": "",
-          "end_date": "",
-          "stock_out": 0,
-          "remark": "test อาหาร",
-          "order_item_id": "825012718100088001",
-          "doctor_eid": "",
-          "item_code": "2-223-24515",
-          "note_team": "",
-          "caution": "",
-          "properties": "",
-          "verify_eid": "คุณวาสนา ตอแคะ(R9)",
-          "verify_date": "2025-01-27",
-          "verify_time": "18:10:00"
-        }
-      ],
-      "data_observe": [
-        {
-          "card_name": "ตรวจอุจจาระ",
-          "total_order": "1",
-          "unit": "0",
-          "dose": null,
-          "take_name": "",
-          "take_time": [
-            "00:00",
-            "03:00",
-            "06:00",
-            "09:00",
-            "12:00",
-            "15:00",
-            "18:00",
-            "21:00"
-          ],
-          "start_date": "",
-          "end_date": "",
-          "stock_out": 0,
-          "remark": "test ตรววจอาการ",
-          "order_item_id": "",
-          "doctor_eid": "",
-          "item_code": "",
-          "note_team": "",
-          "caution": "",
-          "properties": "",
-          "verify_eid": "",
-          "verify_date": "",
-          "verify_time": ""
-        }
-      ]
-    };
-
-    try {
-      String api = '${TlConstant.syncApi}/create_admit';
-      final dio = Dio();
-      final response = await dio.post(
-        api,
-        options: Options(
-          headers: widget.headers,
-        ),
-        data: requestData,
-      );
-
-      if (response.data['code'] == 1) {
-        print("Create success: ${response.data}");
-      } else {
-        print("Create failed: ${response.data}");
-      }
-    } catch (e) {
-      print("Error sending request: $e");
-    }
   }
 }

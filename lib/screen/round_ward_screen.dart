@@ -83,6 +83,8 @@ class _RoundWardScreenState extends State<RoundWardScreen> {
                 onHover: (value) {},
                 onTap: () {},
                 isBack: true,
+                headers: widget.headers,
+                lUserLogin: widget.lUserLogin
               ),
               Expanded(
                   child: SingleChildScrollView(

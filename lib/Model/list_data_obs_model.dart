@@ -1,7 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
-import 'package:e_smartward/Model/list_obs_detail.dart';
+import 'package:e_smartward/Model/list_obs_detail_model.dart';
 
 class ListDataObsDetailModel {
   int? id;
@@ -12,6 +12,10 @@ class ListDataObsDetailModel {
   String? create_by;
   String? create_date;
   String? update_by;
+  String? remark;
+  String? take_time;
+  String? time_slot;
+  String? drug_type_name;
   String? update_date;
   String? delete_by;
   String? delete_date;
@@ -25,15 +29,15 @@ class ListDataObsDetailModel {
     this.create_by,
     this.create_date,
     this.update_by,
+    this.remark,
+    this.take_time,
+    this.time_slot,
+    this.drug_type_name,
     this.update_date,
     this.delete_by,
     this.delete_date,
     this.set_key,
   });
-
-  get obs => null;
-
-  get col => null;
 
   ListDataObsDetailModel copyWith({
     int? id,
@@ -44,6 +48,10 @@ class ListDataObsDetailModel {
     String? create_by,
     String? create_date,
     String? update_by,
+    String? remark,
+    String? take_time,
+    String? time_slot,
+    String? drug_type_name,
     String? update_date,
     String? delete_by,
     String? delete_date,
@@ -58,6 +66,10 @@ class ListDataObsDetailModel {
       create_by: create_by ?? this.create_by,
       create_date: create_date ?? this.create_date,
       update_by: update_by ?? this.update_by,
+      remark: remark ?? this.remark,
+      take_time: take_time ?? this.take_time,
+      time_slot: time_slot ?? this.time_slot,
+      drug_type_name: drug_type_name ?? this.drug_type_name,
       update_date: update_date ?? this.update_date,
       delete_by: delete_by ?? this.delete_by,
       delete_date: delete_date ?? this.delete_date,
@@ -75,6 +87,10 @@ class ListDataObsDetailModel {
       'create_by': create_by,
       'create_date': create_date,
       'update_by': update_by,
+      'remark': remark,
+      'take_time': take_time,
+      'time_slot': time_slot,
+      'drug_type_name': drug_type_name,
       'update_date': update_date,
       'delete_by': delete_by,
       'delete_date': delete_date,
@@ -92,6 +108,10 @@ class ListDataObsDetailModel {
       create_by: map['create_by'] != null ? map['create_by'] as String : null,
       create_date: map['create_date'] != null ? map['create_date'] as String : null,
       update_by: map['update_by'] != null ? map['update_by'] as String : null,
+      remark: map['remark'] != null ? map['remark'] as String : null,
+      take_time: map['take_time'] != null ? map['take_time'] as String : null,
+      time_slot: map['time_slot'] != null ? map['time_slot'] as String : null,
+      drug_type_name: map['drug_type_name'] != null ? map['drug_type_name'] as String : null,
       update_date: map['update_date'] != null ? map['update_date'] as String : null,
       delete_by: map['delete_by'] != null ? map['delete_by'] as String : null,
       delete_date: map['delete_date'] != null ? map['delete_date'] as String : null,
@@ -105,7 +125,7 @@ class ListDataObsDetailModel {
 
   @override
   String toString() {
-    return 'ListDataObsDetailModel(id: $id, code: $code, set_name: $set_name, set_value: $set_value, mDataObs: $mDataObs, create_by: $create_by, create_date: $create_date, update_by: $update_by, update_date: $update_date, delete_by: $delete_by, delete_date: $delete_date, set_key: $set_key)';
+    return 'ListDataObsDetailModel(id: $id, code: $code, set_name: $set_name, set_value: $set_value, mDataObs: $mDataObs, create_by: $create_by, create_date: $create_date, update_by: $update_by, remark: $remark, take_time: $take_time, time_slot: $time_slot, drug_type_name: $drug_type_name, update_date: $update_date, delete_by: $delete_by, delete_date: $delete_date, set_key: $set_key)';
   }
 
   @override
@@ -121,6 +141,10 @@ class ListDataObsDetailModel {
       other.create_by == create_by &&
       other.create_date == create_date &&
       other.update_by == update_by &&
+      other.remark == remark &&
+      other.take_time == take_time &&
+      other.time_slot == time_slot &&
+      other.drug_type_name == drug_type_name &&
       other.update_date == update_date &&
       other.delete_by == delete_by &&
       other.delete_date == delete_date &&
@@ -137,6 +161,10 @@ class ListDataObsDetailModel {
       create_by.hashCode ^
       create_date.hashCode ^
       update_by.hashCode ^
+      remark.hashCode ^
+      take_time.hashCode ^
+      time_slot.hashCode ^
+      drug_type_name.hashCode ^
       update_date.hashCode ^
       delete_by.hashCode ^
       delete_date.hashCode ^

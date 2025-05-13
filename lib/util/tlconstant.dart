@@ -75,3 +75,30 @@ class TlConstant {
     }
   }
 }
+
+class Func{
+  static List<String> generateMedicationTimes({
+  required String startTime,
+  required int intervalHours,
+}) {
+  // แปลง startTime เช่น "18:00" ให้เป็น DateTime
+  final parts = startTime.split(":");
+  final startHour = int.parse(parts[0]);
+  final startMinute = int.parse(parts[1]);
+
+  DateTime time = DateTime(0, 1, 1, startHour, startMinute);
+
+  List<String> times = [];
+  for (int i = 0; i < 24; i += intervalHours) {
+    times.add('${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}');
+    time = time.add(Duration(hours: intervalHours));
+    if (time.hour == startHour && time.minute == startMinute) {
+      // วนกลับมาจุดเริ่มต้น ให้หยุด
+      break;
+    }
+  }
+
+  return times;
+}
+
+}

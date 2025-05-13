@@ -1,7 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
-import '../Model/list_data_obs.dart';
+import '../Model/list_data_obs_model.dart';
 
 // ignore: must_be_immutable
 class RowTime extends StatefulWidget {

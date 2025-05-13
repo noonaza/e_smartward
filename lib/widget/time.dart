@@ -4,8 +4,21 @@ import 'package:flutter/material.dart';
 class TimeSelection extends StatefulWidget {
   final List<String> time;
   final List<String> timeList;
+  final String? selectedMealTiming;
+  final List<String>? initialTakeTimes;
+  final String? initialTimeSlot;
+  final Function(int? selectedTimeIndex, List<bool> selectedTimeList)?
+      onSelectionChanged;
 
-  const TimeSelection({required this.time, required this.timeList});
+  const TimeSelection({
+    super.key,
+    required this.time,
+    required this.timeList,
+    this.selectedMealTiming,
+    this.initialTakeTimes,
+    this.initialTimeSlot,
+    this.onSelectionChanged,
+  });
 
   @override
   _TimeSelectionWidgetState createState() => _TimeSelectionWidgetState();
@@ -19,17 +32,33 @@ class _TimeSelectionWidgetState extends State<TimeSelection> {
   @override
   void initState() {
     super.initState();
-    selectedTimeList = List.generate(widget.timeList.length, (index) => false);
-    selected = List.generate(widget.time.length, (index) => false);
+
+    selectedTimeList = List.generate(widget.timeList.length, (_) => false);
+    selected = List.generate(widget.time.length, (_) => false);
+
+    if (widget.initialTimeSlot != null) {
+      final index = widget.time.indexOf(widget.initialTimeSlot!);
+      if (index != -1) {
+        selectedTimeIndex = index;
+        selected[index] = true;
+      }
+    }
+
+    if (widget.initialTakeTimes != null) {
+      for (int i = 0; i < widget.timeList.length; i++) {
+        if (widget.initialTakeTimes!.contains(widget.timeList[i])) {
+          selectedTimeList[i] = true;
+        }
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ListView.builder สำหรับ Time
         SizedBox(
-          height: 30, // ปรับความสูงของ ListView.builder ตามที่ต้องการ
+          height: 30,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: widget.time.length,
@@ -39,15 +68,22 @@ class _TimeSelectionWidgetState extends State<TimeSelection> {
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      selectedTimeList =
-                          List.generate(widget.timeList.length, (i) => false);
-                      selectedTimeIndex = index;
-                      selected =
-                          List.generate(widget.time.length, (i) => i == index);
-
-                      if (index == 0) {
-                        selectedTimeList[0] = true;
+                      if (selectedTimeIndex == index) {
+                        selectedTimeIndex = null;
+                        selected =
+                            List.generate(widget.time.length, (_) => false);
+                        selectedTimeList =
+                            List.generate(widget.timeList.length, (_) => false);
+                      } else {
+                        selectedTimeIndex = index;
+                        selected = List.generate(
+                            widget.time.length, (i) => i == index);
+                        selectedTimeList =
+                            List.generate(widget.timeList.length, (_) => false);
                       }
+
+                      widget.onSelectionChanged
+                          ?.call(selectedTimeIndex, selectedTimeList);
                     });
                   },
                   style: ElevatedButton.styleFrom(
@@ -65,73 +101,77 @@ class _TimeSelectionWidgetState extends State<TimeSelection> {
             },
           ),
         ),
-        SizedBox(height: 15),
-
-        SizedBox(
+        const SizedBox(height: 15),
+        Container(
           height: 150,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.lightBlue[50],
-              borderRadius: BorderRadius.circular(20),
+          decoration: BoxDecoration(
+            color: Colors.lightBlue[50],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.all(8.0),
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 5,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 5,
             ),
-            padding: const EdgeInsets.all(8.0),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 5,
-              ),
-              itemCount: widget.timeList.length,
-              itemBuilder: (context, index) {
-                return IntrinsicWidth(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      int interval = 1;
-                      if (selectedTimeIndex == 1) {
-                        interval = 2;
-                      } else if (selectedTimeIndex == 2) {
-                        interval = 3;
-                      } else if (selectedTimeIndex == 3) {
-                        interval = 4;
-                      }
+            itemCount: widget.timeList.length,
+            itemBuilder: (context, index) {
+              return IntrinsicWidth(
+                child: ElevatedButton(
+                  onPressed: selectedTimeIndex == null
+                      ? null 
+                      : () {
+                          setState(() {
+                            int interval = 1;
 
-                      setState(() {
-                        selectedTimeList =
-                            List.generate(widget.timeList.length, (i) => false);
+                            if (selectedTimeIndex == 1) {
+                              interval = 2;
+                            } else if (selectedTimeIndex == 2)
+                              interval = 3;
+                            else if (selectedTimeIndex == 3) interval = 4;
 
-                        if (selectedTimeIndex! >= 1 &&
-                            selectedTimeIndex! <= 3) {
-                          for (int i = index;
-                              i < widget.timeList.length;
-                              i += interval) {
-                            selectedTimeList[i] = true;
-                          }
-                        } else {
-                          selectedTimeList[index] = !selectedTimeList[index];
-                        }
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          selectedTimeList[index] ? Colors.grey : Colors.white,
-                      side: BorderSide(
-                          color: selectedTimeList[index]
-                              ? Colors.grey
-                              : Colors.blue),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(80),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                            if (selectedTimeIndex != null &&
+                                selectedTimeIndex! < 4) {
+                              selectedTimeList = List.generate(
+                                  widget.timeList.length, (_) => false);
+                              int i = index;
+                              do {
+                                selectedTimeList[i] = true;
+                                i = (i + interval) % widget.timeList.length;
+                              } while (i != index);
+                            } else {
+                              selectedTimeList[index] =
+                                  !selectedTimeList[index];
+                            }
+
+                            widget.onSelectionChanged
+                                ?.call(selectedTimeIndex, selectedTimeList);
+                          });
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        selectedTimeList[index] ? Colors.grey : Colors.white,
+                    side: BorderSide(
+                        color: selectedTimeList[index]
+                            ? Colors.grey
+                            : Colors.blue),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(80),
                     ),
-                    child: FittedBox(
-                      child: text(context, widget.timeList[index],
-                          color: Color.fromARGB(255, 10, 85, 77)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                  ),
+                  child: FittedBox(
+                    child: text(
+                      context,
+                      widget.timeList[index],
+                      color: const Color.fromARGB(255, 10, 85, 77),
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
       ],

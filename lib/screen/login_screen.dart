@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/screen/admit_screen.dart';
+import 'package:e_smartward/screen/manage_food_screen.dart';
 import 'package:e_smartward/screen/menu_screen.dart';
 import 'package:e_smartward/screen/round_ward_screen.dart';
 import 'package:flutter/material.dart';
@@ -223,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await dio.post(api, data: formData);
-      print(response.data);
+      // print(response.data);
       _saveCredentials();
 
       if (response.data['code'] == 1) {
@@ -231,25 +232,35 @@ class _LoginScreenState extends State<LoginScreen> {
           ListUserModel newLogin = ListUserModel.fromMap(login);
           lUserLogin.add(newLogin);
           headers_ = TlConstant.headers(token: newLogin.access_token!);
-          print(token);
+          // print(token);
           // Navigator.push(
           //   context,
           //   MaterialPageRoute(
-          //       builder: (context) => MenuScreen(
+          //       builder: (context) => ManageFoodScreen(
           //             headers: headers_,
+          //             lUserLogin: lUserLogin
           //           )),
           // );
 
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => AdmitScreen(
-                      lUserLogin: lUserLogin,
+                builder: (context) => MenuScreen(
+                  lUserLogin: lUserLogin,
                       headers: headers_,
-                      onDelete: (int index) {},
-                      lDataCard: [],
                     )),
           );
+
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //       builder: (context) => AdmitScreen(
+          //             lUserLogin: lUserLogin,
+          //             headers: headers_,
+          //             onDelete: (int index) {},
+          //             lDataCard: [],
+          //           )),
+          // );
 
           // Navigator.push(
           //   context,

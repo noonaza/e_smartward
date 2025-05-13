@@ -1,32 +1,41 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:e_smartward/util/tlconstant.dart';
+
+import 'package:e_smartward/Model/list_data_card_model.dart';
 import 'package:e_smartward/widget/action_slider.dart';
 import 'package:e_smartward/widget/button.dart';
 import 'package:e_smartward/widget/textfield.dart';
 import 'package:e_smartward/widget/time.dart';
 import 'package:e_smartward/widgets/text.copy';
+import 'package:intl/intl.dart';
 
 // ignore: must_be_immutable
 class CreateDrugDialog extends StatefulWidget {
   Map<String, String> headers;
+  final Function(ListDataCardModel) onAddDrug;
+
   CreateDrugDialog({
-    Key? key,
+    super.key,
     required this.headers,
-  }) : super(key: key);
+    required this.onAddDrug,
+  });
 
   @override
   State<CreateDrugDialog> createState() => _CreateDrugDialogState();
 
-  static void show(BuildContext context) {
+  static void show(
+    BuildContext context, {
+    required Map<String, String> headers,
+    required Function(ListDataCardModel) onAddDrug_,
+    required double width,
+  }) {
     AwesomeDialog(
       context: context,
       dialogType: DialogType.question,
       animType: AnimType.scale,
-      width: MediaQuery.of(context).size.width * 0.5,
+      width: width * 0.5,
       dismissOnTouchOutside: false,
       customHeader: Stack(
         children: [
@@ -38,7 +47,10 @@ class CreateDrugDialog extends StatefulWidget {
           ),
         ],
       ),
-      body: CreateDrugDialog(headers: {}),
+      body: CreateDrugDialog(
+        headers: headers,
+        onAddDrug: onAddDrug_,
+      ),
     ).show();
   }
 }
@@ -48,9 +60,16 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
   TextEditingController tDrugDose = TextEditingController();
   TextEditingController tDrugCondition = TextEditingController();
   TextEditingController tDrugTime = TextEditingController();
+  TextEditingController tDrugDescription = TextEditingController();
+  TextEditingController tDrugRemark = TextEditingController();
+  TextEditingController tDrugDoc = TextEditingController();
+  TextEditingController tDrugUnit = TextEditingController();
+  TextEditingController tDrugQty = TextEditingController();
   List<String> typeDrug = [
-    'ยาหยอด',
-    'ยาฉีด (วัคซีน และ ยาฉีดอื่นๆ)',
+    'ยาเม็ด',
+    'ยาหยอดตา',
+    'ยาหยอดหู',
+    'ยาฉีด',
     'ยาน้ำ',
     'ยาทา (ยาภายนอก)',
   ];
@@ -61,6 +80,16 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
     'ทุกๆ 4 ชม.',
     'กำหนดเอง',
   ];
+  List<String> setValue = [
+    'ก่อนอาหาร',
+    'หลังอาหาร',
+  ];
+  Map<String, bool> selectedValues = {
+    'ก่อนอาหาร': false,
+    'หลังอาหาร': false,
+  };
+  String selectedTimeSlot = '';
+  List<String> selectedTakeTimes = [];
 
   List<String> timeList = List.generate(24, (index) {
     String formattedHour = index.toString().padLeft(2, '0');
@@ -81,6 +110,7 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -90,7 +120,24 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
           const SizedBox(height: 5),
           textField1('ชื่อยา', controller: tDrudName),
           const SizedBox(height: 10),
-          textField1('วิธีให้', controller: tDrugDose),
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: textField1('จำนวน', controller: tDrugQty),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 1,
+                child: textField1('วิธีให้', controller: tDrugDose),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 1,
+                child: textField1('หน่วย', controller: tDrugUnit),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
           SizedBox(
             height: 30,
@@ -121,15 +168,64 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
             ),
           ),
           const SizedBox(height: 10),
-          textField1('สรรพคุณ', controller: tDrudName),
+          textField1('สรรพคุณ', controller: tDrugDescription),
           const SizedBox(height: 10),
-          textField1('หมายเหตุอื่นๆ', controller: tDrudName),
+          textField1('หมายเหตุอื่นๆ', controller: tDrugRemark),
           const SizedBox(height: 10),
-          textField1('ชื่อแพทย์ที่ทำการสั่งยา', controller: tDrudName),
+          textField1('ชื่อแพทย์ที่ทำการสั่งยา', controller: tDrugDoc),
+          const SizedBox(height: 15),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Wrap(
+                  spacing: 8.0,
+                  children: setValue.map((key) {
+                    final isSelected = selectedValues[key] ?? false;
+                    return ChoiceChip(
+                      label: text(
+                        context,
+                        key,
+                        color: isSelected ? Colors.white : Colors.teal,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      selected: isSelected,
+                      selectedColor: Color.fromARGB(255, 4, 138, 161),
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color:
+                              isSelected ? Colors.teal : Colors.teal.shade200,
+                        ),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                      onSelected: (selected) {
+                        setState(() {
+                          selectedValues.updateAll((key, value) => false);
+
+                          selectedValues[key] = selected;
+                        });
+                      },
+                    );
+                  }).toList()),
+            ],
+          ),
           const SizedBox(height: 15),
           TimeSelection(
             time: time,
             timeList: timeList,
+            onSelectionChanged: (selectedIndex, selectedList) {
+              setState(() {
+                selectedTimeSlot = time[selectedIndex ?? 0];
+                selectedTakeTimes = [];
+
+                for (int i = 0; i < selectedList.length; i++) {
+                  if (selectedList[i]) {
+                    selectedTakeTimes.add(timeList[i]);
+                  }
+                }
+              });
+            },
           ),
           Padding(
             padding: const EdgeInsets.only(top: 20),
@@ -144,173 +240,34 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
               iconColor: Colors.white,
               asController: ActionSliderController(),
               action: (controller) {
-                CreateCardDetail();
-                // final newDrug = ListDataCardModel(
-                //   item_name: 'ยาใหม่',
-                //   dose_qty: '10 mg',
-                //   dose_unit_name: 'เม็ด',
-                //   drug_type_name: 'ยา',
-                //   drug_instruction: 'ทานหลังอาหาร',
-
-                //   // item_name: tDrudName.text,
-                //   // dose_qty: tDrugDose.text,
-                //   // dose_unit_name: selectedTypeDrug,
-                //   // drug_type_name: selectedTypeDrug,
-                //   // drug_instruction: time,
-                // );
-
-                // ปิด dialog และส่งค่ากลับ
-                Navigator.pop(
-                  context,
+                final newDrug = ListDataCardModel(
+                  item_name: tDrudName.text,
+                  dose_qty: double.parse(
+                      tDrugDose.text.isEmpty ? '0' : tDrugDose.text),
+                  unit_name: tDrugUnit.text,
+                  item_qty:
+                      int.parse(tDrugQty.text.isEmpty ? '0' : tDrugQty.text),
+                  start_date_use: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                  drug_type_name: selectedTypeDrug,
+                  drug_description: tDrugDescription.text,
+                  remark: tDrugRemark.text,
+                  
+                  doctor_eid: tDrugDoc.text,
+                  meal_timing: selectedValues.entries
+                      .where((entry) => entry.value)
+                      .map((entry) => entry.key)
+                      .join(','),
+                  take_time:
+                      "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+                  time_slot: selectedTimeSlot,
                 );
-                setState(() {});
+                widget.onAddDrug(newDrug);
+                Navigator.pop(context);
               },
             ),
           ),
         ],
       ),
     );
-  }
-
-  Future CreateCardDetail() async {
-    final Map<String, dynamic> requestData = {
-      "hn_number": "R8-160993-04",
-      "an_number": "IR9-67-036974",
-      "visit_number": "824121113541314501",
-      "pet_name": "Cheesecake",
-      "tl_common_users_id": "4785",
-      "data_drug": [
-        {
-          "card_name": "TRAMADOL HCI 50MG (1X100) tab (TAB)",
-          "total_order": "9",
-          "unit": "เม็ด",
-          "dose": 1.5,
-          "take_name":
-              "รับประทานครั้งละ 1 เม็ด + 1 ชิ้นวันละ 2 ครั้ง หลังอาหาร  เช้า เย็น",
-          "take_time": ["08:00", "18:00"],
-          "start_date": "2024-12-17",
-          "end_date": "2024-12-20",
-          "stock_out": 0,
-          "remark": "test ยา",
-          "order_item_id": "824121716373914401",
-          "doctor_eid": "สพ.ญ.ออมอุสาห์ กัวหา",
-          "item_code": "T-MABR",
-          "note_team":
-              "รับประทานครั้งละ 1.5 เม็ด\r\nวันละ 2 ครั้ง หลังอาหาร  เช้า เย็น",
-          "caution": "",
-          "properties": "บรรเทาอาการปวด",
-          "verify_eid": "สพ.ญ.ออมอุสาห์ กัวหา",
-          "verify_date": "2024-12-17",
-          "verify_time": "16:37:39"
-        },
-        {
-          "card_name": "YunnanBaiyaoJiaonang/tab16's_เขียว (TAB)",
-          "total_order": "6",
-          "unit": "เม็ด",
-          "dose": 1,
-          "take_name":
-              "รับประทานครั้งละ 1 เม็ดวันละ 2 ครั้ง ก่อนอาหาร  เช้า เย็น",
-          "take_time": ["09:00", "17:00"],
-          "start_date": "2024-12-17",
-          "end_date": "2024-12-20",
-          "stock_out": 0,
-          "remark": "test ยา2",
-          "order_item_id": "824121716375363001",
-          "doctor_eid": "สพ.ญ.ออมอุสาห์ กัวหา",
-          "item_code": "T-YUNN-3",
-          "note_team": "",
-          "caution": "สำหรับน้ำหนัก 15-25 กก./cap.",
-          "properties": "ยาสมุนไพรจีน ช่วยห้ามเลือด บรรเทาอาการปวด ลดการอักเสบ",
-          "verify_eid": "สพ.ญ.ออมอุสาห์ กัวหา",
-          "verify_date": "2024-12-17",
-          "verify_time": "16:37:39"
-        }
-      ],
-      "data_food": [
-        {
-          "card_name": "Dog_Wet_RC_Gastrointestinal Low Fat_420g_24515",
-          "total_order": "2",
-          "unit": "กระป๋อง",
-          "dose": null,
-          "take_name": "",
-          "take_time": ["08:00", "18:00"],
-          "start_date": "",
-          "end_date": "",
-          "stock_out": 0,
-          "remark": "test อาหาร",
-          "order_item_id": "825012718100088001",
-          "doctor_eid": "",
-          "item_code": "2-223-24515",
-          "note_team": "",
-          "caution": "",
-          "properties": "",
-          "verify_eid": "คุณวาสนา ตอแคะ(R9)",
-          "verify_date": "2025-01-27",
-          "verify_time": "18:10:00"
-        }
-      ],
-      "data_observe": [
-        {
-          "card_name": "ตรวจอุจจาระ",
-          "total_order": "1",
-          "unit": "0",
-          "dose": null,
-          "take_name": "",
-          "take_time": [
-            "00:00",
-            "03:00",
-            "06:00",
-            "09:00",
-            "12:00",
-            "15:00",
-            "18:00",
-            "21:00"
-          ],
-          "start_date": "",
-          "end_date": "",
-          "stock_out": 0,
-          "remark": "test ตรววจอาการ",
-          "order_item_id": "",
-          "doctor_eid": "",
-          "item_code": "",
-          "note_team": "",
-          "caution": "",
-          "properties": "",
-          "verify_eid": "",
-          "verify_date": "",
-          "verify_time": ""
-        }
-      ]
-    };
-
-    String api = '${TlConstant.syncApi}/create_admit';
-    final dio = Dio();
-    final response = await dio.post(
-      api,
-      options: Options(
-        headers: widget.headers,
-      ),
-      data: requestData,
-    );
-
-    try {
-      String api = '${TlConstant.syncApi}/create_admit';
-      final dio = Dio();
-      final response = await dio.post(
-        api,
-        options: Options(
-          headers: widget.headers,
-        ),
-        data: requestData,
-      );
-
-      if (response.statusCode == 200 && response.data['code'] == 1) {
-        print("Create success: ${response.data}");
-      } else {
-        print("Create failed: ${response.data}");
-      }
-    } catch (e) {
-      print("Error sending request: $e");
-    }
   }
 }

@@ -3,15 +3,20 @@ import 'package:e_smartward/screen/menu_screen.dart';
 import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
 
+import '../Model/list_user_model.dart';
+
 class Header {
   Header(BuildContext context);
 
-  static title(
-      {required String title,
-      required BuildContext context,
-      required Function onHover,
-      required Function onTap,
-      required bool isBack}) {
+  static title({
+    required String title,
+    required BuildContext context,
+    required Function onHover,
+    required Function onTap,
+    required bool isBack,
+    required List<ListUserModel> lUserLogin,
+    required Map<String, String> headers,
+  }) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: PreferredSize(
@@ -62,11 +67,12 @@ class Header {
                               child: text(context, 'Menu',
                                   color: Colors.teal[800]),
                               onPressed: () {
-                                Navigator.push(
+                                Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => MenuScreen(
-                                      headers: {},
+                                      lUserLogin: lUserLogin,
+                                      headers: headers,
                                     ),
                                   ),
                                 );

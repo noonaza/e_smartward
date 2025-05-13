@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/screen/admit_screen.dart';
+import 'package:e_smartward/screen/menu_food_screen.dart';
 import 'package:e_smartward/screen/round_ward_screen.dart';
 import 'package:e_smartward/widget/header.dart';
 import 'package:e_smartward/widgets/text.copy';
@@ -10,19 +11,18 @@ import 'package:e_smartward/widgets/text.copy';
 // ignore: must_be_immutable
 class MenuScreen extends StatefulWidget {
   Map<String, String> headers;
-
+  List<ListUserModel> lUserLogin;
   MenuScreen({
-    super.key,
+    Key? key,
     required this.headers,
-  });
+    required this.lUserLogin,
+  }) : super(key: key);
 
   @override
   _MenuScreenState createState() => _MenuScreenState();
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  List<ListUserModel> lUserLogin = [];
-  late Map<String, String> headers_;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +49,8 @@ class _MenuScreenState extends State<MenuScreen> {
                 onHover: (value) {},
                 onTap: () {},
                 isBack: true,
+                headers: widget.headers,
+                lUserLogin: widget.lUserLogin
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -63,11 +65,11 @@ class _MenuScreenState extends State<MenuScreen> {
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.push(
+                            Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => AdmitScreen(
-                                          lUserLogin: lUserLogin,
+                                          lUserLogin: widget.lUserLogin,
                                           headers: widget.headers,
                                           lDataCard: [],
                                           onDelete: (int index) {},
@@ -145,7 +147,7 @@ class _MenuScreenState extends State<MenuScreen> {
                                     builder: (context) => RoundWardScreen(
                                           lDataCard: [],
                                           headers: widget.headers,
-                                          lUserLogin: lUserLogin,
+                                          lUserLogin: widget.lUserLogin,
                                         )));
                           },
                           style: ElevatedButton.styleFrom(
@@ -179,7 +181,15 @@ class _MenuScreenState extends State<MenuScreen> {
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => MenuFoodScreen(
+                                          headers: widget.headers,
+                                          lUserLogin: widget.lUserLogin
+                                        )));
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             fixedSize: const Size(160, 160),
