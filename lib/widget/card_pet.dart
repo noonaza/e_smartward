@@ -1,12 +1,12 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:dio/dio.dart';
+import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
 
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/util/tlconstant.dart';
 import 'package:e_smartward/widget/show_dialog.dart';
-import 'package:e_smartward/widgets/text.copy';
 
 // ignore: must_be_immutable
 class CardPet extends StatefulWidget {
@@ -14,16 +14,14 @@ class CardPet extends StatefulWidget {
   final String hnNumber;
   final Map<String, String> headers;
   Function cb;
-  
 
   CardPet({
-    Key? key,
+    super.key,
     required this.lUserLogin,
     required this.hnNumber,
     required this.headers,
     required this.cb,
-  
-  }) : super(key: key);
+  });
 
   @override
   State<CardPet> createState() => _CardPetState();
@@ -47,7 +45,7 @@ class _CardPetState extends State<CardPet> {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(
-        height: 100,
+        height: 200,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: lPetAdmit.length,
@@ -57,9 +55,10 @@ class _CardPetState extends State<CardPet> {
             String site = lPetAdmit[index].base_site_branch_id ?? '';
             String ward = lPetAdmit[index].ward ?? '';
             String bed = lPetAdmit[index].bed_number ?? '';
+            String doctor = lPetAdmit[index].doctor ?? '';
 
             String formattedText =
-                'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed';
+                'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed\nชื่อแพทย์: $doctor';
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -120,22 +119,21 @@ class _CardPetState extends State<CardPet> {
         if (response.data['body'] is List) {
           setState(() {
             lPetAdmit = (response.data['body'] as List).map((item) {
-            
               return ListPetModel(
-                an: item['an'],
-                base_site_branch_id: item['base_site_branch_id'],
-                bed_number: item['bed_number'],
-                hn: hnNumber,
-                owner_name: item['owner_name'],
-                pet_name: item['pet_name'],
-                pet_type: item['pet_type'],
-                room_type: item['room_type'],
-                visit_id: item['visit_id'],
-                ward: item['ward'],
-              );
+                  an: item['an'],
+                  base_site_branch_id: item['base_site_branch_id'],
+                  bed_number: item['bed_number'],
+                  hn: hnNumber,
+                  owner_name: item['owner_name'],
+                  pet_name: item['pet_name'],
+                  pet_type: item['pet_type'],
+                  room_type: item['room_type'],
+                  visit_id: item['visit_id'],
+                  ward: item['ward'],
+                  doctor: item['doctor']);
             }).toList();
             widget.cb(lPetAdmit);
-            print('listPet: $lPetAdmit');
+            // print('listPet: $lPetAdmit');
           });
         }
       } else if (response.data['code'] == 401) {

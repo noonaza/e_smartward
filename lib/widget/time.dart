@@ -1,4 +1,4 @@
-import 'package:e_smartward/widgets/text.copy';
+import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
 
 class TimeSelection extends StatefulWidget {
@@ -121,19 +121,33 @@ class _TimeSelectionWidgetState extends State<TimeSelection> {
               return IntrinsicWidth(
                 child: ElevatedButton(
                   onPressed: selectedTimeIndex == null
-                      ? null 
+                      ? null
                       : () {
                           setState(() {
                             int interval = 1;
 
-                            if (selectedTimeIndex == 1) {
-                              interval = 2;
-                            } else if (selectedTimeIndex == 2)
-                              interval = 3;
-                            else if (selectedTimeIndex == 3) interval = 4;
+                            // ตั้งค่าระยะเวลาเป็นช่วง
+                            switch (selectedTimeIndex) {
+                              case 1:
+                                interval = 2;
+                                break;
+                              case 2:
+                                interval = 3;
+                                break;
+                              case 3:
+                                interval = 4;
+                                break;
+                              case 4:
+                                interval = 6;
+                                break;
+                              case 5:
+                                interval = 8;
+                                break;
+                            }
 
                             if (selectedTimeIndex != null &&
-                                selectedTimeIndex! < 4) {
+                                selectedTimeIndex! < 6) {
+                              // ช่วงเวลาทุกๆ X ชม.
                               selectedTimeList = List.generate(
                                   widget.timeList.length, (_) => false);
                               int i = index;
@@ -141,7 +155,8 @@ class _TimeSelectionWidgetState extends State<TimeSelection> {
                                 selectedTimeList[i] = true;
                                 i = (i + interval) % widget.timeList.length;
                               } while (i != index);
-                            } else {
+                            } else if (selectedTimeIndex == 6) {
+                              // "กำหนดเอง" เลือกอิสระ
                               selectedTimeList[index] =
                                   !selectedTimeList[index];
                             }

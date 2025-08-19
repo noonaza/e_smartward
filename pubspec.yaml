@@ -45,6 +45,16 @@ dependencies:
   awesome_dialog: ^3.2.0
   tab_container: ^3.5.3
   flutter_advanced_switch: ^3.1.0
+  image_picker: ^1.0.4
+  file_picker: ^8.0.0
+  url_launcher: ^6.0.9
+  circular_menu: ^4.0.0
+  flutter_speed_dial: ^7.0.0
+  flutter_staggered_grid_view: ^0.7.0
+  photo_view: ^0.14.0
+
+  
+  
   
   
 
@@ -87,6 +97,12 @@ flutter:
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
+
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/icon.png"
 
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/assets-and-images/#from-packages

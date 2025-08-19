@@ -1,6 +1,6 @@
 import 'package:action_slider/action_slider.dart';
 import 'package:e_smartward/widgets/icon.copy';
-import 'package:e_smartward/widgets/text.copy';
+import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
 
 actionSlider(BuildContext context, String label,

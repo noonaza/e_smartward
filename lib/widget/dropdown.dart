@@ -8,7 +8,8 @@ import 'text.dart';
 class GroupDropdown extends StatefulWidget {
   final Map<String, String> headers_;
   final Function(String) onSelected;
-  const GroupDropdown({super.key, required this.headers_, required this.onSelected});
+  const GroupDropdown(
+      {super.key, required this.headers_, required this.onSelected});
 
   @override
   State<GroupDropdown> createState() => _GroupDropdownState();
@@ -44,7 +45,14 @@ class _GroupDropdownState extends State<GroupDropdown> {
             children: [
               const Icon(Icons.local_hotel, color: Colors.teal, size: 18),
               const SizedBox(width: 8),
-              text(context, group.item_name!, color: Colors.teal),
+              Expanded(
+                child: text(
+                  context,
+                  group.item_name!,
+                  color: Colors.teal,
+                  maxLines: 3,
+                ),
+              ),
             ],
           ),
         );
@@ -104,7 +112,14 @@ class _SiteDropdownState extends State<SiteDropdown> {
             children: [
               const Icon(Icons.place, color: Colors.teal, size: 18),
               const SizedBox(width: 8),
-              text(context, site.name!, color: Colors.teal),
+              Expanded(
+                child: text(
+                  context,
+                  site.name!,
+                  color: Colors.teal,
+                  maxLines: 3,
+                ),
+              ),
             ],
           ),
         );
@@ -187,10 +202,18 @@ class _WardDropdownState extends State<WardDropdown> {
         return DropdownMenuItem<WardModel>(
           value: ward,
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Icon(Icons.meeting_room, color: Colors.teal, size: 18),
               const SizedBox(width: 8),
-              text(context, ward.ward!, color: Colors.teal),
+              Expanded(
+                child: text(
+                  context,
+                  ward.ward!,
+                  color: Colors.teal,
+                  maxLines: 3,
+                ),
+              ),
             ],
           ),
         );

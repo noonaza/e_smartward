@@ -7,6 +7,7 @@ import 'package:e_smartward/api/admit_api.dart';
 import 'package:e_smartward/dialog/create_food_dialog.dart';
 import 'package:e_smartward/dialog/create_obs_dialog.dart';
 import 'package:e_smartward/dialog/edit_obs_dialog.dart';
+import 'package:e_smartward/widget/show_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
@@ -43,6 +44,11 @@ class AdmitScreen extends StatefulWidget {
 }
 
 class _AdmitScreenState extends State<AdmitScreen> {
+  final GlobalKey<FoodListWidgetState> foodListKey =
+      GlobalKey<FoodListWidgetState>();
+  final GlobalKey<DrugListWidgetState> DrugListKey =
+      GlobalKey<DrugListWidgetState>();
+
   List<ListDataCardModel> lDataCardDrug = [];
   List<ListDataCardModel> lDataCardFood = [];
 
@@ -64,6 +70,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
     'ทุกๆ 3 ชม.',
     'ทุกๆ 4 ชม.',
     'กำหนดเอง',
+    'เมื่อมีอาการ',
   ];
 
   List<Map<String, String>> items = [];
@@ -73,63 +80,12 @@ class _AdmitScreenState extends State<AdmitScreen> {
     return '$formattedHour:00';
   });
 
-  final List<Map<String, dynamic>> copyLists = [
-    {
-      "cardDate": "AN: 20250202-123",
-      "items": [
-        {
-          "category": "ปัสสาวะ",
-          "description": "ไม่ปัสสาวะเลย",
-          "times": ["04:00"]
-        },
-        {
-          "category": "อุจจาระ",
-          "description": "ไม่มีอาการท้องเสีย หรือ อุจจาระบ่อย",
-          "times": ["04:00"]
-        },
-        {
-          "category": "เพิ่มเติมอื่นๆ",
-          "description": "พบว่า มีน้ำตาไหลตลอดเวลา",
-          "times": ["04:00"]
-        },
-        {
-          "category": "กินอาหารได้น้อย",
-          "description": "กินแค่ 3 กรัม ต่อวัน",
-          "times": ["04:00"]
-        },
-      ],
-    },
-    {
-      "cardDate": "AN: 20250131-123",
-      "items": [
-        {
-          "category": "ปัสสาวะ",
-          "description": "เวลาปวดปัสสาวะ มีอาการปวดท้อง",
-          "times": ["04:00"]
-        },
-        {
-          "category": "อุจจาระ",
-          "description": "สำคัญ ไม่ควรลบ",
-          "times": ["04:00"]
-        },
-        {
-          "category": "เพิ่มเติมอื่นๆ",
-          "description": "ปัสสาวะบ่อย",
-          "times": ["04:00"]
-        },
-        {
-          "category": "มีอาเจียน",
-          "description": "อาเจียนติดกัน 4 รอบ",
-          "times": ["04:00"]
-        },
-      ],
-    }
-  ];
-
   @override
   void initState() {
     super.initState();
-    tHnNumber.text = 'CM-285962-03';
+
+    // tHnNumber.text = 'SV-81472-05';
+    // 'CM-285962-03';
 
     Future.delayed(
       const Duration(milliseconds: 300),
@@ -174,13 +130,22 @@ class _AdmitScreenState extends State<AdmitScreen> {
             Expanded(
               child: SingleChildScrollView(
                   child: Column(children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    text(context, "จัดการขึ้นวอร์ด",
-                        color: const Color.fromARGB(255, 34, 136, 112),
-                        fontSize: 16),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Image.asset(
+                        'assets/images/petward.png',
+                        width: 40,
+                        height: 40,
+                      ),
+                      const SizedBox(width: 5),
+                      text(context, "จัดการสัตว์เลี้ยงขึ้นวอร์ด",
+                          color: const Color.fromARGB(255, 34, 136, 112),
+                          fontSize: 16),
+                    ],
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -206,7 +171,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
                                     context,
                                     'HN : ',
                                     color: Colors.teal,
-                                    fontSize: 12,
+                                    // fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
                                   SizedBox(
@@ -215,7 +180,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
                                     child: TextFormField(
                                       controller: tHnNumber,
                                       style: const TextStyle(
-                                          fontSize: 12, color: Colors.teal),
+                                          fontSize: 14, color: Colors.teal),
                                       decoration: const InputDecoration(
                                         filled: true,
                                         fillColor: Colors.white,
@@ -231,26 +196,35 @@ class _AdmitScreenState extends State<AdmitScreen> {
                                   ),
                                   const SizedBox(width: 20),
                                   ElevatedButton(
-                                    onPressed: () {
+                                    onPressed: () async {
                                       String hn = tHnNumber.text.trim();
-                                      setState(() {
-                                        if (hn.isNotEmpty) {
-                                          hnNumber = hn;
-                                          isLoaded = true;
-                                          lPetAdmit.clear();
-                                          lDataCardDrug.clear();
-                                          lDataCardFood.clear();
-                                          lDataCardObs.clear();
-                                        } else {
-                                          hnNumber = null;
-                                          isLoaded = false;
-                                          lPetAdmit.clear();
-                                          lDataCardDrug.clear();
-                                          lDataCardFood.clear();
-                                          lDataCardObs.clear();
-                                        }
-                                        reloadCard++;
-                                      });
+
+                                      dialog.loadData(context);
+
+                                      if (hn.isNotEmpty) {
+                                        hnNumber = hn;
+                                        isLoaded = true;
+                                        lPetAdmit.clear();
+                                        lDataCardDrug.clear();
+                                        lDataCardFood.clear();
+                                        lDataCardObs.clear();
+                                      } else {
+                                        hnNumber = null;
+                                        isLoaded = false;
+                                        lPetAdmit.clear();
+                                        lDataCardDrug.clear();
+                                        lDataCardFood.clear();
+                                        lDataCardObs.clear();
+                                      }
+
+                                      reloadCard++;
+
+                                      await Future.delayed(
+                                          const Duration(milliseconds: 500));
+
+                                      Navigator.of(context).pop();
+
+                                      setState(() {});
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.white,
@@ -365,105 +339,136 @@ class _AdmitScreenState extends State<AdmitScreen> {
                       ),
                     ],
                   ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        //!Drug List
-                        DrugListWidget(
-                          lDataCard: lDataCardDrug,
-                          lSettingTime: lSettingTime,
-                          headers: widget.headers,
-                          onDelete: (index) {
-                            setState(() {
-                              lDataCardDrug.removeAt(index);
-                            });
-                          },
-                          onEdit: (drug) {
-                            final index = lDataCardDrug.indexOf(drug);
-                            EditDrugDialog.show(context, drug, index,
+                if (hnNumber != null && isLoaded)
+                  Padding(
+                    padding: const EdgeInsets.all(2.0),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          //!Drug List
+                          DrugListWidget(
+                            lDataCard: lDataCardDrug,
+                            lSettingTime: lSettingTime,
+                            headers: widget.headers,
+                            onDelete: (index) {
+                              setState(() {
+                                lDataCardDrug.removeAt(index);
+                              });
+                            },
+                            onEdit: (drug) {
+                              final index = lDataCardDrug.indexOf(drug);
+                              EditDrugDialog.show(
+                                screen: 'admit',
+                                context,
+                                drug,
+                                index,
                                 (updatedDrug, index) {
-                              setState(() {
-                                lDataCardDrug[index] = updatedDrug;
-                              });
-                            });
-                          },
-                          onAdd: () {
-                            CreateDrugDialog.show(context, width: width,
+                                  setState(() {
+                                    lDataCardDrug[index] = updatedDrug;
+                                  });
+                                },
+                                widget.headers,
+                              );
+                            },
+                            onAdd: () {
+                              CreateDrugDialog.show(
+                                context,
+                                screen: 'admit',
                                 onAddDrug_: (ListDataCardModel drug) {
+                                  setState(() {
+                                    lDataCardDrug.add(drug);
+                                  });
+                                },
+                                headers: widget.headers,
+                                rwAddDrug_: () {},
+                              );
+                              (context);
+                            },
+                            onConfirmed: () {
+                              foodListKey.currentState?.setConfirmed();
+                            },
+                          ),
+                          //!Food List
+                          FoodListWidget(
+                            key: foodListKey,
+                            lSettingTime: lSettingTime,
+                            lDataCard: lDataCardFood,
+                            headers: widget.headers,
+                            onDelete: (index) {
                               setState(() {
-                                lDataCardDrug.add(drug);
+                                lDataCardFood.removeAt(index);
                               });
-                            }, headers: widget.headers);
-                            (context);
-                          },
-                        ),
-                        //!Food List
-                        FoodListWidget(
-                          lSettingTime: lSettingTime,
-                          lDataCard: lDataCardFood,
-                          headers: widget.headers,
-                          onDelete: (index) {
-                            setState(() {
-                              lDataCardFood.removeAt(index);
-                            });
-                          },
-                          onEdit: (food) {
-                            final index = lDataCardFood.indexOf(food);
-                            EditFoodDialog.show(context, food, index,
+                            },
+                            onEdit: (food) {
+                              final index = lDataCardFood.indexOf(food);
+                              EditFoodDialog.showEditFoodDialog(
+                                screen: 'admit',
+                                context,
+                                food,
+                                index,
                                 (updatedFood, index) {
-                              setState(() {
-                                lDataCardFood[index] = updatedFood;
-                              });
-                            });
-                          },
-                          onAdd: () {
-                            CreateFoodDialog.show(context, width: width,
-                                onAddFood: (ListDataCardModel food) {
-                              setState(() {
-                                lDataCardFood.add(food);
-                              });
-                            }, headers: widget.headers);
-                            (context);
-                          },
-                        ),
+                                  setState(() {
+                                    lDataCardFood[index] = updatedFood;
+                                  });
+                                },
+                                widget.headers,
+                              );
+                            },
+                            onAdd: () {
+                              CreateFoodDialog.show(context, width: width,
+                                  onAddFood: (ListDataCardModel food) {
+                                setState(() {
+                                  lDataCardFood.add(food);
+                                });
+                              },
+                                  headers: widget.headers,
+                                  rwAddFood_: () {},
+                                  screen: 'admit');
+                              (context);
+                            },
+                            onConfirmed: () {
+                              foodListKey.currentState?.setConfirmed();
+                            },
+                          ),
 
-                        //!obs List
-                        ObsListWidget(
-                          lSettingTime: lSettingTime,
-                          lDataObs: lDataCardObs,
-                          headers: widget.headers,
-                          onDelete: (index) {
-                            setState(() {
-                              lDataCardObs.removeAt(index);
-                            });
-                          },
-                          onEdit: (obs) {
-                            final index = lDataCardObs.indexOf(obs);
-                            EditObsDialog.show(context, obs, index,
-                                (updatedObs, index) {
+                          //!obs List
+                          ObsListWidget(
+                            lSettingTime: lSettingTime,
+                            lDataObs: lDataCardObs,
+                            headers: widget.headers,
+                            onDelete: (index) {
                               setState(() {
-                                lDataCardObs[index] = updatedObs;
+                                lDataCardObs.removeAt(index);
                               });
-                            });
-                          },
-                          onAdd: () {
-                            CreateObsDialog.show(context, width: width,
-                                onAddObs: (obs) {
-                              setState(() {
-                                lDataCardObs.add(obs);
-                              });
-                            }, headers: widget.headers);
-                            (context);
-                          },
-                          onCopy: () {},
-                        ),
-                      ],
+                            },
+                            onEdit: (obs) {
+                              final index = lDataCardObs.indexOf(obs);
+                              EditObsDialog.showObs(context, obs, index,
+                                  screen: 'admit', (updatedObs, index) {
+                                setState(() {
+                                  lDataCardObs[index] = updatedObs;
+                                });
+                              },widget.headers);
+                            },
+                            onAdd: () {
+                              CreateObsDialog.show(context, width: width,
+                                  onAddObs: (obs) {
+                                setState(() {
+                                  lDataCardObs.add(obs);
+                                });
+                              },
+                                  headers: widget.headers,
+                                  rwAddObs_: () {},
+                                  screen: 'admit');
+                              (context);
+                            },
+                            onCopy: () {},
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
               ])),
             ),
             if (hnNumber != null && isLoaded)
@@ -473,20 +478,36 @@ class _AdmitScreenState extends State<AdmitScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Builder(builder: (context) {
-                      bool hasValidTakeTime(String? takeTime) {
-                        return takeTime != null &&
-                            takeTime
-                                .replaceAll('[', '')
-                                .replaceAll(']', '')
-                                .replaceAll("'", '')
-                                .trim()
-                                .isNotEmpty;
+                      bool hasValidTakeTime(String? timeSlot) {
+                        if (timeSlot == null) return false;
+
+                        if (timeSlot.contains('เมื่อมีอาการ')) return true;
+
+                        final cleaned = timeSlot
+                            .replaceAll('[', '')
+                            .replaceAll(']', '')
+                            .replaceAll('"', '')
+                            .replaceAll("'", '')
+                            .trim();
+
+                        final times =
+                            cleaned.split(',').map((e) => e.trim()).toList();
+
+                        return times.any((t) =>
+                            t.isNotEmpty &&
+                            t != '-' &&
+                            t.toLowerCase() != 'null');
                       }
 
-                      final allHaveTakeTime = lDataCardDrug
-                              .every((e) => hasValidTakeTime(e.take_time)) &&
-                          lDataCardFood
-                              .every((e) => hasValidTakeTime(e.take_time));
+                      final isDrugValid = lDataCardDrug.every((e) =>
+                          hasValidTakeTime(e.time_slot) ||
+                          (e.time_slot?.contains('เมื่อมีอาการ') ?? false));
+
+                      final isFoodValid = lDataCardFood.every((e) =>
+                          hasValidTakeTime(e.time_slot) ||
+                          (e.time_slot?.contains('เมื่อมีอาการ') ?? false));
+
+                      final allHaveTakeTime = isDrugValid && isFoodValid;
 
                       return Visibility(
                         visible: !isHideBtn,
@@ -544,8 +565,9 @@ class _AdmitScreenState extends State<AdmitScreen> {
                             );
 
                             dialog.dismiss();
-
                             setState(() {
+                              foodListKey.currentState?.setConfirmed();
+                              DrugListKey.currentState?.setConfirmed();
                               reloadCard++;
                             });
                           }),

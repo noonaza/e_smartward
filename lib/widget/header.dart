@@ -20,10 +20,10 @@ class Header {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: PreferredSize(
-          preferredSize: const Size.fromHeight(60), // Height of the AppBar
+          preferredSize: const Size.fromHeight(60),
           child: Container(
             alignment: Alignment.center,
-            height: 30,
+            height: 40,
             width: double.infinity,
             decoration: const BoxDecoration(
               color: Color.fromARGB(255, 255, 255, 255),
@@ -41,18 +41,41 @@ class Header {
                 children: [
                   Row(
                     children: [
-                      // Image.asset(
-                      //   'assets/icons/logo.png',
-                      //   width: 30,
-                      //   height: 30,
-                      // ),
-                      const SizedBox(width: 5),
-                      text(
-                        context,
-                        'e-Smart Ward',
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal[700],
-                        textAlign: TextAlign.left,
+                      const SizedBox(width: 6),
+                      Row(
+                        children: [
+                          text(
+                            context,
+                            ' iCare Smart Ward',
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal[700],
+                            textAlign: TextAlign.left,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          text(
+                            context,
+                            '  (',
+                            fontWeight: FontWeight.normal,
+                            color: Colors.teal[700],
+                            textAlign: TextAlign.left,
+                          ),
+                          const Icon(
+                            Icons.person,
+                            size: 18,
+                            color: Colors.teal,
+                          ),
+                          text(
+                            context,
+                            ' ${lUserLogin.first.title_name_en} ${lUserLogin.first.name_en})   ',
+                            fontWeight: FontWeight.normal,
+                            color: Colors.teal[700],
+                            textAlign: TextAlign.left,
+                          ),
+                        ],
                       ),
                       const SizedBox(width: 10),
                     ],

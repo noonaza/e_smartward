@@ -4,45 +4,92 @@ import 'dart:convert';
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import 'package:e_smartward/Model/list_an_model.dart';
+import 'package:e_smartward/Model/list_pet_model.dart';
+import 'package:e_smartward/Model/list_roundward_model.dart';
+import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/widget/action_slider.dart';
 import 'package:e_smartward/widget/button.dart';
 import 'package:e_smartward/widget/textfield.dart';
 import 'package:e_smartward/widget/time.dart';
 
+import '../Model/list_data_card_model.dart';
 import '../Model/list_data_obs_model.dart';
+import '../Model/list_group_model.dart';
+import '../Model/update_order_model.dart';
+import '../api/roundward_api.dart';
 import '../widget/text.dart';
 
 class EditObsDialog extends StatefulWidget {
   final ListDataObsDetailModel Obs;
   final int indexObs;
   final Function(ListDataObsDetailModel updatedObs, int index_) cb;
+  final void Function(List<ListRoundwardModel>, bool)? onRefresh;
+  Map<String, String> headers;
+  final List<ListUserModel>? lUserLogin;
+  final ListGroupModel? group;
+  final List<ListAnModel>? lListAn;
+  final ListRoundwardModel? mData;
+  final List<ListPetModel>? lPetAdmit;
+  final String? drugTypeName;
+  String screen;
 
-  const EditObsDialog({
+  EditObsDialog({
     Key? key,
     required this.Obs,
     required this.indexObs,
     required this.cb,
+    this.onRefresh,
+    required this.headers,
+    this.lUserLogin,
+    this.group,
+    this.lListAn,
+    this.mData,
+    this.lPetAdmit,
+    this.drugTypeName,
+    required this.screen,
   }) : super(key: key);
 
   @override
   State<EditObsDialog> createState() => _EditDetailDialogState();
 
-  static void show(
+  static void showObs(
     BuildContext context,
     ListDataObsDetailModel Obs,
     int index_,
     Function(ListDataObsDetailModel updatedObs, int index_) cb_,
-  ) {
+    Map<String, String> headers, {
+    required String screen,
+    List<ListUserModel>? lUserLogin,
+    List<ListPetModel>? lPetAdmit,
+    List<ListAnModel>? lListAn,
+    String? drugTypeName,
+    ListRoundwardModel? mData,
+    ListGroupModel? group,
+    void Function(List<ListRoundwardModel>, bool)? onRefresh,
+  }) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double dialogWidth;
+
+    if (screenWidth >= 1024) {
+      dialogWidth = screenWidth * 0.5; // Desktop
+    } else if (screenWidth >= 680) {
+      dialogWidth = screenWidth * 0.8; // Tablet
+    } else {
+      dialogWidth = screenWidth * 0.9; // Mobile
+    }
     AwesomeDialog(
       context: context,
       dialogType: DialogType.question,
       animType: AnimType.scale,
-      width: MediaQuery.of(context).size.width * 0.5,
+      width: dialogWidth,
       dismissOnTouchOutside: false,
       customHeader: Stack(
         children: [
           Image.asset(
-            'assets/gif/medicin.gif',
+            'assets/gif/index3.gif',
             width: 100,
             height: 100,
             fit: BoxFit.contain,
@@ -53,6 +100,17 @@ class EditObsDialog extends StatefulWidget {
         Obs: Obs,
         indexObs: index_,
         cb: cb_,
+        screen: screen,
+        drugTypeName: drugTypeName,
+        lUserLogin: lUserLogin,
+        lPetAdmit: lPetAdmit,
+        lListAn: lListAn,
+        mData: mData,
+        group: group,
+        headers: headers,
+        onRefresh: (updatedData, hasNew) {
+          onRefresh?.call(updatedData, hasNew);
+        },
       ),
     ).show();
   }
@@ -74,7 +132,10 @@ class _EditDetailDialogState extends State<EditObsDialog> {
     'ทุกๆ 2 ชม.',
     'ทุกๆ 3 ชม.',
     'ทุกๆ 4 ชม.',
+    'ทุกๆ 6 ชม.',
+    'ทุกๆ 8 ชม.',
     'กำหนดเอง',
+    'เมื่อมีอาการ'
   ];
   List<String> setValue = [
     'obs',
@@ -145,7 +206,8 @@ class _EditDetailDialogState extends State<EditObsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isEnabled = selectedTakeTimes.isNotEmpty;
+    // final bool isEnabled =
+    //     selectedTakeTimes.isNotEmpty || selectedTimeSlot == 'เมื่อมีอาการ';
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -153,7 +215,7 @@ class _EditDetailDialogState extends State<EditObsDialog> {
         children: [
           CustomCloseButton(context),
           const SizedBox(height: 5),
-          textField1('อาการ', controller: tObsName),
+          textField1('คำสั่งพิเศษ', controller: tObsName),
           const SizedBox(height: 10),
           textField1('หมายเหตุ', controller: tObsNote),
           const SizedBox(height: 10),
@@ -195,7 +257,7 @@ class _EditDetailDialogState extends State<EditObsDialog> {
             ],
           ),
           const SizedBox(height: 15),
-         TimeSelection(
+          TimeSelection(
             time: time,
             timeList: timeList,
             initialTakeTimes: selectedTakeTimes,
@@ -216,37 +278,81 @@ class _EditDetailDialogState extends State<EditObsDialog> {
           Padding(
             padding: const EdgeInsets.only(top: 20),
             child: IgnorePointer(
-              ignoring: !isEnabled,
+              ignoring: false,
+              // ignoring: !isEnabled,
               child: actionSlider(
                 context,
                 'ยืนยันการส่งสังเกตอาการเพิ่มเติม',
                 width: MediaQuery.of(context).size.width * 0.4,
                 height: 30.0,
-                backgroundColor: isEnabled
-                    ? const Color.fromARGB(255, 203, 230, 252)
-                    : Colors.grey[300]!,
-                togglecolor: isEnabled
-                    ? const Color.fromARGB(255, 76, 172, 175)
-                    : Colors.grey,
+                backgroundColor: const Color.fromARGB(255, 203, 230, 252),
+                togglecolor: const Color.fromARGB(255, 76, 172, 175),
                 icons: Icons.check,
                 iconColor: Colors.white,
                 asController: ActionSliderController(),
-                action: (controller) {
-                  final setValueMap = {
-                    "obs": selectedValue == 'obs' ? 1 : 0,
-                    "col": selectedValue == 'col' ? 1 : 0,
-                    "time_slot": selectedTimeSlot,
-                    "delete": 0,
-                  };
-                  final updatedObs = ListDataObsDetailModel(
-                    set_name: tObsName.text,
-                    set_value: jsonEncode(setValueMap),
-                    remark: tObsNote.text,
-                    take_time:
-                        "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
-                  );
-                  widget.cb(updatedObs, widget.indexObs);
-                  Navigator.of(context).pop();
+                action: (controller) async {
+                  if (widget.screen == 'roundward') {
+                    final data = ListDataCardModel(
+                      item_name: tObsName.text,
+                      remark: tObsNote.text,
+                      stock_out: 0,
+                      start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
+                          .format(DateTime.now()),
+                      take_time:
+                          "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+                      time_slot: selectedTimeSlot,
+                    );
+
+                    final setValueMap = {
+                      "obs": selectedValue == 'obs' ? 1 : 0,
+                      "col": selectedValue == 'col' ? 1 : 0,
+                      "time_slot": selectedTimeSlot,
+                      "delete": 0,
+                    };
+                    final updatedObs = UpdateOrderModel(
+                      item_name: data.item_name,
+                      drug_instruction: jsonEncode(setValueMap),
+                      remark: tObsNote.text,
+                      take_time: data.take_time,
+                      drug_type_name: widget.drugTypeName ??
+                          widget.mData?.drug_type_name ??
+                          '',
+                    );
+
+                    await RoundWardApi().updateOrderData(
+                      context: context,
+                      headers_: widget.headers,
+                      updatedDrug: updatedObs,
+                      mUser: widget.lUserLogin!.first,
+                      mPetAdmit_: widget.lPetAdmit!.first,
+                      mListAn_: widget.lListAn!.first,
+                      mData_: widget.mData!,
+                    );
+                    final updatedData = await RoundWardApi().loadDataRoundWard(
+                      context,
+                      headers_: widget.headers,
+                      mListAn_: widget.lListAn!.first,
+                      mGroup_: widget.group!,
+                    );
+
+                    widget.onRefresh?.call(updatedData, false);
+                  } else {
+                    final setValueMap = {
+                      "obs": selectedValue == 'obs' ? 1 : 0,
+                      "col": selectedValue == 'col' ? 1 : 0,
+                      "time_slot": selectedTimeSlot,
+                      "delete": 0,
+                    };
+                    final updatedObs = ListDataObsDetailModel(
+                      set_name: tObsName.text,
+                      set_value: jsonEncode(setValueMap),
+                      remark: tObsNote.text,
+                      take_time:
+                          "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+                    );
+                    widget.cb(updatedObs, widget.indexObs);
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ),

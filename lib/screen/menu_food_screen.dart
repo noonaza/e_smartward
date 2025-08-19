@@ -1,10 +1,11 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:e_smartward/screen/note_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/screen/manage_food_screen.dart';
 import 'package:e_smartward/widget/header.dart';
-import 'package:e_smartward/widgets/text.copy';
+import 'package:e_smartward/widget/text.dart';
 
 // ignore: must_be_immutable
 class MenuFoodScreen extends StatefulWidget {
@@ -23,7 +24,6 @@ class MenuFoodScreen extends StatefulWidget {
 
 class _MenuFoodScreenState extends State<MenuFoodScreen> {
   List<ListUserModel> lUserLogin = [];
-  
 
   @override
   Widget build(BuildContext context) {
@@ -45,14 +45,13 @@ class _MenuFoodScreenState extends State<MenuFoodScreen> {
           child: Column(
             children: [
               Header.title(
-                title: '',
-                context: context,
-                onHover: (value) {},
-                onTap: () {},
-                isBack: true,
-                headers: widget.headers,
-                lUserLogin: widget.lUserLogin
-              ),
+                  title: '',
+                  context: context,
+                  onHover: (value) {},
+                  onTap: () {},
+                  isBack: true,
+                  headers: widget.headers,
+                  lUserLogin: widget.lUserLogin),
               Expanded(
                 child: SingleChildScrollView(
                     child: Column(children: <Widget>[
@@ -65,7 +64,17 @@ class _MenuFoodScreenState extends State<MenuFoodScreen> {
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => NoteScreen(
+                                          headers: widget.headers,
+                                          lUserLogin: widget.lUserLogin,
+                                          groupId: '',
+                                          isWardMode: true,
+                                        )));
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             fixedSize: const Size(160, 160),
@@ -84,7 +93,7 @@ class _MenuFoodScreenState extends State<MenuFoodScreen> {
                               const SizedBox(height: 15),
                               text(
                                 context,
-                                "Note",
+                                "Nurse Note",
                                 color: Colors.blue[900],
                               ),
                             ],
@@ -124,7 +133,7 @@ class _MenuFoodScreenState extends State<MenuFoodScreen> {
                               const SizedBox(height: 15),
                               text(
                                 context,
-                                "Cook",
+                                "Meal Prep",
                                 color: Colors.blue[900],
                               ),
                             ],

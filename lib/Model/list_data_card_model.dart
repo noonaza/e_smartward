@@ -1,3 +1,7 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+
+import 'package:e_smartward/Model/list_data_roundward_model.dart';
+
 class ListDataCardModel {
   int? id;
   String? visit_id;
@@ -11,7 +15,7 @@ class ListDataCardModel {
   String? take_time;
   String? time_slot;
   String? meal_timing;
-  double? dose_qty;
+  String? dose_qty;
   int? stock_out;
   String? remark;
   String? dose_unit_name;
@@ -30,6 +34,11 @@ class ListDataCardModel {
   String? order_eid;
   String? order_date;
   String? order_time;
+  String? unit_stock;
+  String? status;
+  String? update_date;
+  String? update_by;
+   String? dose_qty_name;
 
   ListDataCardModel({
     this.id,
@@ -39,10 +48,10 @@ class ListDataCardModel {
     this.doctor_eid,
     this.item_code,
     this.item_name,
-    this.time_slot,
     this.item_qty,
     this.unit_name,
     this.take_time,
+    this.time_slot,
     this.meal_timing,
     this.dose_qty,
     this.stock_out,
@@ -63,6 +72,11 @@ class ListDataCardModel {
     this.order_eid,
     this.order_date,
     this.order_time,
+    this.unit_stock,
+    this.status,
+    this.update_date,
+    this.update_by,
+    this.dose_qty_name,
   });
 
   factory ListDataCardModel.fromJson(Map<String, dynamic> json) {
@@ -98,6 +112,10 @@ class ListDataCardModel {
       order_eid: json['order_eid'],
       order_date: json['order_date'],
       order_time: json['order_time'],
+      unit_stock: json['unit_stock'],
+      status: json['status'],
+      update_date: json['update_date'],
+      update_by: json['update_by'],
     );
   }
 
@@ -134,11 +152,20 @@ class ListDataCardModel {
       'order_eid': order_eid,
       'order_date': order_date,
       'order_time': order_time,
+      'unit_stock': unit_stock,
+      'status': status,
+      'update_date': update_date,
+      'update_by': update_by,
     };
   }
 
+  Map<String, dynamic> toMap() => toJson();
+
+  static ListDataCardModel fromMap(Map<String, dynamic> x) =>
+      ListDataCardModel.fromJson(x);
+
   @override
   String toString() {
-    return 'ListDataCardModel(id: $id, visit_id: $visit_id, smw_admit_id: $smw_admit_id, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, item_name: $item_name, time_slot: $time_slot, item_qty: $item_qty, unit_name: $unit_name, take_time: $take_time, meal_timing: $meal_timing, dose_qty: $dose_qty, stock_out: $stock_out, remark: $remark, dose_unit_name: $dose_unit_name, base_drug_usage_code: $base_drug_usage_code, drug_instruction: $drug_instruction, fix_item_type_id: $fix_item_type_id, item_type_name: $item_type_name, drug_type_id: $drug_type_id, patient_age: $patient_age, drug_type_name: $drug_type_name, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, start_date_use: $start_date_use, end_date_use: $end_date_use, order_eid: $order_eid, order_date: $order_date, order_time: $order_time)';
+    return 'ListDataCardModel(id: $id, visit_id: $visit_id, smw_admit_id: $smw_admit_id, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, item_name: $item_name, time_slot: $time_slot, item_qty: $item_qty, unit_name: $unit_name, take_time: $take_time, meal_timing: $meal_timing, dose_qty: $dose_qty, stock_out: $stock_out, remark: $remark, dose_unit_name: $dose_unit_name, base_drug_usage_code: $base_drug_usage_code, drug_instruction: $drug_instruction, fix_item_type_id: $fix_item_type_id, item_type_name: $item_type_name, drug_type_id: $drug_type_id, patient_age: $patient_age, drug_type_name: $drug_type_name, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, start_date_use: $start_date_use, end_date_use: $end_date_use, order_eid: $order_eid, order_date: $order_date, order_time: $order_time, unit_stock: $unit_stock, status: $status, update_date: $update_date, update_by: $update_by)';
   }
 }

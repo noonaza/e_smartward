@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:e_smartward/Model/doctor_model.dart';
 import 'package:e_smartward/Model/list_data_obs_model.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../Model/list_data_card_model.dart';
 import '../util/tlconstant.dart';
 import '../widget/show_dialog.dart';
@@ -34,77 +36,97 @@ class AdmitApi {
                   item['drug_type_name'] != null &&
                   item['drug_type_name'].toString().contains(type))
               .map((item) {
-            var drug_type_name = '';
-            var lTypeName = [];
-            var typeName = '';
-            if (item['id'] != null) {
-              typeName = item['type_card'];
-            } else {
-              drug_type_name = item['drug_type_name'];
-              lTypeName = drug_type_name.toString().split(']');
-              typeName = lTypeName[1];
-            }
-            final meal_timing = item['drug_instruction']
-                    .toString()
-                    .toLowerCase()
-                    .contains("ก่อนอาหาร")
-                ? "ก่อนอาหาร"
-                : item['drug_instruction']
-                        .toString()
-                        .toLowerCase()
-                        .contains("หลังอาหาร")
-                    ? "หลังอาหาร"
-                    : null;
+                try {
+                  var typeName = '';
+                  if (item['id'] != null) {
+                    typeName = item['type_card']?.toString().trim() ?? '';
+                  } else if (item['drug_type_name'] != null) {
+                    typeName = item['drug_type_name'].toString().trim();
+                  }
 
-            return ListDataCardModel(
-              id: item['id'],
-              base_drug_usage_code: item['base_drug_usage_code'],
-              caution: item['caution'],
-              doctor_eid: item['doctor_eid'],
-              dose_qty: double.parse(item['dose_qty'].toString().isEmpty ||
-                      item['dose_qty'] == null
-                  ? '0'
-                  : item['dose_qty'].toString()),
-              dose_unit_name: item['dose_unit_name'],
-              drug_description: item['drug_description'],
-              drug_instruction: item['drug_instruction'],
+                  final meal_timing = item['drug_instruction']
+                              ?.toString()
+                              .toLowerCase()
+                              .contains("ก่อนอาหาร") ==
+                          true
+                      ? "ก่อนอาหาร"
+                      : item['drug_instruction']
+                                  ?.toString()
+                                  .toLowerCase()
+                                  .contains("หลังอาหาร") ==
+                              true
+                          ? "หลังอาหาร"
+                          : null;
 
-              drug_type_id: item['drug_type_id'],
-              visit_id: item['visit_id'],
-              drug_type_name: typeName,
-              fix_item_type_id: item['fix_item_type_id'],
-              item_code: item['item_code'],
-              item_name: item['item_name'],
-              item_qty: int.parse(item['item_qty'].toString().isEmpty ||
-                      item['item_qty'] == null
-                  ? '0'
-                  : item['item_qty'].toString()), //5
-              stock_out: int.parse(item['stock_out'].toString().isEmpty ||
-                      item['stock_out'] == null
-                  ? '0'
-                  : item['stock_out'].toString()), //5
-              item_type_name: item['item_type_name'],
-              note_to_team: item['note_to_team'],
-              order_date: item['order_date'],
-              order_eid: item['order_eid'],
-              order_item_id: item['order_item_id'],
-              order_time: item['order_time'],
-              patient_age: item['patient_age'],
-              start_date_use:
-                  item['start_date_use'] == null || item['start_date_use'] == ''
-                      ? DateTime.now().toString()
-                      : item['start_date_use'],
-              end_date_use: item['end_date_use'],
-              // id: item['id'],
-              meal_timing: item['meal_timing'] ?? meal_timing,
-              remark: item['remark'],
-              take_time: item['take_time'],
-              unit_name: item['unit_name'],
-              time_slot: item['time_slot'],
-            );
-          }).toList();
+                  List<String> lsTakeTime = ['08:00', '12:00', '16:00'];
+                  if (type == 'ยา') {
+                    lsTakeTime = [];
+                    final instruction =
+                        item['drug_instruction']?.toString().toLowerCase() ??
+                            '';
+                    if (instruction.contains("เช้า")) {
+                      lsTakeTime.add("08:00");
+                    }
+                    if (instruction.contains("กลางวัน")) {
+                      lsTakeTime.add("12:00");
+                    }
+                    if (instruction.contains("เย็น")) {
+                      lsTakeTime.add("16:00");
+                    }
+                  }
 
-          // print('listData: $lDataCard');
+                  return ListDataCardModel(
+                    id: item['id'],
+                    base_drug_usage_code: item['base_drug_usage_code'],
+                    caution: item['caution'],
+                    doctor_eid: item['doctor_eid'],
+                    dose_qty: item['dose_qty'],
+                    //  double.tryParse(item['dose_qty']?.toString() ?? '0'),
+                    dose_unit_name: item['dose_unit_name'],
+                    drug_description: item['drug_description'],
+                    drug_instruction: item['drug_instruction'],
+                    drug_type_id: item['drug_type_id'],
+                    visit_id: item['visit_id'],
+                    drug_type_name: typeName,
+                    fix_item_type_id: item['fix_item_type_id'],
+                    item_code: item['item_code'],
+                    item_name: item['item_name'],
+                    item_qty: int.tryParse(item['item_qty']?.toString() ?? '0'),
+                    stock_out:
+                        int.tryParse(item['stock_out']?.toString() ?? '0'),
+                    item_type_name: item['item_type_name'],
+                    note_to_team: item['note_to_team'],
+                    order_date: item['order_date'],
+                    order_eid: item['order_eid'],
+                    order_item_id: item['order_item_id'],
+                    order_time: item['order_time'],
+                    patient_age: item['patient_age'],
+                    start_date_use: (item['start_date_use'] == null ||
+                            item['start_date_use'] == '')
+                        ? DateTime.now().toString()
+                        : item['start_date_use'],
+                    end_date_use: item['end_date_use'],
+                    meal_timing: item['meal_timing'] ?? meal_timing,
+                    remark: item['remark'],
+                    take_time: item['take_time'] != null
+                        ? "['${item['take_time']}']"
+                        : (lsTakeTime.isNotEmpty
+                            ? "['${lsTakeTime.join("','")}']"
+                            : null),
+                    unit_name: item['unit_name'],
+                    time_slot: item['time_slot'],
+                    unit_stock: item['unit_stock'],
+                    status: item['status'],
+                    update_date: item['update_date'],
+                    update_by: item['update_by'],
+                    dose_qty_name: item['dose_qty_name'],
+                  );
+                } catch (e) {
+                  return null;
+                }
+              })
+              .whereType<ListDataCardModel>()
+              .toList();
         }
       } else if (response.data['code'] == 401) {
         dialog.token(context, response.data['message']);
@@ -162,7 +184,6 @@ class AdmitApi {
               time_slot: item['time_slot'],
             );
           }).toList();
-          // print('listDataObs: $lDataObs');
         }
       } else if (response.data['code'] == 401) {
         dialog.token(context, response.data['message']);
@@ -210,7 +231,6 @@ class AdmitApi {
               set_key: item['set_key'],
             );
           }).toList();
-          // print('listDataObs: $lDataObs');
         }
       } else if (response.data['code'] == 401) {
         dialog.token(context, response.data['message']);
@@ -243,7 +263,8 @@ class AdmitApi {
           drug_instruction:
               '{"obs" : ${setValue['obs'] ?? '0'},"col" : ${setValue['col'] ?? '0'},"time_slot" : "${setValue['time_slot'] ?? ''}","delete" : 0}',
           take_time: obs.take_time,
-          start_date_use: DateTime.now().toString(),
+          start_date_use:
+              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
           stock_out: 0,
           remark: obs.remark,
           note_to_team: "",
@@ -283,5 +304,45 @@ class AdmitApi {
     } catch (e) {
       dialog.Error(context, 'Failed to load data. Please try again.');
     }
+  }
+
+  Future<List<DoctorModel>> loadDataDoctor(
+    BuildContext context, {
+    required Map<String, String> headers_,
+  }) async {
+    List<DoctorModel> doctor = [];
+    String api = '${TlConstant.syncApi}/get_data_doctor';
+    final dio = Dio();
+
+    try {
+      final response = await dio.post(
+        api,
+        data: {},
+        options: Options(headers: headers_),
+      );
+
+      if (response.data['code'] == 1) {
+        final body = response.data['body'];
+        if (body is List) {
+          doctor = body.map<DoctorModel>((item) {
+            return DoctorModel(
+              employee_id: item['employee_id'],
+              prename: item['prename'],
+              full_nameth: item['full_nameth'],
+              employee_nameen: item['employee_nameen'],
+              key_search: item['key_search'],
+            );
+          }).toList();
+        }
+      } else if (response.data['code'] == 401) {
+        dialog.token(context, response.data['message']);
+      } else {
+        dialog.Error(context, response.data['message']);
+      }
+    } catch (e) {
+      dialog.Error(context, 'Failed to load group codes.');
+    }
+
+    return doctor;
   }
 }

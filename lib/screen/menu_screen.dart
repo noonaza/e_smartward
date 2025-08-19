@@ -1,4 +1,5 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:e_smartward/screen/preview_dashboard.dart';
 import 'package:flutter/material.dart';
 
 import 'package:e_smartward/Model/list_user_model.dart';
@@ -6,7 +7,7 @@ import 'package:e_smartward/screen/admit_screen.dart';
 import 'package:e_smartward/screen/menu_food_screen.dart';
 import 'package:e_smartward/screen/round_ward_screen.dart';
 import 'package:e_smartward/widget/header.dart';
-import 'package:e_smartward/widgets/text.copy';
+import 'package:e_smartward/widget/text.dart';
 
 // ignore: must_be_immutable
 class MenuScreen extends StatefulWidget {
@@ -23,7 +24,6 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -44,14 +44,13 @@ class _MenuScreenState extends State<MenuScreen> {
           child: Column(
             children: [
               Header.title(
-                title: '',
-                context: context,
-                onHover: (value) {},
-                onTap: () {},
-                isBack: true,
-                headers: widget.headers,
-                lUserLogin: widget.lUserLogin
-              ),
+                  title: '',
+                  context: context,
+                  onHover: (value) {},
+                  onTap: () {},
+                  isBack: true,
+                  headers: widget.headers,
+                  lUserLogin: widget.lUserLogin),
               Expanded(
                 child: SingleChildScrollView(
                     child: Column(children: <Widget>[
@@ -77,7 +76,7 @@ class _MenuScreenState extends State<MenuScreen> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
-                            fixedSize: const Size(160, 160),
+                            fixedSize: const Size(180, 180),
                             elevation: 15,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10.0)),
@@ -100,43 +99,47 @@ class _MenuScreenState extends State<MenuScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(
-                        width: 60,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            fixedSize: const Size(160, 160),
-                            elevation: 15,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0)),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                'assets/images/chart.png',
-                                width: 50,
-                                height: 50,
-                              ),
-                              const SizedBox(height: 15),
-                              text(
-                                context,
-                                "Chart",
-                                color: Colors.blue[900],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                      // const SizedBox(
+                      //   width: 60,
+                      // ),
+                      // Padding(
+                      //   padding: const EdgeInsets.all(10.0),
+                      //   child: ElevatedButton(
+                      //     onPressed: () {
+                      //       Navigator.push(
+                      //           context,
+                      //           MaterialPageRoute(
+                      //               builder: (context) => DashboardScreen(
+                      //                     lDataCard: [],
+                      //                     petNames: [],
+                      //                   )));
+                      //     },
+                      //     style: ElevatedButton.styleFrom(
+                      //       backgroundColor: Colors.white,
+                      //       fixedSize: const Size(180, 180),
+                      //       elevation: 15,
+                      //       shape: RoundedRectangleBorder(
+                      //           borderRadius: BorderRadius.circular(10.0)),
+                      //     ),
+                      //     child: Column(
+                      //       mainAxisAlignment: MainAxisAlignment.center,
+                      //       children: [
+                      //         Image.asset(
+                      //           'assets/images/chart.png',
+                      //           width: 50,
+                      //           height: 50,
+                      //         ),
+                      //         const SizedBox(height: 15),
+                      //         text(
+                      //           context,
+                      //           "Patient on Board",
+                      //           color: Colors.blue[900],
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // ),
+
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
@@ -148,11 +151,13 @@ class _MenuScreenState extends State<MenuScreen> {
                                           lDataCard: [],
                                           headers: widget.headers,
                                           lUserLogin: widget.lUserLogin,
+                                          lPetAdmit: [],
+                                          lListAn: [],
                                         )));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
-                            fixedSize: const Size(160, 160),
+                            fixedSize: const Size(180, 180),
                             elevation: 15,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10.0)),
@@ -168,16 +173,21 @@ class _MenuScreenState extends State<MenuScreen> {
                               const SizedBox(height: 15),
                               text(
                                 context,
-                                "Round Ward",
+                                "Progress Note",
                                 color: Colors.blue[900],
                               ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(
-                        width: 60,
-                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // const SizedBox(
+                      //   width: 60,
+                      // ),
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
@@ -186,13 +196,12 @@ class _MenuScreenState extends State<MenuScreen> {
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => MenuFoodScreen(
-                                          headers: widget.headers,
-                                          lUserLogin: widget.lUserLogin
-                                        )));
+                                        headers: widget.headers,
+                                        lUserLogin: widget.lUserLogin)));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
-                            fixedSize: const Size(160, 160),
+                            fixedSize: const Size(180, 180),
                             elevation: 15,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10.0)),
@@ -208,25 +217,20 @@ class _MenuScreenState extends State<MenuScreen> {
                               const SizedBox(height: 15),
                               text(
                                 context,
-                                "Observing Symptoms And Food Preparation",
+                                "Daily Care Record",
                                 color: Colors.blue[900],
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: ElevatedButton(
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
-                            fixedSize: const Size(160, 160),
+                            fixedSize: const Size(180, 180),
                             elevation: 15,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10.0)),
@@ -249,8 +253,13 @@ class _MenuScreenState extends State<MenuScreen> {
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                       const SizedBox(
-                        width: 240,
+                        width: 260,
                       ),
                     ],
                   )

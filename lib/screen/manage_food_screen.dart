@@ -1,13 +1,12 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first, must_be_immutable
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/widget/header.dart';
 import 'package:e_smartward/widget/manage_food_widget.dart';
 import 'package:e_smartward/widget/switch_widget.dart';
 import 'package:e_smartward/widget/text.dart';
-
+import '../Model/list_data_card_model.dart';
 import '../widget/dropdown.dart';
 
 class ManageFoodScreen extends StatefulWidget {
@@ -15,10 +14,10 @@ class ManageFoodScreen extends StatefulWidget {
   List<ListUserModel> lUserLogin;
 
   ManageFoodScreen({
-    Key? key,
+    super.key,
     required this.headers,
     required this.lUserLogin,
-  }) : super(key: key);
+  });
 
   @override
   State<ManageFoodScreen> createState() => _ManageFoodScreenState();
@@ -32,6 +31,7 @@ class _ManageFoodScreenState extends State<ManageFoodScreen> {
   bool isLoading = false;
   String? errorMessage;
   bool isWardMode = false;
+  List<ListDataCardModel> lDataCard = [];
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +63,7 @@ class _ManageFoodScreenState extends State<ManageFoodScreen> {
                   child: SingleChildScrollView(
                       child: Column(children: <Widget>[
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.only(left: 8, right: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -148,8 +148,10 @@ class _ManageFoodScreenState extends State<ManageFoodScreen> {
                             ),
                             Visibility(
                               visible: isWardMode,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                              child: Wrap(
+                                spacing: 8.0,
+                                runSpacing: 8.0,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   text(
                                     context,
@@ -173,7 +175,6 @@ class _ManageFoodScreenState extends State<ManageFoodScreen> {
                                       },
                                     ),
                                   ),
-                                  const SizedBox(width: 15),
                                   text(
                                     context,
                                     'Ward : ',
@@ -182,78 +183,87 @@ class _ManageFoodScreenState extends State<ManageFoodScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                   SizedBox(
-                                      width: 300,
-                                      height: 30,
-                                      child: WardDropdown(
-                                        headers_: widget.headers,
-                                        selectedSiteCode: selectedSite,
-                                        onSelected: (ward) {
-                                          setState(() {
-                                            selectedWard = ward;
-                                            showCard = false;
-                                            errorMessage = null;
-                                          });
-                                        },
-                                      )),
+                                    width: 320,
+                                    height: 30,
+                                    child: WardDropdown(
+                                      headers_: widget.headers,
+                                      selectedSiteCode: selectedSite,
+                                      onSelected: (ward) {
+                                        setState(() {
+                                          selectedWard = ward;
+                                          showCard = false;
+                                          errorMessage = null;
+                                        });
+                                      },
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    if (!isWardMode &&
-                                        selectedGroupId == null) {
-                                      setState(() {
-                                        errorMessage = 'กรุณาเลือกเตียง';
-                                      });
-                                      return;
-                                    }
-                                    if (isWardMode &&
-                                        (selectedSite == null ||
-                                            selectedWard == null)) {
-                                      setState(() {
-                                        errorMessage =
-                                            'กรุณาเลือก Site และ Ward';
-                                      });
-                                      return;
-                                    }
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          if (!isWardMode &&
+                                              selectedGroupId == null) {
+                                            setState(() {
+                                              errorMessage = 'กรุณาเลือกเตียง';
+                                            });
+                                            return;
+                                          }
+                                          if (isWardMode &&
+                                              (selectedSite == null ||
+                                                  selectedWard == null)) {
+                                            setState(() {
+                                              errorMessage =
+                                                  'กรุณาเลือก Site และ Ward';
+                                            });
+                                            return;
+                                          }
 
-                                    setState(() {
-                                      isLoading = true;
-                                      errorMessage = null;
-                                    });
+                                          setState(() {
+                                            isLoading = true;
+                                            errorMessage = null;
+                                          });
 
-                                    await Future.delayed(
-                                        const Duration(milliseconds: 300));
-
-                                    setState(() {
-                                      showCard = true;
-                                      isLoading = false;
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    side: const BorderSide(
-                                        color: Colors.teal, width: 2),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
+                                          setState(() {
+                                            showCard = true;
+                                            isLoading = false;
+                                          });
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          side: const BorderSide(
+                                              color: Colors.teal, width: 2),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                        ),
+                                        child: text(context, 'Load',
+                                            fontSize: 12, color: Colors.teal),
+                                      ),
+                                      if (isLoading)
+                                        const SizedBox(
+                                          width: 30,
+                                          height: 30,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.teal,
+                                            strokeWidth: 3,
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                  child: text(context, 'Load',
-                                      fontSize: 12, color: Colors.teal),
                                 ),
-                                const SizedBox(width: 10),
-                                if (isLoading)
-                                  const SizedBox(
-                                    width: 30,
-                                    height: 30,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.teal,
-                                      strokeWidth: 3,
-                                    ),
-                                  ),
                               ],
                             ),
                             if (errorMessage != null)
@@ -297,15 +307,20 @@ class _ManageFoodScreenState extends State<ManageFoodScreen> {
                     ],
                   ),
                 ),
-                if (showCard && selectedGroupId != null)
+                if (showCard &&
+                    ((!isWardMode && selectedGroupId != null) ||
+                        (isWardMode &&
+                            selectedSite != null &&
+                            selectedWard != null)))
                   SizedBox(
                     child: ManageFoodWidget(
                       headers: widget.headers,
                       lDataCard: const [],
-                      groupId: selectedGroupId!,
+                      groupId: !isWardMode ? selectedGroupId! : null,
                       siteCode: isWardMode ? selectedSite : null,
                       wardCode: isWardMode ? selectedWard : null,
                       isWardMode: isWardMode,
+                      lUserLogin: widget.lUserLogin,
                     ),
                   ),
               ])))

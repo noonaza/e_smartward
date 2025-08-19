@@ -3,7 +3,8 @@ import 'package:e_smartward/screen/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -18,7 +19,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'e-Smart Ward',
+      title: 'iCare Smart Ward',
       scrollBehavior: MyCustomScrollBehavior(),
       theme: ThemeData(
           useMaterial3: false,
@@ -36,7 +37,6 @@ class _MyAppState extends State<MyApp> {
 
           // ),
           LoginScreen(),
-      //Test(),
     );
   }
 }

@@ -35,7 +35,11 @@ class ListFoodModel {
   String? an_number;
   String? visit_number;
   String? pet_name;
+  String? pre_pare_status;
+  String? date_slot;
+  String? status;
   String? bed_number;
+  
   ListFoodModel({
     this.id,
     this.smw_admit_id,
@@ -70,8 +74,13 @@ class ListFoodModel {
     this.an_number,
     this.visit_number,
     this.pet_name,
+    this.pre_pare_status,
+    this.date_slot,
+    this.status,
     this.bed_number,
   });
+
+  get active_time => null;
 
 
   ListFoodModel copyWith({
@@ -108,6 +117,9 @@ class ListFoodModel {
     String? an_number,
     String? visit_number,
     String? pet_name,
+    String? pre_pare_status,
+    String? date_slot,
+    String? status,
     String? bed_number,
   }) {
     return ListFoodModel(
@@ -144,6 +156,9 @@ class ListFoodModel {
       an_number: an_number ?? this.an_number,
       visit_number: visit_number ?? this.visit_number,
       pet_name: pet_name ?? this.pet_name,
+      pre_pare_status: pre_pare_status ?? this.pre_pare_status,
+      date_slot: date_slot ?? this.date_slot,
+      status: status ?? this.status,
       bed_number: bed_number ?? this.bed_number,
     );
   }
@@ -183,6 +198,9 @@ class ListFoodModel {
       'an_number': an_number,
       'visit_number': visit_number,
       'pet_name': pet_name,
+      'pre_pare_status': pre_pare_status,
+      'date_slot': date_slot,
+      'status': status,
       'bed_number': bed_number,
     };
   }
@@ -222,6 +240,9 @@ class ListFoodModel {
       an_number: map['an_number'] != null ? map['an_number'] as String : null,
       visit_number: map['visit_number'] != null ? map['visit_number'] as String : null,
       pet_name: map['pet_name'] != null ? map['pet_name'] as String : null,
+      pre_pare_status: map['pre_pare_status'] != null ? map['pre_pare_status'] as String : null,
+      date_slot: map['date_slot'] != null ? map['date_slot'] as String : null,
+      status: map['status'] != null ? map['status'] as String : null,
       bed_number: map['bed_number'] != null ? map['bed_number'] as String : null,
     );
   }
@@ -232,7 +253,7 @@ class ListFoodModel {
 
   @override
   String toString() {
-    return 'ListFoodModel(id: $id, smw_admit_id: $smw_admit_id, type_card: $type_card, item_name: $item_name, item_qty: $item_qty, unit_name: $unit_name, dose_qty: $dose_qty, meal_timing: $meal_timing, drug_instruction: $drug_instruction, take_time: $take_time, start_date_use: $start_date_use, end_date_use: $end_date_use, stock_out: $stock_out, remark: $remark, create_date: $create_date, create_by: $create_by, delete_date: $delete_date, delete_by: $delete_by, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, order_eid: $order_eid, order_date: $order_date, order_time: $order_time, drug_type_name: $drug_type_name, time_slot: $time_slot, hn_number: $hn_number, an_number: $an_number, visit_number: $visit_number, pet_name: $pet_name, bed_number: $bed_number)';
+    return 'ListFoodModel(id: $id, smw_admit_id: $smw_admit_id, type_card: $type_card, item_name: $item_name, item_qty: $item_qty, unit_name: $unit_name, dose_qty: $dose_qty, meal_timing: $meal_timing, drug_instruction: $drug_instruction, take_time: $take_time, start_date_use: $start_date_use, end_date_use: $end_date_use, stock_out: $stock_out, remark: $remark, create_date: $create_date, create_by: $create_by, delete_date: $delete_date, delete_by: $delete_by, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, order_eid: $order_eid, order_date: $order_date, order_time: $order_time, drug_type_name: $drug_type_name, time_slot: $time_slot, hn_number: $hn_number, an_number: $an_number, visit_number: $visit_number, pet_name: $pet_name, pre_pare_status: $pre_pare_status, date_slot: $date_slot, status: $status, bed_number: $bed_number)';
   }
 
   @override
@@ -273,6 +294,9 @@ class ListFoodModel {
       other.an_number == an_number &&
       other.visit_number == visit_number &&
       other.pet_name == pet_name &&
+      other.pre_pare_status == pre_pare_status &&
+      other.date_slot == date_slot &&
+      other.status == status &&
       other.bed_number == bed_number;
   }
 
@@ -311,6 +335,9 @@ class ListFoodModel {
       an_number.hashCode ^
       visit_number.hashCode ^
       pet_name.hashCode ^
+      pre_pare_status.hashCode ^
+      date_slot.hashCode ^
+      status.hashCode ^
       bed_number.hashCode;
   }
 }

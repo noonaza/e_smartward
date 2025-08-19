@@ -3,7 +3,7 @@ import 'package:e_smartward/api/manage_food_api.dart';
 import 'package:flutter/material.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
-import 'package:e_smartward/widgets/text.copy';
+import 'package:e_smartward/widget/text.dart';
 
 // ignore: must_be_immutable
 class ManageAdmit extends StatefulWidget {
@@ -11,7 +11,6 @@ class ManageAdmit extends StatefulWidget {
   final String hnNumber;
   final Map<String, String> headers;
   Function cb;
-  
 
   ManageAdmit({
     super.key,
@@ -19,7 +18,6 @@ class ManageAdmit extends StatefulWidget {
     required this.hnNumber,
     required this.headers,
     required this.cb,
-  
   });
 
   @override
@@ -35,7 +33,7 @@ class _ManageAdmitState extends State<ManageAdmit> {
   void initState() {
     super.initState();
     Future.delayed(Duration(milliseconds: 300), () async {
-      await ManageFoodApi().loadListAdmit(context,headers_: widget.headers);
+      await ManageFoodApi().loadListAdmit(context, headers_: widget.headers);
     });
   }
 

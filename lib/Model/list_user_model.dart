@@ -6,6 +6,9 @@ class ListUserModel {
   String? full_name;
   String? email;
   String? employee_id;
+  String? name_th;
+  String? name_en;
+  String? title_name_en;
   String? user_login;
   String? pass_user;
   String? site_id;
@@ -32,6 +35,9 @@ class ListUserModel {
     this.full_name,
     this.email,
     this.employee_id,
+    this.name_th,
+    this.name_en,
+    this.title_name_en,
     this.user_login,
     this.pass_user,
     this.site_id,
@@ -60,6 +66,9 @@ class ListUserModel {
     String? full_name,
     String? email,
     String? employee_id,
+    String? name_th,
+    String? name_en,
+    String? title_name_en,
     String? user_login,
     String? pass_user,
     String? site_id,
@@ -87,6 +96,9 @@ class ListUserModel {
       full_name: full_name ?? this.full_name,
       email: email ?? this.email,
       employee_id: employee_id ?? this.employee_id,
+      name_th: name_th ?? this.name_th,
+      name_en: name_en ?? this.name_en,
+      title_name_en: title_name_en ?? this.title_name_en,
       user_login: user_login ?? this.user_login,
       pass_user: pass_user ?? this.pass_user,
       site_id: site_id ?? this.site_id,
@@ -117,6 +129,9 @@ class ListUserModel {
       'full_name': full_name,
       'email': email,
       'employee_id': employee_id,
+      'name_th': name_th,
+      'name_en': name_en,
+      'title_name_en': title_name_en,
       'user_login': user_login,
       'pass_user': pass_user,
       'site_id': site_id,
@@ -147,6 +162,9 @@ class ListUserModel {
       full_name: map['full_name'] != null ? map['full_name'] as String : null,
       email: map['email'] != null ? map['email'] as String : null,
       employee_id: map['employee_id'] != null ? map['employee_id'] as String : null,
+      name_th: map['name_th'] != null ? map['name_th'] as String : null,
+      name_en: map['name_en'] != null ? map['name_en'] as String : null,
+      title_name_en: map['title_name_en'] != null ? map['title_name_en'] as String : null,
       user_login: map['user_login'] != null ? map['user_login'] as String : null,
       pass_user: map['pass_user'] != null ? map['pass_user'] as String : null,
       site_id: map['site_id'] != null ? map['site_id'] as String : null,
@@ -173,11 +191,12 @@ class ListUserModel {
 
   String toJson() => json.encode(toMap());
 
-  factory ListUserModel.fromJson(String source) => ListUserModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory ListUserModel.fromJson(String source) =>
+      ListUserModel.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
-    return 'ListUserModel(id: $id, full_name: $full_name, email: $email, employee_id: $employee_id, user_login: $user_login, pass_user: $pass_user, site_id: $site_id, site_name: $site_name, department_id: $department_id, department_name: $department_name, sub_department_id: $sub_department_id, sub_department_name: $sub_department_name, position_id: $position_id, position_detail: $position_detail, position_name: $position_name, status: $status, role_id: $role_id, admin_site: $admin_site, create_by: $create_by, create_date: $create_date, update_by: $update_by, update_date: $update_date, delete_by: $delete_by, delete_date: $delete_date, access_token: $access_token)';
+    return 'ListUserModel(id: $id, full_name: $full_name, email: $email, employee_id: $employee_id, name_th: $name_th, name_en: $name_en, title_name_en: $title_name_en, user_login: $user_login, pass_user: $pass_user, site_id: $site_id, site_name: $site_name, department_id: $department_id, department_name: $department_name, sub_department_id: $sub_department_id, sub_department_name: $sub_department_name, position_id: $position_id, position_detail: $position_detail, position_name: $position_name, status: $status, role_id: $role_id, admin_site: $admin_site, create_by: $create_by, create_date: $create_date, update_by: $update_by, update_date: $update_date, delete_by: $delete_by, delete_date: $delete_date, access_token: $access_token)';
   }
 
   @override
@@ -189,6 +208,9 @@ class ListUserModel {
       other.full_name == full_name &&
       other.email == email &&
       other.employee_id == employee_id &&
+      other.name_th == name_th &&
+      other.name_en == name_en &&
+      other.title_name_en == title_name_en &&
       other.user_login == user_login &&
       other.pass_user == pass_user &&
       other.site_id == site_id &&
@@ -218,6 +240,9 @@ class ListUserModel {
       full_name.hashCode ^
       email.hashCode ^
       employee_id.hashCode ^
+      name_th.hashCode ^
+      name_en.hashCode ^
+      title_name_en.hashCode ^
       user_login.hashCode ^
       pass_user.hashCode ^
       site_id.hashCode ^

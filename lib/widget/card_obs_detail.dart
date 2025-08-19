@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:e_smartward/Model/list_data_obs_model.dart';
-import 'package:e_smartward/widgets/text.copy';
+import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
 
 class ObsListWidget extends StatefulWidget {
@@ -93,7 +93,7 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           text(context,
-                                              "อาการ : ${obs.set_name}",
+                                              "คำสั่งพิเศษ : ${obs.set_name}",
                                               color: const Color.fromARGB(
                                                   255, 215, 116, 114)),
                                           const SizedBox(height: 4),
@@ -101,6 +101,24 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                                               "หมายเหตุ : ${obs.remark ?? '-'}",
                                               color: const Color.fromARGB(
                                                   255, 215, 116, 114)),
+                                          const SizedBox(height: 4),
+                                          obs.time_slot?.toString().contains(
+                                                      "เมื่อมีอาการ") ==
+                                                  true
+                                              ? Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    text(
+                                                      context,
+                                                      'ให้เฉพาะเวลา : ${obs.time_slot}',
+                                                      color: Color.fromARGB(
+                                                          255, 185, 120, 15),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                  ],
+                                                )
+                                              : const SizedBox.shrink(),
                                           Wrap(
                                             children: displayItems.map((item) {
                                               return Padding(
@@ -134,73 +152,82 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                                             }).toList(),
                                           ),
                                           const SizedBox(height: 4),
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: Wrap(
-                                              spacing: 8,
-                                              runSpacing: 8,
-                                              children: obs.take_time != null &&
-                                                      obs.take_time!.isNotEmpty
-                                                  ? obs.take_time!
+                                          obs.take_time != null &&
+                                                  obs.take_time!
                                                       .replaceAll('[', '')
                                                       .replaceAll(']', '')
                                                       .replaceAll("'", '')
                                                       .split(',')
-                                                      .map((time) => Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    right: 0),
-                                                            child: Container(
+                                                      .where((e) =>
+                                                          e.trim().isNotEmpty)
+                                                      .isNotEmpty &&
+                                                  !(obs.time_slot?.contains(
+                                                          "เมื่อมีอาการ") ??
+                                                      false)
+                                              ? SizedBox(
+                                                  width: double.infinity,
+                                                  child: Wrap(
+                                                    spacing: 8,
+                                                    runSpacing: 8,
+                                                    children: obs.take_time!
+                                                        .replaceAll('[', '')
+                                                        .replaceAll(']', '')
+                                                        .replaceAll("'", '')
+                                                        .split(',')
+                                                        .map((time) => Padding(
                                                               padding:
                                                                   const EdgeInsets
-                                                                      .symmetric(
-                                                                      horizontal:
-                                                                          12,
-                                                                      vertical:
-                                                                          6),
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: const Color
-                                                                    .fromARGB(
-                                                                    255,
-                                                                    215,
-                                                                    116,
-                                                                    114),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            15),
+                                                                      .only(
+                                                                      right: 0),
+                                                              child: Container(
+                                                                padding: const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        12,
+                                                                    vertical:
+                                                                        6),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: const Color
+                                                                      .fromARGB(
+                                                                      255,
+                                                                      215,
+                                                                      116,
+                                                                      114),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              15),
+                                                                ),
+                                                                child: text(
+                                                                  context,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  time.trim(),
+                                                                ),
                                                               ),
-                                                              child: text(
-                                                                context,
-                                                                time.trim(),
-                                                                color: Colors
-                                                                    .white,
-                                                              ),
-                                                            ),
-                                                          ))
-                                                      .toList()
-                                                  : [SizedBox()],
-                                            ),
-                                          ),
+                                                            ))
+                                                        .toList(),
+                                                  ),
+                                                )
+                                              : const SizedBox.shrink(),
                                         ],
                                       ),
                                     ),
                                   ),
                                 ),
                                 if (!isHideBtn)
-                                Positioned(
-                                  right: 8.0,
-                                  top: 10.0,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.cancel,
-                                        size: 20,
-                                        color:
-                                            Color.fromARGB(255, 215, 116, 114)),
-                                    onPressed: () => widget.onDelete(index),
+                                  Positioned(
+                                    right: 8.0,
+                                    top: 10.0,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.cancel,
+                                          size: 20,
+                                          color: Color.fromARGB(
+                                              255, 215, 116, 114)),
+                                      onPressed: () => widget.onDelete(index),
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ),
@@ -214,7 +241,7 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                 bottom: 8.0,
                 child: IconButton(
                   icon: const Icon(Icons.add_circle_outlined,
-                      size: 35, color: Color.fromARGB(255, 184, 119, 15)),
+                      size: 35, color: Color.fromARGB(255, 215, 116, 114)),
                   onPressed: widget.onAdd,
                 ),
               ),

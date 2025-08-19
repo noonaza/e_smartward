@@ -1,6 +1,4 @@
-
-
-import 'package:e_smartward/widgets/text.copy';
+import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
 
 Widget CustomCloseButton(BuildContext context) {
@@ -15,7 +13,8 @@ Widget CustomCloseButton(BuildContext context) {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       ),
-      child: text(context,'ปิดหน้าต่าง'),  // ใช้ Text widget แทน text(context, 'ปิดหน้าต่าง')
+      child: text(context,
+          'ปิดหน้าต่าง'), 
     ),
   );
 }

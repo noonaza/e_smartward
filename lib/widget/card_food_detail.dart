@@ -1,8 +1,12 @@
 import 'package:e_smartward/Model/list_data_card_model.dart';
 import 'package:e_smartward/Model/list_data_obs_model.dart';
-import 'package:e_smartward/widgets/text.copy';
+import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
+
+import '../Model/doctor_model.dart';
+import '../api/admit_api.dart';
+import '../util/tlconstant.dart';
 
 class FoodListWidget extends StatefulWidget {
   final List<ListDataCardModel> lDataCard;
@@ -11,6 +15,7 @@ class FoodListWidget extends StatefulWidget {
   final void Function(int index) onDelete;
   final VoidCallback onAdd;
   final List<ListDataObsDetailModel> lSettingTime;
+  final VoidCallback onConfirmed;
 
   const FoodListWidget({
     super.key,
@@ -20,19 +25,44 @@ class FoodListWidget extends StatefulWidget {
     required this.headers,
     required this.lDataCard,
     required this.lSettingTime,
+    required this.onConfirmed,
   });
 
   @override
-  _FoodListWidgetState createState() => _FoodListWidgetState();
+  FoodListWidgetState createState() => FoodListWidgetState();
 }
 
-class _FoodListWidgetState extends State<FoodListWidget> {
+class FoodListWidgetState extends State<FoodListWidget> {
   List<String> parseTakeTime(String raw) {
     final cleaned = raw.replaceAll(RegExp(r"[\[\]']"), '');
     return cleaned.split(',').map((e) => e.trim()).toList();
   }
 
+  List<DoctorModel> ListDoctors = [];
+
+  bool get isHideBtn {
+    return widget.lDataCard
+        .any((e) => e.id != null && e.id.toString().trim().isNotEmpty);
+  }
+
+  bool isConfirmed = false;
+
+  void setConfirmed() {
+    setState(() {
+      isConfirmed = true;
+    });
+  }
+
   final tooltipController = JustTheController();
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: 40), () async {
+      ListDoctors =
+          await AdmitApi().loadDataDoctor(context, headers_: widget.headers);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +88,7 @@ class _FoodListWidgetState extends State<FoodListWidget> {
                       itemBuilder: (context, index) {
                         final food = widget.lDataCard[index];
                         final isDisabled = widget.lDataCard[index].id != null;
+                        final tooltipController = JustTheController();
 
                         return GestureDetector(
                           onTap: isDisabled ? null : () => widget.onEdit(food),
@@ -89,61 +120,80 @@ class _FoodListWidgetState extends State<FoodListWidget> {
                                                   255, 185, 120, 15)),
                                           const SizedBox(height: 4),
                                           text(context,
-                                              "วิธีให้ :  ${widget.lDataCard[index].dose_qty} ${widget.lDataCard[index].unit_name ?? "-"}",
+                                              "วิธีให้ : ${widget.lDataCard[index].id == null ? widget.lDataCard[index].dose_qty ?? '-' : widget.lDataCard[index].dose_qty_name ?? '-'} ${widget.lDataCard[index].unit_name ?? '-'}",
                                               color: const Color.fromARGB(
                                                   255, 185, 120, 15)),
                                           const SizedBox(height: 4),
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: Wrap(
-                                              spacing: 8,
-                                              runSpacing: 8,
-                                              children: food.take_time !=
-                                                          null &&
-                                                      food.take_time!.isNotEmpty
-                                                  ? food.take_time!
-                                                      .replaceAll('[', '')
-                                                      .replaceAll(']', '')
-                                                      .replaceAll("'", '')
-                                                      .split(',')
-                                                      .map((time) => Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    right: 0),
-                                                            child: Container(
+                                          food.time_slot?.toString().contains(
+                                                      "เมื่อมีอาการ") ==
+                                                  true
+                                              ? Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    text(
+                                                      context,
+                                                      'ให้เฉพาะเวลา : ${food.time_slot}',
+                                                      color: Color.fromARGB(
+                                                          255, 185, 120, 15),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                  ],
+                                                )
+                                              : const SizedBox.shrink(),
+                                          const SizedBox(height: 4),
+                                          food.take_time != null &&
+                                                  food.take_time!.isNotEmpty &&
+                                                  !(food.time_slot?.contains(
+                                                          "เมื่อมีอาการ") ??
+                                                      false)
+                                              ? SizedBox(
+                                                  width: double.infinity,
+                                                  child: Wrap(
+                                                    spacing: 8,
+                                                    runSpacing: 8,
+                                                    children: food.take_time!
+                                                        .replaceAll('[', '')
+                                                        .replaceAll(']', '')
+                                                        .replaceAll("'", '')
+                                                        .split(',')
+                                                        .map((time) => Padding(
                                                               padding:
                                                                   const EdgeInsets
-                                                                      .symmetric(
-                                                                      horizontal:
-                                                                          12,
-                                                                      vertical:
-                                                                          6),
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: const Color
-                                                                    .fromARGB(
-                                                                    255,
-                                                                    185,
-                                                                    120,
-                                                                    15),
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            15),
+                                                                      .only(
+                                                                      right: 0),
+                                                              child: Container(
+                                                                padding: const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        12,
+                                                                    vertical:
+                                                                        6),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: const Color
+                                                                      .fromARGB(
+                                                                      255,
+                                                                      185,
+                                                                      120,
+                                                                      15),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              15),
+                                                                ),
+                                                                child: text(
+                                                                  context,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  time.trim(),
+                                                                ),
                                                               ),
-                                                              child: text(
-                                                                context,
-                                                                color: Colors
-                                                                    .white,
-                                                                time.trim(),
-                                                              ),
-                                                            ),
-                                                          ))
-                                                      .toList()
-                                                  : [SizedBox()],
-                                            ),
-                                          ),
+                                                            ))
+                                                        .toList(),
+                                                  ),
+                                                )
+                                              : const SizedBox.shrink(),
                                           Padding(
                                             padding: const EdgeInsets.all(5.0),
                                             child: Row(
@@ -176,9 +226,9 @@ class _FoodListWidgetState extends State<FoodListWidget> {
                                                         text(context,
                                                             "สรรพคุณ: ${food.drug_instruction ?? "-"}",
                                                             color: Colors.teal),
-                                                        text(context,
-                                                            "แพทย์ที่ทำการสั่ง: ${food.doctor_eid ?? "-"}",
-                                                            color: Colors.teal),
+                                                        // text(context,
+                                                        //     "แพทย์ที่ทำการสั่ง: ${Func.fullName(ListDoctors: ListDoctors, empId: food.doctor_eid)}",
+                                                            // color: Colors.teal),
                                                         text(context,
                                                             "หมายเหตุอื่นๆ: ${food.remark ?? "-"}",
                                                             color: Colors.teal),
@@ -188,7 +238,7 @@ class _FoodListWidgetState extends State<FoodListWidget> {
                                                   child: GestureDetector(
                                                     onTap: () {
                                                       tooltipController
-                                                          .showTooltip(); // แสดง tooltip เมื่อแตะ
+                                                          .showTooltip();
                                                     },
                                                     child: Image.asset(
                                                       'assets/images/vf1.png',
@@ -196,6 +246,42 @@ class _FoodListWidgetState extends State<FoodListWidget> {
                                                     ),
                                                   ),
                                                 ),
+                                                if (
+                                                  // (food.doctor_eid == null ||
+                                                  //       food.doctor_eid!
+                                                  //           .isEmpty) ||
+                                                    (food.unit_name == null ||
+                                                        food.unit_name!
+                                                            .isEmpty) ||
+                                                    ((food.dose_qty == null ||
+                                                            food.dose_qty
+                                                                .toString()
+                                                                .isEmpty) &&
+                                                        (food.dose_qty_name ==
+                                                                null ||
+                                                            food.dose_qty_name!
+                                                                .isEmpty)) ||
+                                                    (food.item_name == null ||
+                                                        food.item_name!
+                                                            .isEmpty) || 
+                                                    ((food.take_time == null ||
+                                                            food.take_time!
+                                                                .isEmpty) &&
+                                                        !(food.time_slot
+                                                                ?.toString()
+                                                                .contains(
+                                                                    "เมื่อมีอาการ") ??
+                                                            false)))
+                                                  const Padding(
+                                                    padding: EdgeInsets.only(
+                                                        left: 6.0),
+                                                    child: Icon(
+                                                      Icons
+                                                          .warning_amber_rounded,
+                                                      color: Colors.orange,
+                                                      size: 25,
+                                                    ),
+                                                  ),
                                               ],
                                             ),
                                           )
@@ -227,7 +313,10 @@ class _FoodListWidgetState extends State<FoodListWidget> {
                       },
                     ),
             ),
-            if (widget.lDataCard.any((e) => e.id == null))
+           
+            if (!isConfirmed &&
+                (widget.lDataCard.isEmpty ||
+                    widget.lDataCard.any((e) => e.id == null)))
               Positioned(
                 right: 8.0,
                 bottom: 8.0,

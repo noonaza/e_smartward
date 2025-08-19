@@ -1,16 +1,15 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
-import 'package:e_smartward/screen/admit_screen.dart';
-import 'package:e_smartward/screen/manage_food_screen.dart';
+import 'package:e_smartward/screen/dashboard_screen.dart';
 import 'package:e_smartward/screen/menu_screen.dart';
-import 'package:e_smartward/screen/round_ward_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import '../util/tlconstant.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'preview_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -67,9 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('url : ${TlConstant.syncApi}');
-    print('Width : ${MediaQuery.of(context).size.width}');
-    print('Height : ${MediaQuery.of(context).size.height}');
     return Material(
         child: Stack(
       children: [
@@ -94,6 +90,36 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+        // Positioned(
+        //   top: 15,
+        //   right: 20,
+        //   child: InkWell(
+        //     onTap: () {
+        //       // Navigator.push(
+        //       //   context,
+        //       //   MaterialPageRoute(
+        //       //       builder: (context) => PreviewDashboard(
+        //       //             lDataCard: [],
+        //       //             petNames: [],
+        //       //           )),
+        //       // );
+
+        //       Navigator.push(
+        //         context,
+        //         MaterialPageRoute(
+        //             builder: (context) => DashboardScreen(
+        //                   lDataCard: [],
+        //                   petNames: [],
+        //                 )),
+        //       );
+        //     },
+        //     child: Image.asset(
+        //       'assets/icons/dbicon.png',
+        //       width: 35,
+        //       height: 35,
+        //     ),
+        //   ),
+        // ),
         Positioned(
           left: (MediaQuery.of(context).size.width / 2) -
               ((MediaQuery.of(context).size.width / 2.5) / 2),
@@ -105,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Tooltip(
               message: 'Version ${TlConstant.version} ',
               child: Image.asset(
-                'assets/gif/Logo01.gif',
+                'assets/images/02.png',
                 width: MediaQuery.of(context).size.width / 2.5,
               ),
             ),
@@ -187,7 +213,58 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(
-                  height: 50,
+                  height: 120,
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DashboardScreen(
+                                    lDataCard: [],
+                                    petNames: [],
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset(
+                                  'assets/icons/dbicon.png',
+                                  width: 20,
+                                  height: 20,
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'Patient on Board',
+                                  style: TextStyle(
+                                    color: Color.fromARGB(255, 54, 68, 94),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 5),
+                      Text(
+                        'Update 20250818 | Version ${TlConstant.version} ',
+                        style:
+                            const TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -203,8 +280,8 @@ class _LoginScreenState extends State<LoginScreen> {
       prefs.setString('username', userLoginController.text.trim());
       prefs.setString('password', passwordController.text.trim());
 
-      print(
-          'testnug >>>> ${prefs.setString('username', userLoginController.text.trim())}');
+      //  print(
+      //  'testnug >>>> ${prefs.setString('username', userLoginController.text.trim())}');
     });
   }
 
@@ -232,45 +309,14 @@ class _LoginScreenState extends State<LoginScreen> {
           ListUserModel newLogin = ListUserModel.fromMap(login);
           lUserLogin.add(newLogin);
           headers_ = TlConstant.headers(token: newLogin.access_token!);
-          // print(token);
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //       builder: (context) => ManageFoodScreen(
-          //             headers: headers_,
-          //             lUserLogin: lUserLogin
-          //           )),
-          // );
-
           Navigator.push(
             context,
             MaterialPageRoute(
                 builder: (context) => MenuScreen(
-                  lUserLogin: lUserLogin,
+                      lUserLogin: lUserLogin,
                       headers: headers_,
                     )),
           );
-
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //       builder: (context) => AdmitScreen(
-          //             lUserLogin: lUserLogin,
-          //             headers: headers_,
-          //             onDelete: (int index) {},
-          //             lDataCard: [],
-          //           )),
-          // );
-
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //       builder: (context) => RoundWardScreen(
-          //             lUserLogin: lUserLogin,
-          //             headers: headers_,
-          //             lDataCard: [],
-          //           )),
-          // );
         }
       } else if (response.data['code'] == 401) {
         showDialog(

@@ -8,43 +8,48 @@ import 'package:e_smartward/widget/show_dialog.dart';
 import 'package:flutter/material.dart';
 import '../Model/list_food_model.dart';
 import '../Model/list_pet_model.dart';
+import '../Model/list_user_model.dart';
 
 class ManageFoodApi {
-  Future<List<String>> loadFoodSlot(
-    BuildContext context, {
-    required Map<String, String> headers_,
-    required String groupId,
-  }) async {
-    String api = '${TlConstant.syncApi}/get_food_slot';
-    final dio = Dio();
+ Future<List<String>> loadFoodSlot(
+  BuildContext context, {
+  required Map<String, String> headers_,
+  String? groupId,
+  String? siteCode,
+  String? wardCode,
+  required String type,
+}) async {
+  String api = '${TlConstant.syncApi}/get_food_slot';
+  final dio = Dio();
 
-    try {
-      final response = await dio.post(
-        api,
-        data: {
-          "type": "GROUP-BED",
-          "group_id": int.tryParse(groupId),
-          "site_code": null,
-          "ward": null,
-        },
-        options: Options(headers: headers_),
-      );
+  try {
+    final response = await dio.post(
+      api,
+      data: {
+        "type": type,
+        "group_id": groupId != null ? int.tryParse(groupId) : null,
+        "site_code": siteCode,
+        "ward": wardCode,
+      },
+      options: Options(headers: headers_),
+    );
 
-      if (response.data['code'] == 1) {
-        if (response.data['body'] is List) {
-          return List<String>.from(response.data['body']);
-        }
-      } else if (response.data['code'] == 401) {
-        dialog.token(context, response.data['message']);
-      } else {
-        dialog.Error(context, response.data['message']);
+    if (response.data['code'] == 1) {
+      if (response.data['body'] is List) {
+        return List<String>.from(response.data['body']);
       }
-    } catch (e) {
-      dialog.Error(context, 'Failed to load data. Please try again.');
+    } else if (response.data['code'] == 401) {
+      dialog.token(context, response.data['message']);
+    } else {
+      dialog.Error(context, response.data['message']);
     }
-
-    return [];
+  } catch (e) {
+    dialog.Error(context, 'Failed to load data. Please try again.');
   }
+
+  return [];
+}
+
 
   Future<List<ListFoodModel>> loadGroupCodeList(
     BuildContext context, {
@@ -327,24 +332,71 @@ class ManageFoodApi {
                     'hn_number': item['hn_number'] ?? '',
                     'an_number': item['an_number'] ?? '',
                     'visit_number': item['visit_number'] ?? '',
+                    'status': item['status'] ?? '',
                     'pet_name': item['pet_name'] ?? '',
+                    'pre_pare_status': item['pre_pare_status'] ?? '',
+                    'date_slot': item['date_slot'] ?? '',
                     'bed_number': item['bed_number'] ?? '',
                   });
                 }
               } catch (e) {
-                print("JSON decode error: $e");
+               
+                dialog.Error(context, 'JSON decode error: $e');
               }
             }
           }
 
           return result;
         }
+      } else if (response.data['code'] == 401) {
+        dialog.token(context, response.data['message']);
+      } else {
+        dialog.Error(context, response.data['message']);
       }
     } catch (e) {
-      print('Error loading food slot: $e');
+      
+      dialog.Error(context, 'Error loading food slot: $e');
     }
 
     return [];
+  }
+
+  Future CreateFood(
+    BuildContext context, {
+    required Map<String, String> headers_,
+    required ListFoodModel mFood_,
+    required ListUserModel mUser,
+  }) async {
+    final saveFood = {
+      'smw_admit_id': mFood_.smw_admit_id,
+      'smw_admit_order_id': mFood_.id,
+      'slot': mFood_.take_time,
+      'date_slot': mFood_.date_slot,
+      'stock_out': mFood_.stock_out,
+      'pre_pare_status': mFood_.status,
+      'tl_common_users_id': mUser.id,
+    };
+
+    String api = '${TlConstant.syncApi}/save_take_food';
+    final dio = Dio();
+
+    final response = await dio.post(
+      api,
+      data: saveFood,
+      options: Options(headers: headers_),
+    );
+
+    try {
+      if (response.data['code'] == 1) {
+        if (response.data['body'] is List) {}
+      } else if (response.data['code'] == 401) {
+        dialog.token(context, response.data['message']);
+      } else {
+        dialog.Error(context, response.data['message']);
+      }
+    } catch (e) {
+      dialog.Error(context, 'Failed to load data. Please try again.');
+    }
   }
 
   Future<List<ListPetModel>> loadApiPetAdmit(BuildContext context,
@@ -392,5 +444,4 @@ class ManageFoodApi {
 
     return lDataPet;
   }
-
 }

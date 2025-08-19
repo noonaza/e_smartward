@@ -2,16 +2,17 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../Model/doctor_model.dart';
 import '../screen/login_screen.dart';
 
 class TlConstant {
   //workstepupdate
   // static const String syncApi = 'http://192.168.98.10:8081';
-  //static const String syncApi = 'https://e-api.thonglorpet.com/approvejv';
   static const String syncApi = 'https://uat-api.thonglorpet.com/smart-ward';
+  //static const String syncApi = 'https://e-api.thonglorpet.com/smart-ward';
 
-  //static final String version = '1.0.3'; // userAdmin
-  static final String version = 'UAT V.0.0.1'; // userAdmin
+  //static final String version = '1.0.1'; // userAdmin
+  static final String version = 'UAT V.0.1.5'; // userAdmin
 
   static int runID() => DateTime.now().millisecondsSinceEpoch;
   static String random() => Random().nextInt(999).toString().padLeft(3, '0');
@@ -76,29 +77,38 @@ class TlConstant {
   }
 }
 
-class Func{
+class Func {
   static List<String> generateMedicationTimes({
-  required String startTime,
-  required int intervalHours,
-}) {
-  // แปลง startTime เช่น "18:00" ให้เป็น DateTime
-  final parts = startTime.split(":");
-  final startHour = int.parse(parts[0]);
-  final startMinute = int.parse(parts[1]);
+    required String startTime,
+    required int intervalHours,
+  }) {
+    final parts = startTime.split(":");
+    final startHour = int.parse(parts[0]);
+    final startMinute = int.parse(parts[1]);
 
-  DateTime time = DateTime(0, 1, 1, startHour, startMinute);
+    DateTime time = DateTime(0, 1, 1, startHour, startMinute);
 
-  List<String> times = [];
-  for (int i = 0; i < 24; i += intervalHours) {
-    times.add('${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}');
-    time = time.add(Duration(hours: intervalHours));
-    if (time.hour == startHour && time.minute == startMinute) {
-      // วนกลับมาจุดเริ่มต้น ให้หยุด
-      break;
+    List<String> times = [];
+    for (int i = 0; i < 24; i += intervalHours) {
+      times.add(
+          '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}');
+      time = time.add(Duration(hours: intervalHours));
+      if (time.hour == startHour && time.minute == startMinute) {
+        break;
+      }
     }
+
+    return times;
   }
 
-  return times;
-}
-
+  static String fullName({
+    required List<DoctorModel> ListDoctors,
+    required String? empId,
+  }) {
+    return ListDoctors.where((e) => e.employee_id == empId)
+            .firstOrNull
+            ?.full_nameth ??
+        empId ??
+        '-';
+  }
 }
