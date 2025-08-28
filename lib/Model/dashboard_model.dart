@@ -25,6 +25,7 @@ class DashboardModel {
   String? status_now;
   int? to_do_food;
   int? to_do_drug;
+   int? to_do_idrug;
 
   DashboardModel({
     this.id,
@@ -46,8 +47,9 @@ class DashboardModel {
     this.last_transaction,
     this.status_now_slot,
     this.status_now,
-    this.to_do_food,   // ✅ เพิ่ม
-    this.to_do_drug,   // ✅ เพิ่ม
+    this.to_do_food,   
+    this.to_do_drug,  
+    this.to_do_idrug,  
   });
 
   factory DashboardModel.fromJson(Map<String, dynamic> json) {
@@ -75,7 +77,8 @@ class DashboardModel {
       status_now_slot: json['status_now_slot']?.toString(),
       status_now: json['status_now']?.toString(),
       to_do_food: _asInt(json['to_do_food']),  
-      to_do_drug: _asInt(json['to_do_drug']),  
+      to_do_drug: _asInt(json['to_do_drug']),
+      to_do_idrug: _asInt(json['to_do_idrug']),    
     );
   }
 
@@ -101,7 +104,8 @@ class DashboardModel {
       'status_now_slot': status_now_slot,
       'status_now': status_now,
       'to_do_food': to_do_food,   
-      'to_do_drug': to_do_drug,  
+      'to_do_drug': to_do_drug,
+      'to_do_idrug': to_do_idrug,    
     };
   }
 

@@ -122,10 +122,12 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
   List<String> setValue = [
     'ก่อนอาหาร',
     'หลังอาหาร',
+    'ไม่ระบุ',
   ];
   Map<String, bool> selectedValues = {
     'ก่อนอาหาร': false,
     'หลังอาหาร': false,
+    'ไม่ระบุ': false,
   };
 
   Map<String, bool> selectStatus = {

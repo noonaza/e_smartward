@@ -15,6 +15,9 @@ class ListPetModel {
   String? room_type;
   String? bed_number;
   String? doctor;
+    String? admit_date;
+  String? admit_time;
+  String? admit_datetimes;
   ListPetModel({
     this.id,
     this.hn_number,
@@ -29,9 +32,13 @@ class ListPetModel {
     this.room_type,
     this.bed_number,
     this.doctor,
+    this.admit_date,
+    this.admit_time,
+    this.admit_datetimes,
   });
 
   ListPetModel copyWith({
+    int? id,
     String? hn_number,
     String? visit_id,
     String? hn,
@@ -44,8 +51,12 @@ class ListPetModel {
     String? room_type,
     String? bed_number,
     String? doctor,
+    String? admit_date,
+    String? admit_time,
+    String? admit_datetimes,
   }) {
     return ListPetModel(
+      id: id ?? this.id,
       hn_number: hn_number ?? this.hn_number,
       visit_id: visit_id ?? this.visit_id,
       hn: hn ?? this.hn,
@@ -58,11 +69,15 @@ class ListPetModel {
       room_type: room_type ?? this.room_type,
       bed_number: bed_number ?? this.bed_number,
       doctor: doctor ?? this.doctor,
+      admit_date: admit_date ?? this.admit_date,
+      admit_time: admit_time ?? this.admit_time,
+      admit_datetimes: admit_datetimes ?? this.admit_datetimes,
     );
   }
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
+      'id': id,
       'hn_number': hn_number,
       'visit_id': visit_id,
       'hn': hn,
@@ -75,27 +90,30 @@ class ListPetModel {
       'room_type': room_type,
       'bed_number': bed_number,
       'doctor': doctor,
+      'admit_date': admit_date,
+      'admit_time': admit_time,
+      'admit_datetimes': admit_datetimes,
     };
   }
 
   factory ListPetModel.fromMap(Map<String, dynamic> map) {
     return ListPetModel(
+      id: map['id'] != null ? map['id'] as int : null,
       hn_number: map['hn_number'] != null ? map['hn_number'] as String : null,
       visit_id: map['visit_id'] != null ? map['visit_id'] as String : null,
       hn: map['hn'] != null ? map['hn'] as String : null,
       an: map['an'] != null ? map['an'] as String : null,
-      owner_name:
-          map['owner_name'] != null ? map['owner_name'] as String : null,
+      owner_name: map['owner_name'] != null ? map['owner_name'] as String : null,
       pet_name: map['pet_name'] != null ? map['pet_name'] as String : null,
       pet_type: map['pet_type'] != null ? map['pet_type'] as String : null,
-      base_site_branch_id: map['base_site_branch_id'] != null
-          ? map['base_site_branch_id'] as String
-          : null,
+      base_site_branch_id: map['base_site_branch_id'] != null ? map['base_site_branch_id'] as String : null,
       ward: map['ward'] != null ? map['ward'] as String : null,
       room_type: map['room_type'] != null ? map['room_type'] as String : null,
-      bed_number:
-          map['bed_number'] != null ? map['bed_number'] as String : null,
+      bed_number: map['bed_number'] != null ? map['bed_number'] as String : null,
       doctor: map['doctor'] != null ? map['doctor'] as String : null,
+      admit_date: map['admit_date'] != null ? map['admit_date'] as String : null,
+      admit_time: map['admit_time'] != null ? map['admit_time'] as String : null,
+      admit_datetimes: map['admit_datetimes'] != null ? map['admit_datetimes'] as String : null,
     );
   }
 
@@ -106,40 +124,49 @@ class ListPetModel {
 
   @override
   String toString() {
-    return 'ListPetModel(hn_number: $hn_number, visit_id: $visit_id, hn: $hn, an: $an, owner_name: $owner_name, pet_name: $pet_name, pet_type: $pet_type, base_site_branch_id: $base_site_branch_id, ward: $ward, room_type: $room_type, bed_number: $bed_number, doctor: $doctor)';
+    return 'ListPetModel(id: $id, hn_number: $hn_number, visit_id: $visit_id, hn: $hn, an: $an, owner_name: $owner_name, pet_name: $pet_name, pet_type: $pet_type, base_site_branch_id: $base_site_branch_id, ward: $ward, room_type: $room_type, bed_number: $bed_number, doctor: $doctor, admit_date: $admit_date, admit_time: $admit_time, admit_datetimes: $admit_datetimes)';
   }
 
   @override
   bool operator ==(covariant ListPetModel other) {
     if (identical(this, other)) return true;
-
-    return other.hn_number == hn_number &&
-        other.visit_id == visit_id &&
-        other.hn == hn &&
-        other.an == an &&
-        other.owner_name == owner_name &&
-        other.pet_name == pet_name &&
-        other.pet_type == pet_type &&
-        other.base_site_branch_id == base_site_branch_id &&
-        other.ward == ward &&
-        other.room_type == room_type &&
-        other.bed_number == bed_number &&
-        other.doctor == doctor;
+  
+    return 
+      other.id == id &&
+      other.hn_number == hn_number &&
+      other.visit_id == visit_id &&
+      other.hn == hn &&
+      other.an == an &&
+      other.owner_name == owner_name &&
+      other.pet_name == pet_name &&
+      other.pet_type == pet_type &&
+      other.base_site_branch_id == base_site_branch_id &&
+      other.ward == ward &&
+      other.room_type == room_type &&
+      other.bed_number == bed_number &&
+      other.doctor == doctor &&
+      other.admit_date == admit_date &&
+      other.admit_time == admit_time &&
+      other.admit_datetimes == admit_datetimes;
   }
 
   @override
   int get hashCode {
-    return hn_number.hashCode ^
-        visit_id.hashCode ^
-        hn.hashCode ^
-        an.hashCode ^
-        owner_name.hashCode ^
-        pet_name.hashCode ^
-        pet_type.hashCode ^
-        base_site_branch_id.hashCode ^
-        ward.hashCode ^
-        room_type.hashCode ^
-        bed_number.hashCode ^
-        doctor.hashCode;
+    return id.hashCode ^
+      hn_number.hashCode ^
+      visit_id.hashCode ^
+      hn.hashCode ^
+      an.hashCode ^
+      owner_name.hashCode ^
+      pet_name.hashCode ^
+      pet_type.hashCode ^
+      base_site_branch_id.hashCode ^
+      ward.hashCode ^
+      room_type.hashCode ^
+      bed_number.hashCode ^
+      doctor.hashCode ^
+      admit_date.hashCode ^
+      admit_time.hashCode ^
+      admit_datetimes.hashCode;
   }
 }

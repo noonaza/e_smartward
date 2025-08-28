@@ -76,6 +76,8 @@ class _RoundWardScreenState extends State<RoundWardScreen>
   bool showAn = false;
   bool hasNewOrders = false;
   DateTime _selectedDate = DateTime.now();
+  TextEditingController searchController = TextEditingController();
+  String searchPet = '';
 
   int iMenu = 1;
   bool isLoadingTab = false;
@@ -103,6 +105,31 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
   DateTime selectedDate = DateTime.now();
 
+  Future<void> _refreshAllGroups() async {
+    final futures = <Future<List<ListRoundwardModel>>>[];
+
+    for (final group in lGroupTabs) {
+      futures.add(
+        RoundWardApi().loadDataRoundWard(
+          context,
+          headers_: widget.headers,
+          mListAn_: selectedAnModel!,
+          mGroup_: group,
+        ),
+      );
+    }
+
+    final results = await Future.wait(futures);
+
+    if (!mounted) return;
+    setState(() {
+      for (int i = 0; i < lGroupTabs.length; i++) {
+        final key = lGroupTabs[i].type_name ?? '-';
+        groupedCardData[key] = results[i];
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -116,6 +143,14 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final filteredList = lPetAdmit.where((pet) {
+      final hn = (pet.hn ?? '').toLowerCase();
+      final name = (pet.pet_name ?? '').toLowerCase();
+      final query = searchPet.toLowerCase();
+      return hn.contains(query) || name.contains(query);
+    }).toList();
+
+    final listToShow = searchPet.trim().isEmpty ? lPetAdmit : filteredList;
     return Material(
       child: Container(
         width: double.infinity,
@@ -339,41 +374,71 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                             ),
                           ),
                         ),
+                        if (showCard && lPetAdmit.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: SizedBox(
+                              height: 40,
+                              child: TextField(
+                                controller: searchController,
+                                style: const TextStyle(
+                                    fontSize: 14, color: Colors.black87),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  hintText: 'ค้นหาจาก HN หรือชื่อสัตว์เลี้ยง',
+                                  hintStyle: TextStyle(color: Colors.grey[500]),
+                                  prefixIcon: const Icon(Icons.search,
+                                      color: Colors.teal),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 0),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: Colors.teal, width: 1.5),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: Colors.teal, width: 2),
+                                  ),
+                                ),
+                                onChanged: (value) =>
+                                    setState(() => searchPet = value),
+                              ),
+                            ),
+                          ),
+                        ],
 
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: SizedBox(
-                            height: 200,
+                            height: 230,
                             child: isLoading
                                 ? const Center(
                                     child: CircularProgressIndicator())
                                 : !showCard
                                     ? const SizedBox.shrink()
-                                    : lPetAdmit.isEmpty
+                                    : listToShow.isEmpty
                                         ? const Center(
                                             child: Text('ไม่พบข้อมูล'))
                                         : ListView.builder(
                                             scrollDirection: Axis.horizontal,
-                                            itemCount: lPetAdmit.length,
+                                            itemCount: listToShow.length,
                                             itemBuilder: (context, index) {
-                                              String hn =
-                                                  lPetAdmit[index].hn ?? '';
-                                              String name =
-                                                  lPetAdmit[index].pet_name ??
-                                                      '';
-                                              String site = lPetAdmit[index]
-                                                      .base_site_branch_id ??
-                                                  '';
-                                              String ward =
-                                                  lPetAdmit[index].ward ?? '';
-                                              String bed =
-                                                  lPetAdmit[index].bed_number ??
-                                                      '';
-                                              String doctor =
-                                                  lPetAdmit[index].doctor ?? '';
+                                              final pet = listToShow[index];
+                                              String hn = pet.hn ?? '';
+                                              String name = pet.pet_name ?? '';
+                                              String site =
+                                                  pet.base_site_branch_id ?? '';
+                                              String ward = pet.ward ?? '';
+                                              String bed = pet.bed_number ?? '';
+                                              String doctor = pet.doctor ?? '';
+                                              String date =
+                                                  pet.admit_date ?? '';
 
                                               String formattedText =
-                                                  'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed\nชื่อแพทย์: $doctor';
+                                                  'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed\nชื่อแพทย์: $doctor\nวันที่เข้ารักษา: $date';
 
                                               return Padding(
                                                 padding:
@@ -1163,8 +1228,6 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                         (newDrug) {},
                                                                     rwAddDrug_:
                                                                         () async {
-                                                                      // callback
-                                                                      // await refreshScreen();
                                                                       groupedCardData
                                                                           .clear();
                                                                       setState(
@@ -1222,8 +1285,6 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                         (newFood) async {},
                                                                     rwAddFood_:
                                                                         () async {
-                                                                      //  await refreshGroupedData();
-
                                                                       groupedCardData
                                                                           .clear();
                                                                       setState(
@@ -1403,11 +1464,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                           () {});
                                                                     },
                                                                   );
-                                                                } else {
-                                                                  dialog.Error(
-                                                                      context,
-                                                                      'กรุณาเลือก AN หรือสัตว์ก่อน');
-                                                                }
+                                                                } else {}
                                                               },
                                                             ),
                                                           ],
@@ -1726,25 +1783,32 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
-                                                Text(
-                                                    'จำนวน: ${item.item_qty ?? "-"} ${item.unit_name ?? "-"}'),
+                                                text(context,
+                                                    'จำนวน : ${item.item_qty ?? "-"} ${item.unit_name ?? "-"}'),
                                                 SizedBox(height: 4),
                                                 if (isDrug)
-                                                  Text(
-                                                      'ขนาดยา: ${item.dose_qty ?? "-"} ${item.dose_unit_name ?? "-"}'),
+                                                  text(context,
+                                                      'ขนาดยา : ${item.dose_qty ?? "-"} ${item.dose_unit_name ?? "-"}'),
                                                 SizedBox(height: 4),
-                                                Text(
-                                                    'ประเภท: ${item.drug_type_name ?? "-"}'),
+                                                text(context,
+                                                    'ประเภท : ${item.drug_type_name ?? "-"}'),
                                                 if (item.note_to_team
                                                         ?.isNotEmpty ??
                                                     false) ...[
                                                   SizedBox(height: 4),
-                                                  Text(
-                                                      'หมายเหตุ: ${item.note_to_team}'),
+                                                  text(context,
+                                                      'หมายเหตุ : ${item.note_to_team}'),
                                                 ],
                                                 SizedBox(height: 4),
-                                                Text(
+                                                text(context,
                                                     'วิธีให้ : ${item.drug_instruction ?? "-"}'),
+                                                SizedBox(height: 4),
+                                                if (isDrug)
+                                                  text(context,
+                                                      'วันที่สั่งยา : ${item.order_date ?? "-"} ${item.order_time ?? "-"}'),
+                                                if (isFood)
+                                                  text(context,
+                                                      'วันที่สั่งอาหาร : ${item.order_date ?? "-"} ${item.order_time ?? "-"}'),
                                               ],
                                             )
                                           ],

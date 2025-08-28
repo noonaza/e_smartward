@@ -163,7 +163,7 @@ class _PreviewDashboardState extends State<PreviewDashboard> {
   }
 
   int _columnsForWidth(double w) {
-    if (w >= 1500) return 8;
+    if (w >= 2300) return 8;
     if (w >= 1250) return 6;
     if (w >= 1000) return 5;
     if (w >= 800) return 4;
@@ -197,9 +197,9 @@ class _PreviewDashboardState extends State<PreviewDashboard> {
 
     List<Widget> imagesCard(ColorTone t) => switch (t) {
           ColorTone.yellow => [
-              Image.asset('assets/images/drug.png', width: 25, height: 25),
-              Image.asset('assets/images/oh.png', width: 25, height: 25),
-              Image.asset('assets/images/dc.png', width: 25, height: 25),
+              Image.asset('assets/images/drug.png', width: 20, height: 20),
+              Image.asset('assets/images/oh.png', width: 20, height: 20),
+              Image.asset('assets/images/dc.png', width: 20, height: 20),
             ],
           ColorTone.blue => [
               Image.asset('assets/images/note.png', width: 25, height: 25),
@@ -230,7 +230,7 @@ class _PreviewDashboardState extends State<PreviewDashboard> {
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
-    const double sideStripW = 16.0;
+    const double sideStripW = 13.0;
 
     final cols = _columnsForWidth(w);
     final cards = _buildCards();

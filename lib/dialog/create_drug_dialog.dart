@@ -134,10 +134,12 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
   List<String> setValue = [
     'ก่อนอาหาร',
     'หลังอาหาร',
+    'ไม่ระบุ',
   ];
   Map<String, bool> selectedValues = {
     'ก่อนอาหาร': false,
     'หลังอาหาร': false,
+    'ไม่ระบุ': false,
   };
   String selectedTimeSlot = '';
   List<String> selectedTakeTimes = [];
@@ -438,9 +440,8 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
                       lDataOrder_: [newDrug],
                       mListAn_: widget.lListAn!.first,
                     );
-                    await widget
-                        .rwAddDrug(); 
-                    Navigator.of(context).pop(); 
+                    await widget.rwAddDrug();
+                    Navigator.of(context).pop();
                   } else {
                     final newDrug = ListDataCardModel(
                       item_name: tDrudName.text,

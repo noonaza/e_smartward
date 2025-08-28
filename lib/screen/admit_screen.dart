@@ -44,8 +44,8 @@ class AdmitScreen extends StatefulWidget {
 }
 
 class _AdmitScreenState extends State<AdmitScreen> {
-  final GlobalKey<FoodListWidgetState> foodListKey =
-      GlobalKey<FoodListWidgetState>();
+  // final GlobalKey<FoodListWidgetState> foodListKey =
+  //     GlobalKey<FoodListWidgetState>();
   final GlobalKey<DrugListWidgetState> DrugListKey =
       GlobalKey<DrugListWidgetState>();
 
@@ -63,6 +63,8 @@ class _AdmitScreenState extends State<AdmitScreen> {
   bool isLoaded = false;
   int reloadCard = 0;
   bool isHideBtn = false;
+  final drugListKey = GlobalKey<DrugListWidgetState>();
+  final foodListKey = GlobalKey<FoodListWidgetState>();
 
   List<String> time = [
     'ทุกๆ 1 ชม.',
@@ -348,6 +350,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
                         children: [
                           //!Drug List
                           DrugListWidget(
+                            key: drugListKey,
                             lDataCard: lDataCardDrug,
                             lSettingTime: lSettingTime,
                             headers: widget.headers,
@@ -386,7 +389,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
                               (context);
                             },
                             onConfirmed: () {
-                              foodListKey.currentState?.setConfirmed();
+                              drugListKey.currentState?.setConfirmed();
                             },
                           ),
                           //!Food List
@@ -449,7 +452,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
                                 setState(() {
                                   lDataCardObs[index] = updatedObs;
                                 });
-                              },widget.headers);
+                              }, widget.headers);
                             },
                             onAdd: () {
                               CreateObsDialog.show(context, width: width,
@@ -567,7 +570,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
                             dialog.dismiss();
                             setState(() {
                               foodListKey.currentState?.setConfirmed();
-                              DrugListKey.currentState?.setConfirmed();
+                              drugListKey.currentState?.setConfirmed();
                               reloadCard++;
                             });
                           }),

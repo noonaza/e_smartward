@@ -60,6 +60,9 @@ class RoundWardApi {
               room_type: item['room_type'],
               bed_number: item['bed_number'],
               doctor: item['doctor'],
+              admit_date: item['admit_date'],
+              admit_time: item['admit_time'],
+              admit_datetimes: item['admit_datetimes'],
             );
           }).toList();
         }
@@ -206,6 +209,10 @@ class RoundWardApi {
                   comment: card['comment']?.toString() ?? '',
                   remark: card['remark']?.toString() ?? '',
                   status: card['status']?.toString() ?? '',
+                  save_by: card['save_by'] is int
+                      ? card['save_by']
+                      : int.tryParse(card['save_by']?.toString() ?? ''),
+                  save_by_name: card['save_by_name']?.toString() ?? '',
                   create_date: card['create_date']?.toString() ?? '',
                 ));
               }
@@ -443,8 +450,6 @@ class RoundWardApi {
         data: createList,
         options: Options(headers: headers_),
       );
-
-    
 
       if (response.data['code'] == 1) {
         if (response.data['body'] != 0) {

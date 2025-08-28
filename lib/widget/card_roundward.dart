@@ -173,6 +173,16 @@ class _CardRoundwardDrugState extends State<CardRoundwardDrug> {
     }
   }
 
+  Widget _infoText(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        '$label $value',
+        style: const TextStyle(fontSize: 13, color: Colors.black87),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const double slotHeight = 50;
@@ -372,6 +382,30 @@ class _CardRoundwardDrugState extends State<CardRoundwardDrug> {
                                                     if (type == 'Observe') ...[
                                                       const SizedBox(
                                                           height: 10),
+                                                      _infoText(
+                                                          '🕒 เวลา:',
+                                                          tran?.slot ??
+                                                              slotTime),
+                                                      _infoText(
+                                                          '📌 เวลาที่บันทึก:',
+                                                          tran?.create_date ??
+                                                              '-'),
+                                                      _infoText(
+                                                          '👩‍⚕️ ผู้บันทึก:',
+                                                          tran?.save_by_name ??
+                                                              '-'),
+                                                      _infoText(
+                                                          '📋 สถานะ:',
+                                                          getStatusText(
+                                                              tran?.status,
+                                                              type)),
+                                                      if (tran?.comment !=
+                                                              null &&
+                                                          tran!.comment!
+                                                              .isNotEmpty)
+                                                        _infoText(
+                                                            '💬 หมายเหตุ:',
+                                                            tran.comment ?? ''),
                                                       text(
                                                         context,
                                                         '  รูปภาพที่แนบ:',
@@ -499,28 +533,30 @@ class _CardRoundwardDrugState extends State<CardRoundwardDrug> {
                                                         },
                                                       ),
                                                     ] else ...[
-                                                      Text(
-                                                        'เวลา: ${tran?.slot ?? slotTime}',
-                                                        style: const TextStyle(
-                                                            fontSize: 12),
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                      Text(
-                                                        'สถานะ: ${getStatusText(tran?.status, type)}',
-                                                        style: const TextStyle(
-                                                            fontSize: 12),
-                                                      ),
-                                                      const SizedBox(height: 4),
+                                                      _infoText(
+                                                          '🕒 เวลา:',
+                                                          tran?.slot ??
+                                                              slotTime),
+                                                      _infoText(
+                                                          '📌 เวลาที่บันทึก:',
+                                                          tran?.create_date ??
+                                                              '-'),
+                                                      _infoText(
+                                                          '👩‍⚕️ ผู้บันทึก:',
+                                                          tran?.save_by_name ??
+                                                              '-'),
+                                                      _infoText(
+                                                          '📋 สถานะ:',
+                                                          getStatusText(
+                                                              tran?.status,
+                                                              type)),
                                                       if (tran?.comment !=
                                                               null &&
                                                           tran!.comment!
                                                               .isNotEmpty)
-                                                        Text(
-                                                          'หมายเหตุ: ${tran.comment ?? ''}',
-                                                          style:
-                                                              const TextStyle(
-                                                                  fontSize: 12),
-                                                        ),
+                                                        _infoText(
+                                                            '💬 หมายเหตุ:',
+                                                            tran.comment ?? ''),
                                                     ],
                                                   ],
                                                 ),

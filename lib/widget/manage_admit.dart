@@ -53,8 +53,10 @@ class _ManageAdmitState extends State<ManageAdmit> {
             String ward = lPetAdmit[index].ward ?? '';
             String bed = lPetAdmit[index].bed_number ?? '';
 
+            String date = lPetAdmit[index].admit_datetimes ?? '';
+
             String formattedText =
-                'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed';
+                'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed\วันที่เข้ารักษา: $date';
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),

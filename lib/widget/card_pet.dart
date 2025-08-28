@@ -45,7 +45,7 @@ class _CardPetState extends State<CardPet> {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(
-        height: 200,
+        height: 230,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: lPetAdmit.length,
@@ -56,9 +56,10 @@ class _CardPetState extends State<CardPet> {
             String ward = lPetAdmit[index].ward ?? '';
             String bed = lPetAdmit[index].bed_number ?? '';
             String doctor = lPetAdmit[index].doctor ?? '';
+            String date = lPetAdmit[index].admit_date ?? '';
 
             String formattedText =
-                'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed\nชื่อแพทย์: $doctor';
+                'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed\nชื่อแพทย์: $doctor\nวันที่เข้ารักษา: $date';
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),

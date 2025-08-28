@@ -57,9 +57,10 @@ class _CardPetState extends State<ListPetWidget> {
             String site = lPetAdmit[index].base_site_branch_id ?? '';
             String ward = lPetAdmit[index].ward ?? '';
             String bed = lPetAdmit[index].bed_number ?? '';
+            String date = lPetAdmit[index].admit_datetimes ?? '';
 
             String formattedText =
-                'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed';
+                'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed\วันที่เข้ารักษา: $date';
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -140,6 +141,9 @@ class _CardPetState extends State<ListPetWidget> {
               ward: item['ward'],
               room_type: item['room_type'],
               bed_number: item['bed_number'],
+                       admit_date: item['admit_date'],
+              admit_time: item['admit_time'],
+              admit_datetimes: item['admit_datetimes'],
             );
           }).toList();
         }

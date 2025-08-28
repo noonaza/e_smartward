@@ -142,10 +142,12 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
   List<String> setValue = [
     'ก่อนอาหาร',
     'หลังอาหาร',
+    'ไม่ระบุ',
   ];
   Map<String, bool> selectedValues = {
     'ก่อนอาหาร': false,
     'หลังอาหาร': false,
+    'ไม่ระบุ': false,
   };
   List<String> selectedTakeTimes = [];
   List<String> initialTakeTimes = [];

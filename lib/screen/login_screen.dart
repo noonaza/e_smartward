@@ -235,6 +235,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               );
+
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => PreviewDashboard(
+                              //       lDataCard: [],
+                              //       petNames: [],
+                              //     ),
+                              //   ),
+                              // );
                             },
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -259,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 5),
                       Text(
-                        'Update 20250818 | Version ${TlConstant.version} ',
+                        'Update 20250828 | Version ${TlConstant.version} ',
                         style:
                             const TextStyle(color: Colors.grey, fontSize: 12),
                       ),

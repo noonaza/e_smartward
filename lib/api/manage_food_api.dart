@@ -11,45 +11,44 @@ import '../Model/list_pet_model.dart';
 import '../Model/list_user_model.dart';
 
 class ManageFoodApi {
- Future<List<String>> loadFoodSlot(
-  BuildContext context, {
-  required Map<String, String> headers_,
-  String? groupId,
-  String? siteCode,
-  String? wardCode,
-  required String type,
-}) async {
-  String api = '${TlConstant.syncApi}/get_food_slot';
-  final dio = Dio();
+  Future<List<String>> loadFoodSlot(
+    BuildContext context, {
+    required Map<String, String> headers_,
+    String? groupId,
+    String? siteCode,
+    String? wardCode,
+    required String type,
+  }) async {
+    String api = '${TlConstant.syncApi}/get_food_slot';
+    final dio = Dio();
 
-  try {
-    final response = await dio.post(
-      api,
-      data: {
-        "type": type,
-        "group_id": groupId != null ? int.tryParse(groupId) : null,
-        "site_code": siteCode,
-        "ward": wardCode,
-      },
-      options: Options(headers: headers_),
-    );
+    try {
+      final response = await dio.post(
+        api,
+        data: {
+          "type": type,
+          "group_id": groupId != null ? int.tryParse(groupId) : null,
+          "site_code": siteCode,
+          "ward": wardCode,
+        },
+        options: Options(headers: headers_),
+      );
 
-    if (response.data['code'] == 1) {
-      if (response.data['body'] is List) {
-        return List<String>.from(response.data['body']);
+      if (response.data['code'] == 1) {
+        if (response.data['body'] is List) {
+          return List<String>.from(response.data['body']);
+        }
+      } else if (response.data['code'] == 401) {
+        dialog.token(context, response.data['message']);
+      } else {
+        dialog.Error(context, response.data['message']);
       }
-    } else if (response.data['code'] == 401) {
-      dialog.token(context, response.data['message']);
-    } else {
-      dialog.Error(context, response.data['message']);
+    } catch (e) {
+      dialog.Error(context, 'Failed to load data. Please try again.');
     }
-  } catch (e) {
-    dialog.Error(context, 'Failed to load data. Please try again.');
+
+    return [];
   }
-
-  return [];
-}
-
 
   Future<List<ListFoodModel>> loadGroupCodeList(
     BuildContext context, {
@@ -126,6 +125,9 @@ class ManageFoodApi {
               ward: item['ward'],
               room_type: item['room_type'],
               bed_number: item['bed_number'],
+                            admit_date: item['admit_date'],
+              admit_time: item['admit_time'],
+              admit_datetimes: item['admit_datetimes'],
             );
           }).toList();
         }
@@ -340,7 +342,6 @@ class ManageFoodApi {
                   });
                 }
               } catch (e) {
-               
                 dialog.Error(context, 'JSON decode error: $e');
               }
             }
@@ -354,7 +355,6 @@ class ManageFoodApi {
         dialog.Error(context, response.data['message']);
       }
     } catch (e) {
-      
       dialog.Error(context, 'Error loading food slot: $e');
     }
 

@@ -1,15 +1,17 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:async';
-import 'package:e_smartward/Model/dashboard_model.dart';
-import 'package:e_smartward/api/dashboard_api.dart';
-import 'package:e_smartward/widget/board_data.dart';
-import 'package:e_smartward/widget/dropdown_db.dart';
-import 'package:e_smartward/widget/text.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+import 'package:e_smartward/Model/dashboard_model.dart';
+import 'package:e_smartward/Model/list_pet_model.dart';
+import 'package:e_smartward/api/dashboard_api.dart';
+import 'package:e_smartward/widget/board_data.dart';
 import 'package:e_smartward/widget/board_detail.dart';
 import 'package:e_smartward/widget/colors_board.dart';
-import 'package:e_smartward/Model/list_pet_model.dart';
+import 'package:e_smartward/widget/dropdown_db.dart';
+import 'package:e_smartward/widget/text.dart';
 
 class DashboardScreen extends StatefulWidget {
   final List<Map<String, dynamic>> lDataCard;
@@ -76,6 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               status: _status(m),
               toDoFood: m.to_do_food ?? 0,
               toDoDrug: m.to_do_drug ?? 0,
+              toDoiDrug: m.to_do_idrug ?? 0,
             ))
         .toList();
 
@@ -105,8 +108,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   int _columnsForWidth(double w) {
-    if (w >= 1500) return 8;
-    if (w >= 1250) return 6;
+    if (w >= 2300) return 8;
+    if (w >= 1250) return 7;
     if (w >= 1000) return 5;
     if (w >= 800) return 4;
     return 3;
@@ -117,6 +120,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ColorTone t, {
       int toDoFood = 0,
       int toDoDrug = 0,
+      int toDoiDrug = 0,
     }) {
       final result = <Widget>[];
 
@@ -128,11 +132,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         } else if (t == ColorTone.yellow) {
           foodIcon = 'assets/images/oh.png';
         }
-
         result.add(
           SizedBox(
-            width: 50,
-            height: 50,
+            width: 30,
+            height: 30,
             child: Image.asset(foodIcon, fit: BoxFit.contain),
           ),
         );
@@ -141,26 +144,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (toDoDrug > 0) {
         result.add(
           SizedBox(
-            width: 50,
-            height: 50,
+            width: 30,
+            height: 30,
             child: Image.asset('assets/images/drug.png', fit: BoxFit.contain),
           ),
         );
       }
 
-      // switch (t) {
-      //   case ColorTone.yellow:
-      //     result
-      //         .add(Image.asset('assets/images/dc.png', width: 25, height: 25));
-      //     break;
-      //   case ColorTone.blue:
-      //     result.add(
-      //         Image.asset('assets/images/note.png', width: 25, height: 25));
-      //     result.add(Image.asset('assets/images/6.png', width: 25, height: 25));
-      //     break;
-      //   case ColorTone.green:
-      //     break;
-      // }
+      if (toDoiDrug > 0) {
+        result.add(
+          SizedBox(
+            width: 30,
+            height: 30,
+            child: Image.asset('assets/images/dc.png', fit: BoxFit.contain),
+          ),
+        );
+      }
+
       return result;
     }
 
@@ -178,7 +178,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ownerName: owner,
         hn: hn,
         tone: tone,
-        cornerIcons: images(tone, toDoFood: r.toDoFood, toDoDrug: r.toDoDrug),
+        cornerIcons: images(tone,
+            toDoFood: r.toDoFood, toDoDrug: r.toDoDrug, toDoiDrug: r.toDoiDrug),
       );
     }).toList();
   }
@@ -224,8 +225,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final totalCrossSpacing = crossSpacing * (cols - 1);
     final itemWidth = (gridUsableWidth - totalCrossSpacing) / cols;
 
-    final bigH = w >= 1500 ? 170.0 : 350.0;
-    final smallH = w >= 1500 ? 120.0 : 300.0;
+    final bigH = w >= 1250 ? 120.0 : 350.0; //! การ์ดสีฟ้าเหลือง
+    final smallH = w >= 1250 ? 100.0 : 300.0; //! การ์ดสีเขียว
     final bigAspect = itemWidth / bigH;
     final smallAspect = itemWidth / smallH;
 
@@ -240,7 +241,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisCount: cols,
             crossAxisSpacing: 12,
             mainAxisSpacing: 15,
-            childAspectRatio: aspect,
+            childAspectRatio: aspect * 0.985,
           ),
           delegate: SliverChildBuilderDelegate(
             (context, i) => BoardDetail(data: list[i]),
@@ -311,7 +312,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(width: 10),
                     const Text(
-                      'iCare Dashboard',
+                      'Thonglor iCare Dashboard',
                       style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -362,8 +363,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: CustomScrollView(
                   slivers: [
                     if (yellow.isNotEmpty) CardList(yellow, bigAspect),
-                    if (blue.isNotEmpty) CardList(blue, bigAspect, top: 20),
-                    if (green.isNotEmpty) CardList(green, smallAspect, top: 20),
+                    if (blue.isNotEmpty) CardList(blue, bigAspect, top: 15),
+                    if (green.isNotEmpty) CardList(green, smallAspect, top: 15),
                   ],
                 ),
               ),
@@ -499,7 +500,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Action Buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -547,11 +547,13 @@ class PetRow {
   final ColorTone status;
   final int toDoFood;
   final int toDoDrug;
+  final int toDoiDrug;
 
   PetRow({
     required this.pet,
     required this.status,
     this.toDoFood = 0,
-    this.toDoDrug = 0,
+    required this.toDoDrug,
+    this.toDoiDrug = 0,
   });
 }

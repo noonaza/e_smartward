@@ -6,7 +6,6 @@ import 'package:just_the_tooltip/just_the_tooltip.dart';
 
 import '../Model/doctor_model.dart';
 import '../api/admit_api.dart';
-import '../util/tlconstant.dart';
 
 class FoodListWidget extends StatefulWidget {
   final List<ListDataCardModel> lDataCard;
@@ -40,10 +39,10 @@ class FoodListWidgetState extends State<FoodListWidget> {
 
   List<DoctorModel> ListDoctors = [];
 
-  bool get isHideBtn {
-    return widget.lDataCard
-        .any((e) => e.id != null && e.id.toString().trim().isNotEmpty);
-  }
+  // bool get isHideBtn {
+  //   return widget.lDataCard
+  //       .any((e) => e.id != null && e.id.toString().trim().isNotEmpty);
+  // }
 
   bool isConfirmed = false;
 
@@ -52,6 +51,11 @@ class FoodListWidgetState extends State<FoodListWidget> {
       isConfirmed = true;
     });
   }
+
+  bool get _hasAnyId => widget.lDataCard
+      .any((e) => e.id != null && e.id.toString().trim().isNotEmpty);
+
+  bool get _hideAddButton => isConfirmed || _hasAnyId;
 
   final tooltipController = JustTheController();
 
@@ -228,7 +232,7 @@ class FoodListWidgetState extends State<FoodListWidget> {
                                                             color: Colors.teal),
                                                         // text(context,
                                                         //     "แพทย์ที่ทำการสั่ง: ${Func.fullName(ListDoctors: ListDoctors, empId: food.doctor_eid)}",
-                                                            // color: Colors.teal),
+                                                        // color: Colors.teal),
                                                         text(context,
                                                             "หมายเหตุอื่นๆ: ${food.remark ?? "-"}",
                                                             color: Colors.teal),
@@ -247,31 +251,31 @@ class FoodListWidgetState extends State<FoodListWidget> {
                                                   ),
                                                 ),
                                                 if (
-                                                  // (food.doctor_eid == null ||
-                                                  //       food.doctor_eid!
-                                                  //           .isEmpty) ||
+                                                    // (food.doctor_eid == null ||
+                                                    //       food.doctor_eid!
+                                                    //           .isEmpty) ||
                                                     (food.unit_name == null ||
-                                                        food.unit_name!
-                                                            .isEmpty) ||
-                                                    ((food.dose_qty == null ||
-                                                            food.dose_qty
-                                                                .toString()
-                                                                .isEmpty) &&
-                                                        (food.dose_qty_name ==
-                                                                null ||
-                                                            food.dose_qty_name!
-                                                                .isEmpty)) ||
-                                                    (food.item_name == null ||
-                                                        food.item_name!
-                                                            .isEmpty) || 
-                                                    ((food.take_time == null ||
-                                                            food.take_time!
-                                                                .isEmpty) &&
-                                                        !(food.time_slot
-                                                                ?.toString()
-                                                                .contains(
-                                                                    "เมื่อมีอาการ") ??
-                                                            false)))
+                                                            food.unit_name!
+                                                                .isEmpty) ||
+                                                        ((food.dose_qty == null ||
+                                                                food.dose_qty
+                                                                    .toString()
+                                                                    .isEmpty) &&
+                                                            (food.dose_qty_name ==
+                                                                    null ||
+                                                                food.dose_qty_name!
+                                                                    .isEmpty)) ||
+                                                        (food.item_name == null ||
+                                                            food.item_name!
+                                                                .isEmpty) ||
+                                                        ((food.take_time == null ||
+                                                                food.take_time!
+                                                                    .isEmpty) &&
+                                                            !(food.time_slot
+                                                                    ?.toString()
+                                                                    .contains(
+                                                                        "เมื่อมีอาการ") ??
+                                                                false)))
                                                   const Padding(
                                                     padding: EdgeInsets.only(
                                                         left: 6.0),
@@ -313,10 +317,7 @@ class FoodListWidgetState extends State<FoodListWidget> {
                       },
                     ),
             ),
-           
-            if (!isConfirmed &&
-                (widget.lDataCard.isEmpty ||
-                    widget.lDataCard.any((e) => e.id == null)))
+            if (!_hideAddButton)
               Positioned(
                 right: 8.0,
                 bottom: 8.0,

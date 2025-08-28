@@ -11,8 +11,8 @@ class TlConstant {
   static const String syncApi = 'https://uat-api.thonglorpet.com/smart-ward';
   //static const String syncApi = 'https://e-api.thonglorpet.com/smart-ward';
 
-  //static final String version = '1.0.1'; // userAdmin
-  static final String version = 'UAT V.0.1.5'; // userAdmin
+  //static final String version = '1.0.2'; // userAdmin
+  static final String version = 'UAT V.0.1.8'; // userAdmin
 
   static int runID() => DateTime.now().millisecondsSinceEpoch;
   static String random() => Random().nextInt(999).toString().padLeft(3, '0');

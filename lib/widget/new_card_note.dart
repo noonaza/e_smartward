@@ -179,7 +179,6 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
   }
 
   Future<void> loadFiles() async {
-    if (!mounted) return;
     setState(() {
       isLoading = true;
     });
@@ -204,6 +203,25 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
 
       isLoading = false;
     });
+  }
+
+  String resolveFileUrl(String raw) {
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      // normalize ให้แน่ใจว่า encode ถูกต้อง
+      return Uri.parse(raw).toString();
+    }
+    final base = TlConstant.syncApi; // ex: https://api.yourhost.com
+    final cleanedBase = base.replaceAll(RegExp(r'/+$'), '');
+
+    // แปลง \ -> / แล้ว encode ทีละ segment (กันช่องว่าง/ภาษาไทย)
+    final encodedPath = raw
+        .replaceAll('\\', '/')
+        .split('/')
+        .where((s) => s.isNotEmpty)
+        .map(Uri.encodeComponent)
+        .join('/');
+
+    return '$cleanedBase/$encodedPath';
   }
 
   @override
@@ -441,7 +459,8 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                             )
                           : const SizedBox.shrink(),
                       const SizedBox(height: 12),
-                      widget.typeCard == 'Observe'
+                      widget.typeCard == 'Observe' &&
+                              widget.dataNote.smw_transaction_order_id == null
                           ? IconButton(
                               icon: Icon(
                                 Icons.camera_alt,
@@ -495,7 +514,8 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                             )
                           : const SizedBox.shrink(),
                       const SizedBox(height: 8),
-                      if (widget.typeCard == 'Observe')
+                      if (widget.typeCard == 'Observe' &&
+                          widget.dataNote.smw_transaction_order_id == null)
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -678,8 +698,177 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                           ],
                         ),
                       const SizedBox(height: 5),
-                      // if (widget.typeCard == 'Observe')
-                      //   isNewCard
+                      //>> popup
+                      if (widget.typeCard == 'Observe' &&
+                          widget.dataNote.file_count != 0 &&
+                          widget.dataNote.smw_transaction_order_id != null) ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                                onTap: () async {
+                                  setState(() => isLoading = true);
+                                  await loadFiles();
+                                  setState(() => isLoading = false);
+
+                                  if (localFiles.isEmpty) {
+                                    return;
+                                  }
+
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      final width =
+                                          MediaQuery.of(context).size.width;
+                                      final crossAxisCount = width >= 1100
+                                          ? 4
+                                          : width >= 800
+                                              ? 3
+                                              : 2;
+
+                                      return AlertDialog(
+                                        title: Text(
+                                            "รูปภาพ (${localFiles.length})"),
+                                        content: SizedBox(
+                                          width: double.maxFinite,
+                                          child: GridView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: localFiles.length,
+                                            gridDelegate:
+                                                SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: crossAxisCount,
+                                              crossAxisSpacing: 12,
+                                              mainAxisSpacing: 12,
+                                              childAspectRatio: 1,
+                                            ),
+                                            itemBuilder: (context, index) {
+                                              final file = localFiles[index];
+                                              final fileName =
+                                                  file.path.split('/').last;
+                                              final isPDF = fileName
+                                                  .toLowerCase()
+                                                  .endsWith('.pdf');
+
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (context) =>
+                                                        AlertDialog(
+                                                      title: Text(fileName),
+                                                      content: isPDF
+                                                          ? const Icon(
+                                                              Icons
+                                                                  .picture_as_pdf,
+                                                              size: 100,
+                                                              color: Colors.red,
+                                                            )
+                                                          : Image.network(
+                                                              file.path),
+                                                    ),
+                                                  );
+                                                },
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  child: Stack(
+                                                    children: [
+                                                      Positioned.fill(
+                                                        child: isPDF
+                                                            ? Container(
+                                                                color: const Color(
+                                                                    0xFFF7F7F7),
+                                                                child:
+                                                                    const Center(
+                                                                  child: Icon(
+                                                                    Icons
+                                                                        .picture_as_pdf,
+                                                                    size: 56,
+                                                                    color: Colors
+                                                                        .red,
+                                                                  ),
+                                                                ),
+                                                              )
+                                                            : Image.network(
+                                                                file.path,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              ),
+                                                      ),
+                                                      Positioned(
+                                                        left: 0,
+                                                        right: 0,
+                                                        bottom: 0,
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal: 6,
+                                                                  vertical: 4),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            gradient:
+                                                                LinearGradient(
+                                                              begin: Alignment
+                                                                  .bottomCenter,
+                                                              end: Alignment
+                                                                  .topCenter,
+                                                              colors: [
+                                                                Colors.black
+                                                                    .withOpacity(
+                                                                        0.6),
+                                                                Colors
+                                                                    .transparent,
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          child: Text(
+                                                            file.remark
+                                                                    .isNotEmpty
+                                                                ? file.remark
+                                                                : "-",
+                                                            maxLines: 2,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style:
+                                                                const TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 12,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    Image.asset(
+                                      'assets/icons/pic1.png',
+                                      width: 25,
+                                      height: 25,
+                                    ),
+                                    text(
+                                      context,
+                                      'คลิกดูรูปภาพ (${widget.dataNote.file_count})',
+                                      color: const Color.fromARGB(
+                                          255, 13, 81, 116),
+                                    ),
+                                  ],
+                                )),
+                          ],
+                        ),
+                      ],
                       SizedBox(
                         child: widget.typeCard == 'Observe' &&
                                 widget.dataNote.smw_transaction_order_id == null
@@ -698,7 +887,7 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                         null
                                 ? SizedBox(
                                     child: Text(
-                                        'หมายเหตุ : ${widget.dataNote.comment}'),
+                                        'หมายเหตุ : ${widget.dataNote.comment ?? '-'}'),
                                   )
                                 : null,
                       ),
@@ -720,6 +909,15 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                           child: Text(
                             'ผู้บันทึก : ${widget.dataNote.save_by_name}',
                             style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                      if (widget.note.date_slot != null)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: text(
+                            context,
+                            'วัน/เวลา ที่บันทึก : ${widget.dataNote.create_date}',
                           ),
                         ),
                       const SizedBox(height: 5),
@@ -829,8 +1027,7 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                       // remark: widget.dataNote.remark ?? '',
                                     );
 
-                                    int? smwTransactionId =
-                                        await NoteApi().CreateTransectionDetail(
+                                    await NoteApi().CreateTransectionDetail(
                                       context,
                                       headers_: widget.headers,
                                       mNoteDataDetail: mNoteDataDetail,
@@ -854,14 +1051,13 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                           date_time: '',
                                         );
 
-                                        final updatedNote = updatedNotes
-                                            .firstWhere((e) =>
-                                                    e.id == null &&
-                                                    e.smw_admit_id ==
-                                                        widget.note.smw_admit_id
-                                                //         ,
-                                                // orElse: () => widget.note,
-                                                );
+                                        final updatedNote =
+                                            updatedNotes.firstWhere(
+                                          (e) =>
+                                              e.slot == widget.note.slot &&
+                                              e.smw_admit_id ==
+                                                  widget.note.smw_admit_id,
+                                        );
 
                                         final updatedItem = widget.dataNote.type_card ==
                                                 'Observe'
@@ -882,7 +1078,19 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                                         widget.dataNote.doctor)
                                                 : updatedNote.dataNote.firstWhere(
                                                     (e) => e.item_code == widget.dataNote.item_code && e.type_card == widget.dataNote.type_card && e.doctor == widget.dataNote.doctor);
-
+                                        // final updatedItem =
+                                        //     updatedNote.dataNote.firstWhere(
+                                        //   (e) =>
+                                        //       e.item_code ==
+                                        //           widget.dataNote.item_code &&
+                                        //       e.type_card ==
+                                        //           widget.dataNote.type_card &&
+                                        //       e.doctor ==
+                                        //           widget.dataNote.doctor &&
+                                        //       e.time_slot ==
+                                        //           widget.dataNote.time_slot,
+                                        //   orElse: () => widget.dataNote,
+                                        // );
                                         final files = await NoteApi().loadFile(
                                           context,
                                           orderId: updatedItem
@@ -897,26 +1105,24 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                                 ))
                                             .toList();
 
-                                        if (mounted) {
-                                          setState(() {
-                                            localDataNote = updatedItem;
-                                            _isSaved = true;
-                                            isLoading = false;
-                                            widget.dataNote.status =
-                                                updatedItem.status;
-                                            widget.dataNote.doctor =
-                                                updatedItem.doctor;
-                                            widget.dataNote.save_by_name =
-                                                updatedItem.save_by_name;
-                                            widget.dataNote
-                                                    .smw_transaction_order_id =
-                                                updatedItem
-                                                    .smw_transaction_order_id;
-                                            widget.dataNote.file =
-                                                updatedItem.file;
-                                            widget.onRefresh?.call();
-                                          });
-                                        }
+                                        setState(() {
+                                          localDataNote = updatedItem;
+                                          _isSaved = true;
+                                          isLoading = false;
+                                          widget.dataNote.status =
+                                              updatedItem.status;
+                                          widget.dataNote.doctor =
+                                              updatedItem.doctor;
+                                          widget.dataNote.save_by_name =
+                                              updatedItem.save_by_name;
+                                          widget.dataNote
+                                                  .smw_transaction_order_id =
+                                              updatedItem
+                                                  .smw_transaction_order_id;
+                                          widget.dataNote.file =
+                                              updatedItem.file;
+                                          widget.onRefresh?.call();
+                                        });
                                       },
                                     ).show();
                                   },
@@ -961,16 +1167,6 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                         ),
                     ],
                   ))),
-          // if (!isDisabled && !isSaved && widget.typeCard == 'Observe')
-          //   Positioned(
-          //     top: 8,
-          //     right: 8,
-          //     child: IconButton(
-          //       icon: const Icon(Icons.cancel, color: Colors.red),
-          //       tooltip: 'ลบรายการนี้',
-          //       onPressed: widget.onRemove,
-          //     ),
-          //   )
         ]));
   }
 

@@ -9,6 +9,20 @@ class BoardDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isGreen = data.tone == ColorTone.green;
+
+    // ---- size tuning for green card (เตี้ย) ----
+    final double fontSize = isGreen ? 14 : 16; //>> ข้อความอื่นๆ <<//
+    final double fontSizename = isGreen ? 14 : 18; //>> ชื่อสัตว์ <<//
+    final double avatar = isGreen ? 46 : 70; //>> รูปภาพ <<//
+    final double vTop = isGreen ? 8 : 10; //>> ระยะห่างด้านบน <<//
+    final double Bottom = isGreen ? 26 : 38; //>> ระยะห่างด้านล่าง <<//
+    final double nameLineHeight = isGreen ? 1.0 : 1.05;
+    final double infoLineHeight = isGreen ? 1.05 : 1.2;
+
+    final List<String> petNamesToShow =
+        isGreen ? data.petNames.take(1).toList() : data.petNames;
+
     return Container(
       decoration: BoxDecoration(
         color: BedColors.bgPtOf(data.tone),
@@ -26,13 +40,14 @@ class BoardDetail extends StatelessWidget {
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 38),
+            padding: EdgeInsets.fromLTRB(12, vTop, 12, Bottom),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // avatar
                 Container(
-                  width: 70,
-                  height: 70,
+                  width: avatar,
+                  height: avatar,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
@@ -44,51 +59,55 @@ class BoardDetail extends StatelessWidget {
                           ? 'assets/images/dog1.png'
                           : data.petType == "FE"
                               ? 'assets/images/cat.png'
-                              : 'assets/images/default.png',
-                      width: 50,
-                      height: 50,
+                              : 'assets/images/duck1.png',
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
+
                 const SizedBox(width: 12),
-                Expanded(
+
+                Flexible(
+                  fit: FlexFit.loose,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ...data.petNames.map(
+                      ...petNamesToShow.map(
                         (n) => Text(
-                          '$n${data.petType != null && data.petType!.isNotEmpty ? ' (${data.petType})' : ''}',
+                          '$n${(data.petType != null && data.petType!.isNotEmpty) ? ' (${data.petType})' : ''}',
                           maxLines: 1,
+                          softWrap: false,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
-                            fontSize: 23,
+                            fontSize: fontSizename,
                             color: Colors.grey.shade800,
-                            height: 1.05,
+                            height: nameLineHeight,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: isGreen ? 2 : 4),
                       Text(
                         'คุณ : ${data.ownerName}',
                         maxLines: 1,
+                        softWrap: false,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: fontSize,
                           color: Colors.grey.shade700,
-                          height: 1.2,
+                          height: infoLineHeight,
                         ),
                       ),
                       Text(
                         'HN : ${data.hn}',
                         maxLines: 1,
+                        softWrap: false,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: fontSize,
                           color: Colors.grey.shade700,
-                          height: 1.2,
+                          height: infoLineHeight,
                         ),
                       ),
                     ],
@@ -105,14 +124,17 @@ class BoardDetail extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: data.cornerIcons.map((w) {
+                  final double iconSize = isGreen ? 20.0 : 22.0;
+                  final double gap = isGreen ? 4.0 : 6.0;
                   return Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: SizedBox(width: 35, height: 35, child: w),
+                    padding: EdgeInsets.only(left: gap),
+                    child:
+                        SizedBox(width: iconSize, height: iconSize, child: w),
                   );
                 }).toList(),
               ),
             ),
-          )
+          ),
         ],
       ),
     );

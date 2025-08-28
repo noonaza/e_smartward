@@ -8,9 +8,11 @@ class ListDataRoundwardModel {
   String? drug_instruction;
   String? date_slot;
   String? slot;
-    String? status;
+  String? status;
   String? create_date;
   String? comment;
+  int? save_by;
+  String? save_by_name;
   String? remark;
   ListDataRoundwardModel({
     this.smw_transaction_order_id,
@@ -22,6 +24,8 @@ class ListDataRoundwardModel {
     this.status,
     this.create_date,
     this.comment,
+    this.save_by,
+    this.save_by_name,
     this.remark,
   });
 
@@ -35,6 +39,8 @@ class ListDataRoundwardModel {
     String? status,
     String? create_date,
     String? comment,
+    int? save_by,
+    String? save_by_name,
     String? remark,
   }) {
     return ListDataRoundwardModel(
@@ -47,6 +53,8 @@ class ListDataRoundwardModel {
       status: status ?? this.status,
       create_date: create_date ?? this.create_date,
       comment: comment ?? this.comment,
+      save_by: save_by ?? this.save_by,
+      save_by_name: save_by_name ?? this.save_by_name,
       remark: remark ?? this.remark,
     );
   }
@@ -62,6 +70,8 @@ class ListDataRoundwardModel {
       'status': status,
       'create_date': create_date,
       'comment': comment,
+      'save_by': save_by,
+      'save_by_name': save_by_name,
       'remark': remark,
     };
   }
@@ -77,6 +87,8 @@ class ListDataRoundwardModel {
       status: map['status'] != null ? map['status'] as String : null,
       create_date: map['create_date'] != null ? map['create_date'] as String : null,
       comment: map['comment'] != null ? map['comment'] as String : null,
+      save_by: map['save_by'] != null ? map['save_by'] as int : null,
+      save_by_name: map['save_by_name'] != null ? map['save_by_name'] as String : null,
       remark: map['remark'] != null ? map['remark'] as String : null,
     );
   }
@@ -87,7 +99,7 @@ class ListDataRoundwardModel {
 
   @override
   String toString() {
-    return 'ListDataRoundwardModel(smw_transaction_order_id: $smw_transaction_order_id, smw_transaction_id: $smw_transaction_id, item_name: $item_name, drug_instruction: $drug_instruction, date_slot: $date_slot, slot: $slot, status: $status, create_date: $create_date, comment: $comment, remark: $remark)';
+    return 'ListDataRoundwardModel(smw_transaction_order_id: $smw_transaction_order_id, smw_transaction_id: $smw_transaction_id, item_name: $item_name, drug_instruction: $drug_instruction, date_slot: $date_slot, slot: $slot, status: $status, create_date: $create_date, comment: $comment, save_by: $save_by, save_by_name: $save_by_name, remark: $remark)';
   }
 
   @override
@@ -104,6 +116,8 @@ class ListDataRoundwardModel {
       other.status == status &&
       other.create_date == create_date &&
       other.comment == comment &&
+      other.save_by == save_by &&
+      other.save_by_name == save_by_name &&
       other.remark == remark;
   }
 
@@ -118,6 +132,8 @@ class ListDataRoundwardModel {
       status.hashCode ^
       create_date.hashCode ^
       comment.hashCode ^
+      save_by.hashCode ^
+      save_by_name.hashCode ^
       remark.hashCode;
   }
 }

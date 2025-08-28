@@ -51,7 +51,11 @@ class NoteApi {
                 ward: item['ward'],
                 room_type: item['room_type'],
                 bed_number: item['bed_number'],
+                              admit_date: item['admit_date'],
+              admit_time: item['admit_time'],
+              admit_datetimes: item['admit_datetimes'],
                 doctor: item['doctor']);
+                
           }).toList();
         }
       } else if (response.data['code'] == 401) {
@@ -81,12 +85,9 @@ class NoteApi {
         api,
         data: {
           'visit_id': visitId,
-          //'date_time': DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())
           'date_time': DateFormat('yyyy-MM-dd HH:00')
               .format(DateTime.now().add(const Duration(minutes: 15))),
         },
-
-        // 'date_time': DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())
         options: Options(headers: headers_),
       );
 
@@ -130,6 +131,10 @@ class NoteApi {
                   doctor: card['doctor']?.toString() ?? '',
                   comment: card['comment']?.toString() ?? '',
                   status: card['status']?.toString() ?? '',
+                  file_count: card['file_count'] is int
+                      ? card['file_count']
+                      : int.tryParse(
+                          card['file_count']?.toString() ?? ''),
                 ));
               }
             }

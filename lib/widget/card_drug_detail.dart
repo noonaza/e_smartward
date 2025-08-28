@@ -39,10 +39,10 @@ class DrugListWidgetState extends State<DrugListWidget> {
 
   List<DoctorModel> ListDoctors = [];
 
-  bool get isHideBtn {
-    return widget.lDataCard
-        .any((e) => e.id != null && e.id.toString().trim().isNotEmpty);
-  }
+  // bool get isHideBtn {
+  //   return widget.lDataCard
+  //       .every((e) => e.id != null && e.id.toString().trim().isNotEmpty);
+  // }
 
   final tooltipController = JustTheController();
 
@@ -53,6 +53,11 @@ class DrugListWidgetState extends State<DrugListWidget> {
       isConfirmed = true;
     });
   }
+
+  bool get _hasAnyId => widget.lDataCard
+      .any((e) => e.id != null && e.id.toString().trim().isNotEmpty);
+
+  bool get _hideAddButton => isConfirmed || _hasAnyId;
 
   @override
   void initState() {
@@ -343,7 +348,7 @@ class DrugListWidgetState extends State<DrugListWidget> {
                                       ),
                                     ),
                                   ),
-                                  if (!isHideBtn)
+                                  if (!_hideAddButton)
                                     Positioned(
                                       right: 8.0,
                                       top: 10.0,
@@ -368,9 +373,7 @@ class DrugListWidgetState extends State<DrugListWidget> {
                         },
                       ),
               ),
-              if (isConfirmed &&
-                  (widget.lDataCard.isEmpty ||
-                      widget.lDataCard.any((e) => e.id == null)))
+              if (!_hideAddButton)
                 Positioned(
                   right: 8.0,
                   bottom: 8.0,
