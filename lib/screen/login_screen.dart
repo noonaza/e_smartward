@@ -271,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 5),
                       Text(
-                        'Update $formattedDate | Version ${TlConstant.version} 888',
+                        'Update $formattedDate | Version ${TlConstant.version} 8885555',
                         style:
                             const TextStyle(color: Colors.grey, fontSize: 12),
                       )
