@@ -5,13 +5,11 @@ import 'package:e_smartward/Model/data_add_order_mpdel.dart';
 import 'package:e_smartward/Model/list_an_model.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
-import 'package:e_smartward/Model/new_order_model.dart';
 import 'package:e_smartward/api/roundward_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:e_smartward/Model/doctor_model.dart';
-import 'package:e_smartward/Model/list_data_card_model.dart';
 import 'package:e_smartward/api/admit_api.dart';
 import 'package:e_smartward/widget/action_slider.dart';
 import 'package:e_smartward/widget/button.dart';
@@ -20,6 +18,7 @@ import 'package:e_smartward/widget/textfield.dart';
 import 'package:e_smartward/widget/time.dart';
 import 'package:e_smartward/widget/text.dart';
 
+// ignore: must_be_immutable
 class CheckDrugOrderDialog extends StatefulWidget {
   String screen;
   final DataAddOrderModel drug;

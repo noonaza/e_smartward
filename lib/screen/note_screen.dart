@@ -1,6 +1,9 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first, must_be_immutable
+import 'dart:async';
+
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:e_smartward/dialog/chat_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
@@ -58,7 +61,7 @@ class _NoteScreenState extends State<NoteScreen> {
   String? visit_id;
 
   bool _isSubmitting = false;
-  AwesomeDialog? _sendingDialog;
+
   List<String> setValue = [
     'เดินเล่น',
     'แปรงขน',
@@ -68,6 +71,7 @@ class _NoteScreenState extends State<NoteScreen> {
     'แปรงขน': false,
   };
   late ScrollController _scrollController;
+
   Map<int, Map<String, bool>> selectedValuesMap = {};
 
   TextEditingController tremark = TextEditingController();
@@ -85,9 +89,20 @@ class _NoteScreenState extends State<NoteScreen> {
     return note.dataNote.every((item) => item.pre_pare_status == '1');
   }
 
+  bool get _hasDraftOrUnsaved {
+    if (newNote != null) return true;
+
+    return lDataNote.any((note) {
+      if (note.id == null) return true;
+
+      return note.dataNote.any((item) => item.smw_transaction_order_id == null);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    selectedSite = widget.lUserLogin.first.site_code;
     lRemarkController = List.generate(lDataNote.length, (index) {
       return TextEditingController(text: lDataNote[index].remark ?? '');
     });
@@ -97,11 +112,13 @@ class _NoteScreenState extends State<NoteScreen> {
   @override
   void dispose() {
     remarkNewNote?.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    String? userDefaultSiteCode = widget.lUserLogin.first.site_code;
     final filteredList = lPetAdmit.where((pet) {
       final hn = (pet.hn ?? '').toLowerCase();
       final name = (pet.pet_name ?? '').toLowerCase();
@@ -237,12 +254,18 @@ class _NoteScreenState extends State<NoteScreen> {
                                     height: 30,
                                     child: SiteDropdown(
                                       headers_: widget.headers,
+                                      initialSiteCode: userDefaultSiteCode,
                                       onSelected: (siteCodeName) {
                                         setState(() {
                                           selectedSite = siteCodeName;
                                           selectedWard = null;
                                           showCard = false;
                                           errorMessage = null;
+                                          lPetAdmit = [];
+
+                                          visit_id = null;
+                                          lDataNote = [];
+                                          newNote = null;
                                         });
                                       },
                                     ),
@@ -266,6 +289,12 @@ class _NoteScreenState extends State<NoteScreen> {
                                             selectedWard = ward;
                                             showCard = false;
                                             errorMessage = null;
+
+                                            // เคลียร์ตัวแปรที่มีในหน้านี้
+                                            lPetAdmit = [];
+                                            lDataNote = [];
+                                            newNote = null;
+                                            visit_id = null;
                                           });
                                         },
                                       )),
@@ -380,7 +409,14 @@ class _NoteScreenState extends State<NoteScreen> {
                                 const BorderSide(color: Colors.teal, width: 2),
                           ),
                         ),
-                        onChanged: (value) => setState(() => searchPet = value),
+                        onChanged: (value) {
+                          setState(() {
+                            searchPet = value;
+                            lDataNote = [];
+                            newNote = null;
+                            visit_id = null;
+                          });
+                        },
                       ),
                     ),
                   ),
@@ -401,6 +437,8 @@ class _NoteScreenState extends State<NoteScreen> {
                               : ListView.builder(
                                   scrollDirection: Axis.horizontal,
                                   itemCount: listToShow.length,
+                                  key: const PageStorageKey(''),
+                                  controller: _scrollController,
                                   itemBuilder: (context, index) {
                                     final pet = listToShow[index];
                                     String hn = pet.hn ?? '';
@@ -424,8 +462,7 @@ class _NoteScreenState extends State<NoteScreen> {
                                           SizedBox(
                                             child: ElevatedButton(
                                               onPressed: () async {
-                                                final visitId =
-                                                    lPetAdmit[index].visit_id;
+                                                final visitId = pet.visit_id;
                                                 if (visitId == null) return;
 
                                                 setState(() {
@@ -465,11 +502,10 @@ class _NoteScreenState extends State<NoteScreen> {
                                                 });
                                               },
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: visit_id ==
-                                                        lPetAdmit[index]
-                                                            .visit_id
-                                                    ? Colors.teal[100]
-                                                    : Colors.white,
+                                                backgroundColor:
+                                                    visit_id == pet.visit_id
+                                                        ? Colors.teal[100]
+                                                        : Colors.white,
                                                 side: const BorderSide(
                                                     color: Colors.teal,
                                                     width: 2),
@@ -485,7 +521,7 @@ class _NoteScreenState extends State<NoteScreen> {
                                               ),
                                               child: Padding(
                                                 padding: const EdgeInsets.only(
-                                                    left: 50.0),
+                                                    left: 100.0),
                                                 child: text(
                                                     context, formattedText,
                                                     textAlign: TextAlign.start,
@@ -493,14 +529,71 @@ class _NoteScreenState extends State<NoteScreen> {
                                               ),
                                             ),
                                           ),
-                                          const Positioned(
+                                          Positioned(
+                                              right: 5,
+                                              top: 20,
+                                              child: IconButton(
+                                                  icon: const Icon(
+                                                      Icons.note_alt,
+                                                      color: Colors.teal,
+                                                      size: 28),
+                                                  onPressed: () {
+                                                    final admitId =
+                                                        pet.visit_id;
+                                                    showDialog(
+                                                      context: context,
+                                                      barrierDismissible: true,
+                                                      builder: (_) =>
+                                                          ChatDialog(
+                                                        headers: widget.headers,
+                                                        visitId: admitId ?? '',
+                                                        lUserLogin:
+                                                            widget.lUserLogin,
+                                                      ),
+                                                    );
+                                                  })),
+                                          Positioned(
                                             left: 8,
-                                            child: CircleAvatar(
-                                              radius: 25,
-                                              backgroundImage: AssetImage(
-                                                  'assets/images/ward.png'),
+                                            child: FutureBuilder<ImageInfo>(
+                                              future: _getImageInfo(pet.image),
+                                              builder: (context, snapshot) {
+                                                ImageProvider imageProvider;
+
+                                                if (snapshot.hasData) {
+                                                  final size =
+                                                      snapshot.data!.image;
+                                                  if (size.width == 80 &&
+                                                      size.height == 80) {
+                                                    imageProvider =
+                                                        const AssetImage(
+                                                            'assets/images/petnull.png');
+                                                  } else {
+                                                    imageProvider =
+                                                        NetworkImage(
+                                                            pet.image!.trim());
+                                                  }
+                                                } else {
+                                                  imageProvider = const AssetImage(
+                                                      'assets/images/petnull.png');
+                                                }
+
+                                                return Container(
+                                                  width: 100,
+                                                  height: 100,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                        color: Colors.teal,
+                                                        width: 2),
+                                                    image: DecorationImage(
+                                                      fit: BoxFit.cover,
+                                                      image: imageProvider,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
                                             ),
-                                          ),
+                                          )
                                         ],
                                       ),
                                     );
@@ -743,7 +836,6 @@ class _NoteScreenState extends State<NoteScreen> {
                                           return;
                                         }
 
-                                        // 2) สร้าง payload
                                         final mNoteData =
                                             CreateTransectionModel(
                                           smw_admit_id:
@@ -1238,9 +1330,11 @@ class _NoteScreenState extends State<NoteScreen> {
                   ),
               ]))),
               if (showCard &&
-                  newNote == null &&
+                  !_hasDraftOrUnsaved &&
+                  visit_id != null &&
                   ((isWardMode &&
                           selectedSite != null &&
+                          visit_id != null &&
                           selectedWard != null) ||
                       (!isWardMode && selectedGroupId != null)))
                 Padding(
@@ -1253,6 +1347,7 @@ class _NoteScreenState extends State<NoteScreen> {
                         color: Colors.teal,
                         iconSize: 35,
                         onPressed: () async {
+                          if (_hasDraftOrUnsaved) return;
                           if (visit_id == null) return;
 
                           final noteDetailList = await NoteApi().loadNoteDetail(
@@ -1312,38 +1407,23 @@ class _NoteScreenState extends State<NoteScreen> {
             ])));
   }
 
-  // void _showSendingDialog() {
-  //   _sendingDialog?.dismiss();
-  //   _sendingDialog = AwesomeDialog(
-  //     context: context,
-  //     customHeader: Lottie.asset(
-  //       "assets/animations/Send1.json",
-  //       repeat: true,
-  //       width: 200,
-  //       height: 100,
-  //       fit: BoxFit.contain,
-  //     ),
-  //     dialogType: DialogType.noHeader,
-  //     animType: AnimType.scale,
-  //     dismissOnTouchOutside: false,
-  //     dismissOnBackKeyPress: false,
-  //     width: MediaQuery.of(context).size.width * 0.3,
-  //     body: const Column(
-  //       mainAxisSize: MainAxisSize.min,
-  //       children: [
-  //         SizedBox(height: 10),
-  //         Text("กำลังส่งข้อมูล กรุณารอสักครู่...",
-  //             textAlign: TextAlign.center, style: TextStyle(fontSize: 14)),
-  //         SizedBox(height: 10),
-  //       ],
-  //     ),
-  //   )..show();
-  // }
+  // ฟังก์ชันเช็คขนาดรูป
+  Future<ImageInfo> _getImageInfo(String? url) async {
+    if (url == null || url.trim().isEmpty || url.toLowerCase() == 'null') {
+      throw Exception("No image");
+    }
 
-  // void _dismissSendingDialog() {
-  //   try {
-  //     _sendingDialog?.dismiss();
-  //   } catch (_) {}
-  //   _sendingDialog = null;
-  // }
+    final completer = Completer<ImageInfo>();
+    final imageProvider = NetworkImage(url.trim());
+
+    imageProvider.resolve(const ImageConfiguration()).addListener(
+          ImageStreamListener((ImageInfo info, bool _) {
+            completer.complete(info);
+          }, onError: (dynamic _, __) {
+            completer.completeError("Load error");
+          }),
+        );
+
+    return completer.future;
+  }
 }

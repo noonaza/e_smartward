@@ -1,4 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:async';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:e_smartward/Model/add_order_model.dart';
 import 'package:e_smartward/Model/data_add_order_mpdel.dart';
@@ -13,6 +15,7 @@ import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/Model/new_order_model.dart';
 import 'package:e_smartward/api/note_api.dart';
 import 'package:e_smartward/api/roundward_api.dart';
+import 'package:e_smartward/dialog/chat_dialog.dart';
 import 'package:e_smartward/dialog/check_drug_order.dart';
 import 'package:e_smartward/dialog/check_food_order.dart';
 import 'package:e_smartward/dialog/create_drug_dialog.dart';
@@ -21,7 +24,6 @@ import 'package:e_smartward/dialog/create_obs_dialog.dart';
 import 'package:e_smartward/dialog/progress_note_dialog.dart';
 import 'package:e_smartward/widget/card_roundward.dart';
 import 'package:e_smartward/widget/dropdown.dart';
-import 'package:e_smartward/widget/show_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:e_smartward/widget/header.dart';
 import 'package:e_smartward/widget/text.dart';
@@ -35,9 +37,9 @@ class RoundWardScreen extends StatefulWidget {
   Map<String, String> headers;
   List<ListUserModel> lUserLogin = [];
   final List<ListPetModel> lPetAdmit;
-
   final List<ListAnModel> lListAn;
   String? hnNumber;
+
   RoundWardScreen({
     super.key,
     required this.lDataCard,
@@ -78,6 +80,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
   DateTime _selectedDate = DateTime.now();
   TextEditingController searchController = TextEditingController();
   String searchPet = '';
+  bool _isLoadingNewOrder = false;
 
   int iMenu = 1;
   bool isLoadingTab = false;
@@ -105,34 +108,10 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
   DateTime selectedDate = DateTime.now();
 
-  Future<void> _refreshAllGroups() async {
-    final futures = <Future<List<ListRoundwardModel>>>[];
-
-    for (final group in lGroupTabs) {
-      futures.add(
-        RoundWardApi().loadDataRoundWard(
-          context,
-          headers_: widget.headers,
-          mListAn_: selectedAnModel!,
-          mGroup_: group,
-        ),
-      );
-    }
-
-    final results = await Future.wait(futures);
-
-    if (!mounted) return;
-    setState(() {
-      for (int i = 0; i < lGroupTabs.length; i++) {
-        final key = lGroupTabs[i].type_name ?? '-';
-        groupedCardData[key] = results[i];
-      }
-    });
-  }
-
   @override
   void initState() {
     super.initState();
+    selectedSite = widget.lUserLogin.first.site_code;
   }
 
   @override
@@ -149,7 +128,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
       final query = searchPet.toLowerCase();
       return hn.contains(query) || name.contains(query);
     }).toList();
-
+    String? userDefaultSiteCode = widget.lUserLogin.first.site_code;
     final listToShow = searchPet.trim().isEmpty ? lPetAdmit : filteredList;
     return Material(
       child: Container(
@@ -241,6 +220,8 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                           height: 30,
                                           child: SiteDropdown(
                                             headers_: widget.headers,
+                                            initialSiteCode:
+                                                userDefaultSiteCode,
                                             onSelected: (siteCodeName) {
                                               setState(() {
                                                 selectedSite = siteCodeName;
@@ -275,6 +256,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                           width: 300,
                                           height: 30,
                                           child: WardDropdown(
+                                            key: ValueKey(selectedSite),
                                             headers_: widget.headers,
                                             selectedSiteCode: selectedSite,
                                             onSelected: (ward) {
@@ -403,8 +385,15 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                         color: Colors.teal, width: 2),
                                   ),
                                 ),
-                                onChanged: (value) =>
-                                    setState(() => searchPet = value),
+                                onChanged: (value) {
+                                  setState(() {
+                                    searchPet = value;
+                                    lGroupTabs = [];
+                                    lListAn = [];
+                                    //  = null;
+                                    // visit_id = null;
+                                  });
+                                },
                               ),
                             ),
                           ),
@@ -451,9 +440,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                     SizedBox(
                                                       child: ElevatedButton(
                                                         onPressed: () async {
-                                                          final hn =
-                                                              lPetAdmit[index]
-                                                                  .hn;
+                                                          final hn = pet.hn;
 
                                                           if (hn == null ||
                                                               hn.isEmpty) {
@@ -484,9 +471,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                             context,
                                                             headers_:
                                                                 widget.headers,
-                                                            mPetAdmit_:
-                                                                lPetAdmit[
-                                                                    index],
+                                                            mPetAdmit_: pet,
                                                           );
 
                                                           if (!mounted) return;
@@ -499,9 +484,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                             .styleFrom(
                                                           backgroundColor:
                                                               selectedHn ==
-                                                                      lPetAdmit[
-                                                                              index]
-                                                                          .hn
+                                                                      pet.hn
                                                                   ? Colors
                                                                       .teal[100]
                                                                   : Colors
@@ -529,7 +512,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                           padding:
                                                               const EdgeInsets
                                                                   .only(
-                                                                  left: 50.0),
+                                                                  left: 100.0),
                                                           child: text(context,
                                                               formattedText,
                                                               textAlign:
@@ -540,14 +523,77 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                         ),
                                                       ),
                                                     ),
-                                                    const Positioned(
-                                                      left: 8,
-                                                      child: CircleAvatar(
-                                                        radius: 25,
-                                                        backgroundImage: AssetImage(
-                                                            'assets/images/ward.png'),
-                                                      ),
-                                                    ),
+
+                                                    Positioned(
+                                                        right: 5,
+                                                        top: 30,
+                                                        child: IconButton(
+                                                            icon: const Icon(
+                                                                Icons.note_alt,
+                                                                color:
+                                                                    Colors.teal,
+                                                                size: 28),
+                                                            onPressed: () {
+                                                              final admitId =
+                                                                  pet.visit_id;
+                                                              showDialog(
+                                                                context:
+                                                                    context,
+                                                                barrierDismissible:
+                                                                    true,
+                                                                builder: (_) =>
+                                                                    ChatDialog(
+                                                                  headers: widget
+                                                                      .headers,
+                                                                  visitId:
+                                                                      admitId ??
+                                                                          '',
+                                                                  lUserLogin: widget
+                                                                      .lUserLogin,
+                                                                ),
+                                                              );
+                                                            })),
+
+                                                    Positioned(
+  left: 8,
+  child: FutureBuilder<ImageInfo>(
+    future: _getImageInfo(pet.image),
+    builder: (context, snapshot) {
+      ImageProvider imageProvider;
+
+      if (snapshot.hasData) {
+        final size = snapshot.data!.image;
+        if (size.width == 80 && size.height == 80) {
+          // ถ้าขนาด 80*80 → ใช้ default
+          imageProvider = const AssetImage('assets/images/petnull.png');
+        } else {
+          imageProvider = NetworkImage(pet.image!.trim());
+        }
+      } else {
+        // โหลดไม่ทันหรือ error → แสดง default
+        imageProvider = const AssetImage('assets/images/petnull.png');
+      }
+
+      return Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.teal, width: 2),
+          image: DecorationImage(
+            fit: BoxFit.cover,
+            image: imageProvider,
+          ),
+        ),
+      );
+    },
+  ),
+)
+
+
+
+//
+// ),
                                                   ],
                                                 ),
                                               );
@@ -638,24 +684,24 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                       .headers,
                                                                 );
 
-                                                                final newOrders =
-                                                                    await RoundWardApi()
-                                                                        .loadNewOrder(
-                                                                  context,
-                                                                  mPetAdmit_:
-                                                                      mPetAdmit_!,
-                                                                  headers_: widget
-                                                                      .headers,
-                                                                );
-                                                                setState(() {
-                                                                  hasNewOrders =
-                                                                      newOrders
-                                                                          .isNotEmpty;
-                                                                });
+                                                                // final newOrders =
+                                                                //     await RoundWardApi()
+                                                                //         .loadNewOrder(
+                                                                //   context,
+                                                                //   mPetAdmit_:
+                                                                //       mPetAdmit_!,
+                                                                //   headers_: widget
+                                                                //       .headers,
+                                                                // );
+                                                                // setState(() {
+                                                                //   hasNewOrders =
+                                                                //       newOrders
+                                                                //           .isNotEmpty;
+                                                                // });
 
-                                                                if (!mounted) {
-                                                                  return;
-                                                                }
+                                                                // if (!mounted) {
+                                                                //   return;
+                                                                // }
 
                                                                 if (groupTabs
                                                                     .isNotEmpty) {
@@ -684,6 +730,24 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                     tempGroupedData[
                                                                         group.type_name ??
                                                                             "-"] = data;
+                                                                  }
+                                                                  final newOrders =
+                                                                      await RoundWardApi()
+                                                                          .loadNewOrder(
+                                                                    context,
+                                                                    mPetAdmit_:
+                                                                        mPetAdmit_!,
+                                                                    headers_: widget
+                                                                        .headers,
+                                                                  );
+                                                                  setState(() {
+                                                                    hasNewOrders =
+                                                                        newOrders
+                                                                            .isNotEmpty;
+                                                                  });
+
+                                                                  if (!mounted) {
+                                                                    return;
                                                                   }
 
                                                                   setState(() {
@@ -747,126 +811,131 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                         },
                                                       ),
                                                     ),
-                                                    IconButton(
-                                                      icon: Icon(
-                                                        Icons.menu_book_rounded,
-                                                        size: 35,
-                                                        color:
-                                                            selectedAnModel ==
-                                                                    null
-                                                                ? Colors.grey
-                                                                : const Color
-                                                                    .fromARGB(
-                                                                    255,
-                                                                    77,
-                                                                    156,
-                                                                    216),
-                                                      ),
-                                                      onPressed: () async {
-                                                        final dialog =
-                                                            AwesomeDialog(
-                                                          context: context,
-                                                          customHeader:
-                                                              Image.asset(
-                                                            "assets/gif/load.gif",
-                                                            width: 200,
-                                                            height: 100,
-                                                            fit: BoxFit.contain,
-                                                          ),
-                                                          dialogType: DialogType
-                                                              .noHeader,
-                                                          animType:
-                                                              AnimType.scale,
-                                                          dismissOnTouchOutside:
-                                                              false,
-                                                          dismissOnBackKeyPress:
-                                                              false,
-                                                          width: MediaQuery.of(
-                                                                      context)
-                                                                  .size
-                                                                  .width *
-                                                              0.3,
-                                                          body: Column(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .center,
-                                                            children: const [
-                                                              SizedBox(
-                                                                  height: 10),
-                                                              Text(
-                                                                "กำลังโหลดข้อมูล Progress Note กรุณารอสักครู่...",
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .center,
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        16),
-                                                              ),
-                                                              SizedBox(
-                                                                  height: 10),
-                                                            ],
-                                                          ),
-                                                        );
+                                                    if (selectedAnModel != null)
+                                                      IconButton(
+                                                        icon: Icon(
+                                                          Icons
+                                                              .menu_book_rounded,
+                                                          size: 35,
+                                                          color:
+                                                              selectedAnModel ==
+                                                                      null
+                                                                  ? Colors.grey
+                                                                  : const Color
+                                                                      .fromARGB(
+                                                                      255,
+                                                                      77,
+                                                                      156,
+                                                                      216),
+                                                        ),
+                                                        onPressed: () async {
+                                                          final dialog =
+                                                              AwesomeDialog(
+                                                            context: context,
+                                                            customHeader:
+                                                                Image.asset(
+                                                              "assets/gif/load.gif",
+                                                              width: 200,
+                                                              height: 100,
+                                                              fit: BoxFit
+                                                                  .contain,
+                                                            ),
+                                                            dialogType:
+                                                                DialogType
+                                                                    .noHeader,
+                                                            animType:
+                                                                AnimType.scale,
+                                                            dismissOnTouchOutside:
+                                                                false,
+                                                            dismissOnBackKeyPress:
+                                                                false,
+                                                            width: MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width *
+                                                                0.3,
+                                                            body: Column(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .center,
+                                                              children: const [
+                                                                SizedBox(
+                                                                    height: 10),
+                                                                Text(
+                                                                  "กำลังโหลดข้อมูล Progress Note กรุณารอสักครู่...",
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
+                                                                  style: TextStyle(
+                                                                      fontSize:
+                                                                          16),
+                                                                ),
+                                                                SizedBox(
+                                                                    height: 10),
+                                                              ],
+                                                            ),
+                                                          );
 
-                                                        dialog.show();
+                                                          dialog.show();
 
-                                                        final matchedPet =
-                                                            lPetAdmit
-                                                                .firstWhere(
-                                                          (pet) =>
-                                                              pet.an ==
-                                                              selectedAnModel
-                                                                  ?.an_number,
-                                                          orElse: () =>
-                                                              ListPetModel(),
-                                                        );
+                                                          final matchedPet =
+                                                              lPetAdmit
+                                                                  .firstWhere(
+                                                            (pet) =>
+                                                                pet.an ==
+                                                                selectedAnModel
+                                                                    ?.an_number,
+                                                            orElse: () =>
+                                                                ListPetModel(),
+                                                          );
 
-                                                        final progressList =
-                                                            await RoundWardApi()
-                                                                .loadProgress(
-                                                          context,
-                                                          headers_:
-                                                              widget.headers,
-                                                          mPetAdmit_:
-                                                              matchedPet,
-                                                        );
+                                                          final progressList =
+                                                              await RoundWardApi()
+                                                                  .loadProgress(
+                                                            context,
+                                                            headers_:
+                                                                widget.headers,
+                                                            mPetAdmit_:
+                                                                matchedPet,
+                                                          );
 
-                                                        if (!context.mounted) {
-                                                          return;
-                                                        }
+                                                          if (!context
+                                                              .mounted) {
+                                                            return;
+                                                          }
 
-                                                        setState(() {
-                                                          lProgressNote =
-                                                              progressList;
-                                                          showNote = true;
-                                                        });
+                                                          setState(() {
+                                                            lProgressNote =
+                                                                progressList;
+                                                            showNote = true;
+                                                          });
 
-                                                        Navigator.of(context,
-                                                                rootNavigator:
-                                                                    true)
-                                                            .pop();
+                                                          Navigator.of(context,
+                                                                  rootNavigator:
+                                                                      true)
+                                                              .pop();
 
-                                                        showDialog(
-                                                          context: context,
-                                                          builder: (context) {
-                                                            return ProgressNoteDialog(
-                                                              lProgressNote:
-                                                                  lProgressNote,
-                                                              onClose: () =>
-                                                                  Navigator.of(
-                                                                          context)
-                                                                      .pop(),
-                                                            );
-                                                          },
-                                                        );
-                                                      },
-                                                    )
+                                                          showDialog(
+                                                            context: context,
+                                                            builder: (context) {
+                                                              return ProgressNoteDialog(
+                                                                lProgressNote:
+                                                                    lProgressNote,
+                                                                onClose: () =>
+                                                                    Navigator.of(
+                                                                            context)
+                                                                        .pop(),
+                                                              );
+                                                            },
+                                                          );
+                                                        },
+                                                      )
                                                   ],
                                                 ),
                                               ),
@@ -1376,97 +1445,98 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                               },
                                                             ),
                                                             SpeedDialChild(
-                                                              child: Stack(
-                                                                children: [
-                                                                  Image.asset(
-                                                                    'assets/icons/add_cat.png',
-                                                                    width: 28,
-                                                                    height: 28,
-                                                                  ),
-                                                                  if (hasNewOrders)
-                                                                    Positioned(
-                                                                      right: 0,
-                                                                      top: 0,
-                                                                      child:
-                                                                          Container(
-                                                                        width:
-                                                                            8,
-                                                                        height:
-                                                                            8,
-                                                                        decoration:
-                                                                            const BoxDecoration(
-                                                                          color:
-                                                                              Colors.red,
-                                                                          shape:
-                                                                              BoxShape.circle,
+                                                                child: Stack(
+                                                                  children: [
+                                                                    Image.asset(
+                                                                      'assets/icons/add_cat.png',
+                                                                      width: 28,
+                                                                      height:
+                                                                          28,
+                                                                    ),
+                                                                    if (hasNewOrders)
+                                                                      Positioned(
+                                                                        right:
+                                                                            0,
+                                                                        top: 0,
+                                                                        child:
+                                                                            Container(
+                                                                          width:
+                                                                              8,
+                                                                          height:
+                                                                              8,
+                                                                          decoration:
+                                                                              const BoxDecoration(
+                                                                            color:
+                                                                                Colors.red,
+                                                                            shape:
+                                                                                BoxShape.circle,
+                                                                          ),
                                                                         ),
                                                                       ),
-                                                                    ),
-                                                                ],
-                                                              ),
-                                                              backgroundColor:
-                                                                  Colors
-                                                                      .lightBlue
-                                                                      .shade100,
-                                                              label:
-                                                                  'รายการใหม่',
-                                                              onTap: () {
-                                                                final currentTab =
-                                                                    lGroupTabs[
-                                                                        _tabController!
-                                                                            .index];
+                                                                  ],
+                                                                ),
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .lightBlue
+                                                                        .shade100,
+                                                                label:
+                                                                    'รายการใหม่',
+                                                                onTap:
+                                                                    () async {
+                                                                  if (_isLoadingNewOrder)
+                                                                    return;
+                                                                  _isLoadingNewOrder =
+                                                                      true;
 
-                                                                if (mPetAdmit_ !=
-                                                                        null &&
-                                                                    mPetAdmit_!
-                                                                            .visit_id !=
-                                                                        null) {
-                                                                  showNewOrderDialog(
-                                                                    context,
-                                                                    mPetAdmit_!,
-                                                                    widget
-                                                                        .headers,
-                                                                    selectedAnModel!,
-                                                                    widget
-                                                                        .lUserLogin
-                                                                        .first,
-                                                                    selectedAnModel!,
-                                                                    currentTab,
-                                                                    (updatedData,
-                                                                        hasNew) async {
-                                                                      groupedCardData
-                                                                          .clear();
+                                                                  try {
+                                                                    final currentTab =
+                                                                        lGroupTabs[
+                                                                            _tabController!.index];
+                                                                    if (mPetAdmit_?.visit_id !=
+                                                                            null &&
+                                                                        selectedAnModel !=
+                                                                            null) {
+                                                                      await showNewOrderDialog(
+                                                                        context,
+                                                                        mPetAdmit_!,
+                                                                        widget
+                                                                            .headers,
+                                                                        selectedAnModel!,
+                                                                        widget
+                                                                            .lUserLogin
+                                                                            .first,
+                                                                        selectedAnModel!,
+                                                                        currentTab,
+                                                                        (updatedData,
+                                                                            hasNew) async {
+                                                                          groupedCardData
+                                                                              .clear();
+                                                                          setState(
+                                                                              () {});
 
-                                                                      setState(
-                                                                          () {});
-                                                                      Future.delayed(Duration(
-                                                                          milliseconds:
-                                                                              100));
-                                                                      for (var group
-                                                                          in lGroupTabs) {
-                                                                        List<ListRoundwardModel>
-                                                                            data_ =
-                                                                            await RoundWardApi().loadDataRoundWard(
-                                                                          context,
-                                                                          headers_:
-                                                                              widget.headers,
-                                                                          mListAn_:
-                                                                              selectedAnModel!,
-                                                                          mGroup_:
-                                                                              group,
-                                                                        );
-                                                                        groupedCardData[group.type_name ??
-                                                                                '-'] =
-                                                                            data_;
-                                                                      }
+                                                                          for (final group
+                                                                              in lGroupTabs) {
+                                                                            final data =
+                                                                                await RoundWardApi().loadDataRoundWard(
+                                                                              context,
+                                                                              headers_: widget.headers,
+                                                                              mListAn_: selectedAnModel!,
+                                                                              mGroup_: group,
+                                                                            );
+                                                                            groupedCardData[group.type_name ?? '-'] =
+                                                                                data;
+                                                                          }
 
-                                                                      setState(
-                                                                          () {});
-                                                                    },
-                                                                  );
-                                                                } else {}
-                                                              },
-                                                            ),
+                                                                          if (mounted)
+                                                                            setState(() {});
+                                                                        },
+                                                                      );
+                                                                    }
+                                                                  } finally {
+                                                                    _isLoadingNewOrder =
+                                                                        false;
+                                                                  }
+                                                                }),
                                                           ],
                                                         ),
                                                       ),
@@ -1504,38 +1574,49 @@ class _RoundWardScreenState extends State<RoundWardScreen>
     bool isLoading = true;
     String? loadError;
 
+    bool requestedOnce = false;
+    bool busy = false;
+
+    Future<void> refreshOrders(StateSetter setState) async {
+      if (busy) return;
+      busy = true;
+      try {
+        setState(() {
+          isLoading = true;
+          loadError = null;
+        });
+
+        final reloaded = await RoundWardApi().loadNewOrder(
+          context,
+          mPetAdmit_: mPetAdmit_,
+          headers_: headers_,
+        );
+
+        setState(() {
+          orders = reloaded;
+          isLoading = false;
+        });
+      } catch (e) {
+        setState(() {
+          loadError = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+          isLoading = false;
+        });
+      } finally {
+        busy = false;
+      }
+    }
+
     await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            Future<void> refreshOrders() async {
-              try {
-                setState(() {
-                  isLoading = true;
-                  loadError = null;
-                });
-                final reloaded = await RoundWardApi().loadNewOrder(
-                  context,
-                  mPetAdmit_: mPetAdmit_,
-                  headers_: headers_,
-                );
-                setState(() {
-                  orders = reloaded;
-                  isLoading = false;
-                });
-              } catch (e) {
-                setState(() {
-                  loadError = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
-                  isLoading = false;
-                });
-              }
-            }
-
-            if (isLoading && orders.isEmpty && loadError == null) {
-              WidgetsBinding.instance
-                  .addPostFrameCallback((_) => refreshOrders());
+            if (!requestedOnce) {
+              requestedOnce = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                refreshOrders(setState);
+              });
             }
 
             return Dialog(
@@ -1550,6 +1631,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Header
                       Container(
                         width: double.maxFinite,
                         padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
@@ -1559,10 +1641,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF00B4D8),
-                              Color(0xFF48CAE4),
-                            ],
+                            colors: [Color(0xFF00B4D8), Color(0xFF48CAE4)],
                           ),
                         ),
                         child: const Row(
@@ -1583,252 +1662,259 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                           ],
                         ),
                       ),
+
                       SizedBox(
                         height: 460,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                          child: Builder(
-                            builder: (_) {
-                              if (isLoading) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                              if (loadError != null) {
-                                return Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(loadError!,
-                                        style:
-                                            const TextStyle(color: Colors.red)),
-                                    const SizedBox(height: 12),
-                                    OutlinedButton.icon(
-                                      onPressed: refreshOrders,
-                                      icon: const Icon(Icons.refresh),
-                                      label: const Text('ลองอีกครั้ง'),
-                                    ),
-                                  ],
-                                );
-                              }
-                              if (orders.isEmpty) {
-                                return Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text('ไม่พบข้อมูล',
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600)),
-                                    const SizedBox(height: 12),
-                                    OutlinedButton.icon(
-                                      onPressed: refreshOrders,
-                                      icon: const Icon(Icons.refresh),
-                                      label: const Text('รีเฟรช'),
-                                    ),
-                                  ],
-                                );
-                              }
-
-                              return Scrollbar(
-                                thumbVisibility: true,
-                                child: ListView.builder(
-                                  itemCount: orders.length,
-                                  itemBuilder: (context, index) {
-                                    final item = orders[index];
-                                    final isFood =
-                                        item.drug_type_name == '[PF]อาหารสัตว์';
-                                    final isDrug = !isFood;
-
-                                    return Card(
-                                      elevation: 2,
-                                      color: isDrug
-                                          ? Colors.blue.shade50
-                                          : Colors.orange.shade50,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      margin: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(12.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    item.item_name ?? "-",
-                                                    style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      fontSize: 16,
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 12),
-                                                OutlinedButton.icon(
-                                                  style:
-                                                      OutlinedButton.styleFrom(
-                                                    foregroundColor:
-                                                        Colors.teal[800],
-                                                    side: const BorderSide(
-                                                        color: Colors.teal,
-                                                        width: 1.8),
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 10),
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10),
-                                                    ),
-                                                  ),
-                                                  icon: const Icon(
-                                                      Icons.add_circle_outline),
-                                                  label: const Text(
-                                                      'เพิ่มรายการใหม่เข้า'),
-                                                  onPressed: () {
-                                                    if (isDrug) {
-                                                      CheckDrugOrderDialog.show(
-                                                        context,
-                                                        AddOrder(item),
-                                                        0,
-                                                        (newDrug, _) async {
-                                                          newDrug.order_eid =
-                                                              item.order_eid;
-                                                          newDrug.order_date =
-                                                              item.order_date;
-                                                          newDrug.order_time =
-                                                              item.order_time;
-
-                                                          await RoundWardApi()
-                                                              .AddOrder(
-                                                            context,
-                                                            headers_: headers_,
-                                                            mUser: userLogin,
-                                                            mPetAdmit_:
-                                                                mPetAdmit_,
-                                                            mListAn_: mListAn_,
-                                                            lDataOrder_: [
-                                                              newDrug
-                                                            ],
-                                                          );
-                                                        },
-                                                        headers_,
-                                                        screen: 'imedx',
-                                                        mUser: userLogin,
-                                                        mPetAdmit: mPetAdmit_,
-                                                        mListAn: mListAn_,
-                                                        onConfirmed: () async {
-                                                          await refreshOrders();
-
-                                                          setState(() {
-                                                            orders.removeWhere((e) =>
-                                                                e.order_item_id ==
-                                                                item.order_item_id);
-                                                          });
-                                                        },
-                                                      );
-                                                    } else {
-                                                      CheckFoodOrderDialog.show(
-                                                        context,
-                                                        AddOrder(item),
-                                                        0,
-                                                        (newFood, _) async {
-                                                          newFood.order_eid =
-                                                              item.order_eid;
-                                                          newFood.order_date =
-                                                              item.order_date;
-                                                          newFood.order_time =
-                                                              item.order_time;
-
-                                                          await RoundWardApi()
-                                                              .AddOrder(
-                                                            context,
-                                                            headers_: headers_,
-                                                            mUser: userLogin,
-                                                            mPetAdmit_:
-                                                                mPetAdmit_,
-                                                            mListAn_: mListAn_,
-                                                            lDataOrder_: [
-                                                              newFood
-                                                            ],
-                                                          );
-                                                        },
-                                                        headers_,
-                                                        screen: 'imedx',
-                                                        mUser: userLogin,
-                                                        mPetAdmit: mPetAdmit_,
-                                                        mListAn: mListAn_,
-                                                        onConfirmed: () async {
-                                                          await refreshOrders();
-                                                          setState(() {
-                                                            orders.removeWhere((e) =>
-                                                                e.order_item_id ==
-                                                                item.order_item_id);
-                                                          });
-                                                        },
-                                                      );
-                                                    }
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                text(context,
-                                                    'จำนวน : ${item.item_qty ?? "-"} ${item.unit_name ?? "-"}'),
-                                                SizedBox(height: 4),
-                                                if (isDrug)
-                                                  text(context,
-                                                      'ขนาดยา : ${item.dose_qty ?? "-"} ${item.dose_unit_name ?? "-"}'),
-                                                SizedBox(height: 4),
-                                                text(context,
-                                                    'ประเภท : ${item.drug_type_name ?? "-"}'),
-                                                if (item.note_to_team
-                                                        ?.isNotEmpty ??
-                                                    false) ...[
-                                                  SizedBox(height: 4),
-                                                  text(context,
-                                                      'หมายเหตุ : ${item.note_to_team}'),
-                                                ],
-                                                SizedBox(height: 4),
-                                                text(context,
-                                                    'วิธีให้ : ${item.drug_instruction ?? "-"}'),
-                                                SizedBox(height: 4),
-                                                if (isDrug)
-                                                  text(context,
-                                                      'วันที่สั่งยา : ${item.order_date ?? "-"} ${item.order_time ?? "-"}'),
-                                                if (isFood)
-                                                  text(context,
-                                                      'วันที่สั่งอาหาร : ${item.order_date ?? "-"} ${item.order_time ?? "-"}'),
-                                              ],
-                                            )
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
+                          child: () {
+                            if (isLoading) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+                            if (loadError != null) {
+                              return Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(loadError!,
+                                      style:
+                                          const TextStyle(color: Colors.red)),
+                                  const SizedBox(height: 12),
+                                  OutlinedButton.icon(
+                                    onPressed: () => refreshOrders(setState),
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('ลองอีกครั้ง'),
+                                  ),
+                                ],
                               );
-                            },
-                          ),
+                            }
+                            if (orders.isEmpty) {
+                              return Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'ไม่พบข้อมูล',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  OutlinedButton.icon(
+                                    onPressed: () => refreshOrders(setState),
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('รีเฟรช'),
+                                  ),
+                                ],
+                              );
+                            }
+
+                            return Scrollbar(
+                              thumbVisibility: true,
+                              child: ListView.builder(
+                                itemCount: orders.length,
+                                itemBuilder: (context, index) {
+                                  final item = orders[index];
+                                  final isFood =
+                                      item.drug_type_name == '[PF]อาหารสัตว์';
+                                  final isDrug = !isFood;
+
+                                  return Card(
+                                    elevation: 2,
+                                    color: isDrug
+                                        ? Colors.blue.shade50
+                                        : Colors.orange.shade50,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    margin:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  item.item_name ?? "-",
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              OutlinedButton.icon(
+                                                style: OutlinedButton.styleFrom(
+                                                  foregroundColor:
+                                                      Colors.teal[800],
+                                                  side: const BorderSide(
+                                                      color: Colors.teal,
+                                                      width: 1.8),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 10),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                                icon: const Icon(
+                                                    Icons.add_circle_outline),
+                                                label: const Text(
+                                                    'เพิ่มรายการใหม่เข้า'),
+                                                onPressed: () {
+                                                  openDrug() {
+                                                    CheckDrugOrderDialog.show(
+                                                      context,
+                                                      AddOrder(item),
+                                                      0,
+                                                      (newDrug, _) async {
+                                                        newDrug.order_eid =
+                                                            item.order_eid;
+                                                        newDrug.order_date =
+                                                            item.order_date;
+                                                        newDrug.order_time =
+                                                            item.order_time;
+
+                                                        await RoundWardApi()
+                                                            .AddOrder(
+                                                          context,
+                                                          headers_: headers_,
+                                                          mUser: userLogin,
+                                                          mPetAdmit_:
+                                                              mPetAdmit_,
+                                                          mListAn_: mListAn_,
+                                                          lDataOrder_: [
+                                                            newDrug
+                                                          ],
+                                                        );
+                                                      },
+                                                      headers_,
+                                                      screen: 'imedx',
+                                                      mUser: userLogin,
+                                                      mPetAdmit: mPetAdmit_,
+                                                      mListAn: mListAn_,
+                                                      onConfirmed: () async {
+                                                        setState(() {
+                                                          orders.removeWhere((e) =>
+                                                              e.order_item_id ==
+                                                              item.order_item_id);
+                                                        });
+                                                      },
+                                                    );
+                                                  }
+
+                                                  openFood() {
+                                                    CheckFoodOrderDialog.show(
+                                                      context,
+                                                      AddOrder(item),
+                                                      0,
+                                                      (newFood, _) async {
+                                                        newFood.order_eid =
+                                                            item.order_eid;
+                                                        newFood.order_date =
+                                                            item.order_date;
+                                                        newFood.order_time =
+                                                            item.order_time;
+
+                                                        await RoundWardApi()
+                                                            .AddOrder(
+                                                          context,
+                                                          headers_: headers_,
+                                                          mUser: userLogin,
+                                                          mPetAdmit_:
+                                                              mPetAdmit_,
+                                                          mListAn_: mListAn_,
+                                                          lDataOrder_: [
+                                                            newFood
+                                                          ],
+                                                        );
+                                                      },
+                                                      headers_,
+                                                      screen: 'imedx',
+                                                      mUser: userLogin,
+                                                      mPetAdmit: mPetAdmit_,
+                                                      mListAn: mListAn_,
+                                                      onConfirmed: () async {
+                                                        setState(() {
+                                                          orders.removeWhere((e) =>
+                                                              e.order_item_id ==
+                                                              item.order_item_id);
+                                                        });
+                                                      },
+                                                    );
+                                                  }
+
+                                                  if (isDrug) {
+                                                    openDrug();
+                                                  } else {
+                                                    openFood();
+                                                  }
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              text(context,
+                                                  'จำนวน : ${item.item_qty ?? "-"} ${item.unit_name ?? "-"}'),
+                                              const SizedBox(height: 4),
+                                              if (isDrug)
+                                                text(context,
+                                                    'ขนาดยา : ${item.dose_qty ?? "-"} ${item.dose_unit_name ?? "-"}'),
+                                              const SizedBox(height: 4),
+                                              text(context,
+                                                  'ประเภท : ${item.drug_type_name ?? "-"}'),
+                                              if ((item.note_to_team
+                                                      ?.isNotEmpty ??
+                                                  false)) ...[
+                                                const SizedBox(height: 4),
+                                                text(context,
+                                                    'หมายเหตุ : ${item.note_to_team}'),
+                                              ],
+                                              const SizedBox(height: 4),
+                                              text(context,
+                                                  'วิธีให้ : ${item.drug_instruction ?? "-"}'),
+                                              const SizedBox(height: 4),
+                                              if (isDrug)
+                                                text(context,
+                                                    'วันที่สั่งยา : ${item.order_date ?? "-"} ${item.order_time ?? "-"}'),
+                                              if (isFood)
+                                                text(context,
+                                                    'วันที่สั่งอาหาร : ${item.order_date ?? "-"} ${item.order_time ?? "-"}'),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          }(),
                         ),
                       ),
+
                       const Divider(height: 1),
+
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
                         child: Row(
                           children: [
                             OutlinedButton.icon(
-                              onPressed: isLoading ? null : refreshOrders,
+                              onPressed: isLoading
+                                  ? null
+                                  : () => refreshOrders(setState),
                               icon: const Icon(Icons.refresh),
                               label: const Text('รีเฟรช'),
                             ),
@@ -1839,8 +1925,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                   context: context,
                                   barrierDismissible: false,
                                   builder: (_) => const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
+                                      child: CircularProgressIndicator()),
                                 );
 
                                 final updatedData =
@@ -1851,14 +1936,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                   mGroup_: selectedGroup,
                                 );
 
-                                final newOrders =
-                                    await RoundWardApi().loadNewOrder(
-                                  context,
-                                  mPetAdmit_: mPetAdmit_,
-                                  headers_: headers_,
-                                );
-
-                                final hasNew = newOrders.isNotEmpty;
+                                final hasNew = orders.isNotEmpty;
 
                                 Navigator.of(context, rootNavigator: true)
                                     .pop();
@@ -1930,4 +2008,49 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
     setState(() {});
   }
+
+  bool _isProbablyPhoto(String? raw) {
+    if (raw == null) return false;
+    final u = raw.trim();
+    if (u.isEmpty || u.toLowerCase() == 'null') return false;
+
+    final s = u.toLowerCase();
+    const badHints = [
+      'noimage',
+      'no-image',
+      'placeholder',
+      'default',
+      'avatar',
+      'user.png',
+      'profile.png',
+      'blank.png'
+    ];
+    for (final h in badHints) {
+      if (s.contains(h)) return false;
+    }
+
+    final looksLikeImage = RegExp(r'\.(jpg|jpeg|png)(\?.*)?$').hasMatch(s);
+    if (!looksLikeImage) return false;
+
+    return true;
+  }
+// ฟังก์ชันเช็คขนาดรูป
+Future<ImageInfo> _getImageInfo(String? url) async {
+  if (url == null || url.trim().isEmpty || url.toLowerCase() == 'null') {
+    throw Exception("No image");
+  }
+
+  final completer = Completer<ImageInfo>();
+  final imageProvider = NetworkImage(url.trim());
+
+  imageProvider.resolve(const ImageConfiguration()).addListener(
+    ImageStreamListener((ImageInfo info, bool _) {
+      completer.complete(info);
+    }, onError: (dynamic _, __) {
+      completer.completeError("Load error");
+    }),
+  );
+
+  return completer.future;
+}
 }

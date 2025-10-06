@@ -1,7 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
-import 'package:dio/dio.dart';
 import 'package:e_smartward/Model/list_an_model.dart';
 import 'package:e_smartward/Model/list_group_model.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
@@ -9,11 +8,9 @@ import 'package:e_smartward/Model/list_roundward_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/Model/update_order_model.dart';
 import 'package:e_smartward/api/roundward_api.dart';
-import 'package:e_smartward/util/tlconstant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-
 import 'package:e_smartward/Model/doctor_model.dart';
 import 'package:e_smartward/Model/list_data_card_model.dart';
 import 'package:e_smartward/api/admit_api.dart';
@@ -200,14 +197,6 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
       initDoctors();
     });
 
-    // selectedDoctor = DoctorModel(
-    //   employee_id: 'dddd',
-    //   employee_nameen: 'dddd',
-    //   full_nameth: widget.drug.doctor_eid,
-    //   key_search: 'dddd',
-    //   prename: 'dddd',
-    // );
-
     tDrudName.text = widget.drug.item_name ?? '';
     tDrugDose.text = widget.drug.dose_qty?.toString() ?? '';
     tDrugCondition.text = widget.drug.drug_description ?? '';
@@ -279,7 +268,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
     tDrugDose.addListener(checkIsEnabled);
     tDrugUnit.addListener(checkIsEnabled);
     tDrugCondition.addListener(checkIsEnabled);
-    tnote.addListener(checkIsEnabled);
+    //tnote.addListener(checkIsEnabled);
   }
 
   @override
@@ -288,7 +277,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
     tDrugDose.dispose();
     tproperties.dispose();
     tDrugCondition.dispose();
-    tnote.dispose();
+    //tnote.dispose();
     tDrugQty.dispose();
     tDrugUnit.dispose();
     tDrugUnitQty.dispose();
@@ -562,9 +551,6 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                   final updatedDrug = ListDataCardModel(
                     item_name: tDrudName.text,
                     dose_qty: tDrugDose.text,
-
-                    // double.parse(
-                    //     tDrugDose.text.isEmpty ? '0' : tDrugDose.text),
                     unit_name: tDrugUnit.text,
                     item_qty: int.tryParse(tDrugQty.text) ?? 0,
                     unit_stock: tDrugUnitQty.text,

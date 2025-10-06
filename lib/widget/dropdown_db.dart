@@ -73,10 +73,12 @@ class _GroupDropdownState extends State<GroupDropdown> {
 
 class DbSiteDropdown extends StatefulWidget {
   final Function(String) onSelected;
+  final String? initialSiteCode; // เช่น "R9" (code_name) หรือ "123" (id)
 
   const DbSiteDropdown({
     super.key,
     required this.onSelected,
+    this.initialSiteCode,
   });
 
   @override
@@ -86,25 +88,58 @@ class DbSiteDropdown extends StatefulWidget {
 class _DbSiteDropdownState extends State<DbSiteDropdown> {
   List<SiteModel> groupSite = [];
   SiteModel? selectedSite;
+  bool _loading = false;
+  bool _didApplyInitial = false; // กันยิงซ้ำ
 
   @override
   void initState() {
     super.initState();
-    DashboardApi()
-        .loadSite(
-      context,
-    )
-        .then((sites) {
-      setState(() {
-        groupSite = sites;
-      });
-    });
+    _loadSites();
+  }
+
+  Future<void> _loadSites() async {
+    setState(() => _loading = true);
+    try {
+      final sites = await DashboardApi().loadSite(context);
+      if (!mounted) return;
+
+      setState(() => groupSite = sites);
+
+      if (!_didApplyInitial &&
+          widget.initialSiteCode != null &&
+          widget.initialSiteCode!.trim().isNotEmpty &&
+          groupSite.isNotEmpty) {
+        final init = widget.initialSiteCode!.trim().toLowerCase();
+
+        SiteModel? match = groupSite.firstWhere(
+          (s) => (s.code_name ?? '').trim().toLowerCase() == init,
+          orElse: () => SiteModel(),
+        );
+
+        if ((match.code_name ?? '').isEmpty) {
+          match = groupSite.firstWhere(
+            (s) => '${s.id}'.trim().toLowerCase() == init,
+            orElse: () => SiteModel(),
+          );
+        }
+
+        if ((match.code_name ?? '').isNotEmpty) {
+          setState(() {
+            selectedSite = match;
+            _didApplyInitial = true;
+          });
+          widget.onSelected(match.code_name!);
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return DropdownButton<SiteModel>(
-      hint: text(context, "เลือก Site"),
+      hint: text(context, _loading ? "กำลังโหลด Site..." : "เลือก Site"),
       value: selectedSite,
       isExpanded: true,
       underline: const SizedBox(),
@@ -118,7 +153,7 @@ class _DbSiteDropdownState extends State<DbSiteDropdown> {
               Expanded(
                 child: text(
                   context,
-                  site.name!,
+                  site.name ?? '-',
                   color: Colors.teal,
                   maxLines: 3,
                 ),
@@ -127,14 +162,13 @@ class _DbSiteDropdownState extends State<DbSiteDropdown> {
           ),
         );
       }).toList(),
-      onChanged: (site) {
-        if (site != null) {
-          setState(() {
-            selectedSite = site;
-          });
-          widget.onSelected(site.code_name!);
-        }
-      },
+      onChanged: _loading
+          ? null
+          : (site) {
+              if (site == null || site == selectedSite) return;
+              setState(() => selectedSite = site);
+              widget.onSelected(site.code_name!);
+            },
       dropdownColor: Colors.white,
       icon: const Icon(Icons.arrow_drop_down, color: Colors.deepPurple),
     );

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:e_smartward/Model/doctor_model.dart';
+import 'package:e_smartward/Model/get_obs_model.dart';
 import 'package:e_smartward/Model/list_data_obs_model.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
@@ -252,6 +253,7 @@ class AdmitApi {
     required List<ListDataCardModel> lDataCardFood_,
     required List<ListDataObsDetailModel> lDataObs_,
     required ListUserModel mUser,
+    required String message,
   }) async {
     List<ListDataCardModel> lDataObs = [];
     for (var obs in lDataObs_) {
@@ -279,6 +281,7 @@ class AdmitApi {
       'visit_number': mPetAdmit_.visit_id,
       'pet_name': mPetAdmit_.pet_name,
       'tl_common_users_id': mUser.id,
+      'message': message,
       'data_drug': lDataCardDrug_.map((e) => e.toJson()).toList(),
       'data_food': lDataCardFood_.map((e) => e.toJson()).toList(),
       'data_observe': lDataObs.map((e) => e.toJson()).toList(),
@@ -344,5 +347,86 @@ class AdmitApi {
     }
 
     return doctor;
+  }
+
+  Future<List<GetObsModel>> GetObs(
+    BuildContext context, {
+    required String floor,
+    required String bed_number,
+    required Map<String, String> headers_,
+  }) async {
+    final dio = Dio();
+    final api = '${TlConstant.syncApi}/get_observ';
+    List<GetObsModel> lGetObs = [];
+
+    try {
+      // Log request
+      debugPrint('GetObs Request => floor=$floor, bed_number=$bed_number');
+
+      final response = await dio.post(
+        api,
+        data: {
+          'floor': floor,
+          'bed_number': bed_number,
+        },
+        options: Options(headers: headers_),
+      );
+
+      final data = response.data;
+      // Log raw response (สั้น ๆ)
+      debugPrint('GetObs raw code => ${data?['code']}');
+
+      if (data is Map && data['code'] == 1 && data['body'] is List) {
+        final body = data['body'] as List;
+
+        lGetObs = body.map<GetObsModel>((item) {
+          final setValue =
+              (item['set_value'] as Map?)?.cast<String, dynamic>() ?? {};
+          final detail = setValue['detail'];
+          final level = setValue['level'];
+          final col = setValue['col'];
+
+          final setValueJson = jsonEncode({
+            'detail': detail,
+            'level': level,
+            'col': col,
+          });
+
+          return GetObsModel(
+            code: item['code'],
+            set_name: item['set_name'],
+            set_value: setValueJson,
+            create_by: item['create_by'],
+            create_date: item['create_date'],
+            update_by: item['update_by'],
+            update_date: item['update_date'],
+            delete_by: item['delete_by'],
+            delete_date: item['delete_date'],
+            set_key: item['set_key'],
+            key_special: item['key_special'],
+            take_time: item['take_time'],
+            time_slot: item['time_slot'],
+          );
+        }).toList();
+
+        // Pretty print สำหรับ debug (ถ้า GetObsModel มี toJson())
+        try {
+          final pretty = const JsonEncoder.withIndent('  ')
+              .convert(lGetObs.map((e) => (e as dynamic).toJson()).toList());
+          debugPrint('GetObs parsed =>\n$pretty');
+        } catch (_) {
+          debugPrint('GetObs parsed (no toJson) => ${lGetObs.length} items');
+        }
+      } else if (data is Map && data['code'] == 401) {
+        dialog.token(context, data['message']);
+      } else {
+        dialog.Error(context, data?['message'] ?? 'Unknown error');
+      }
+    } catch (e) {
+      dialog.Error(context, 'Failed to load data. Please try again.');
+      debugPrint('GetObs error => $e');
+    }
+
+    return lGetObs;
   }
 }

@@ -198,6 +198,13 @@ class FoodListWidgetState extends State<FoodListWidget> {
                                                   ),
                                                 )
                                               : const SizedBox.shrink(),
+                                          const SizedBox(height: 4),
+                                          text(
+                                            context,
+                                            "วันที่สั่งอาหาร : ${widget.lDataCard[index].order_date}",
+                                            color: Color.fromARGB(
+                                                255, 185, 120, 15),
+                                          ),
                                           Padding(
                                             padding: const EdgeInsets.all(5.0),
                                             child: Row(

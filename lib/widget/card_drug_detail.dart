@@ -244,6 +244,12 @@ class DrugListWidgetState extends State<DrugListWidget> {
                                                     ),
                                                   )
                                                 : const SizedBox.shrink(),
+                                                 const SizedBox(height: 4),
+                                            text(
+                                              context,
+                                              "วันที่สั่งยา : ${widget.lDataCard[index].order_date}",
+                                              color: Colors.blue,
+                                            ),
                                             Padding(
                                               padding:
                                                   const EdgeInsets.all(5.0),
@@ -315,14 +321,12 @@ class DrugListWidgetState extends State<DrugListWidget> {
                                                               drug.dose_qty
                                                                   .toString()
                                                                   .isEmpty) &&
-                                                          (drug.dose_qty_name ==
-                                                                  null ||
+                                                          (drug.dose_qty_name == null ||
                                                               drug.dose_qty_name!
                                                                   .isEmpty)) ||
                                                       (drug.item_name == null ||
                                                           drug.item_name!
                                                               .isEmpty) ||
-                                                      // เงื่อนไขตรวจสอบ take_time แต่ยกเว้นเมื่อ time_slot มี "เมื่อมีอาการ"
                                                       ((drug.take_time == null ||
                                                               drug.take_time!
                                                                   .isEmpty) &&
@@ -348,7 +352,7 @@ class DrugListWidgetState extends State<DrugListWidget> {
                                       ),
                                     ),
                                   ),
-                                  if (!_hideAddButton)
+                              
                                     Positioned(
                                       right: 8.0,
                                       top: 10.0,

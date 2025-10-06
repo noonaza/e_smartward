@@ -1,6 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:async';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:e_smartward/Model/list_pet_model.dart';
+import 'package:e_smartward/dialog/chat_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:e_smartward/Model/list_data_card_model.dart';
 import 'package:e_smartward/api/manage_food_api.dart';
@@ -42,6 +44,7 @@ class _ManageFoodWidgetState extends State<ManageFoodWidget> {
   Set<String> activeSlots = {};
   bool isLoading = false;
   Timer? _debounce;
+  List<ListPetModel> lPetAdmit = [];
 
   final Map<String, List<ListFoodModel>> slotCache = {};
 
@@ -165,6 +168,7 @@ class _ManageFoodWidgetState extends State<ManageFoodWidget> {
           if (e is String) {
             return [e.trim()];
           } else if (e is List) {
+            // ignore: cast_from_null_always_fails
             return (e as List).map((x) => x.toString().trim());
           }
           return [];
@@ -292,6 +296,27 @@ class _ManageFoodWidgetState extends State<ManageFoodWidget> {
                                                 color: const Color.fromARGB(
                                                     255, 26, 90, 76),
                                               ),
+                                              IconButton(
+                                                icon: const Icon(Icons.note_alt,
+                                                    color: Colors.teal,
+                                                    size: 28),
+                                                onPressed: () {
+                                                  final admitId = food
+                                                          .visit_number
+                                                          ?.toString() ??
+                                                      '';
+                                                  showDialog(
+                                                    context: context,
+                                                    barrierDismissible: true,
+                                                    builder: (_) => ChatDialog(
+                                                      headers: widget.headers,
+                                                      visitId: admitId,
+                                                      lUserLogin:
+                                                          widget.lUserLogin,
+                                                    ),
+                                                  );
+                                                },
+                                              )
                                             ],
                                           ),
                                           const SizedBox(height: 4),

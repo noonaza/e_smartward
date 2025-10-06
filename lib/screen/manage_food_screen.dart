@@ -25,6 +25,7 @@ class ManageFoodScreen extends StatefulWidget {
 
 class _ManageFoodScreenState extends State<ManageFoodScreen> {
   String? selectedGroupId;
+  String? userDefaultSiteCode;
   String? selectedSite;
   String? selectedWard;
   bool showCard = false;
@@ -34,7 +35,15 @@ class _ManageFoodScreenState extends State<ManageFoodScreen> {
   List<ListDataCardModel> lDataCard = [];
 
   @override
+  void initState() {
+    super.initState();
+    selectedSite = widget.lUserLogin.first.site_code;
+    selectedSite = userDefaultSiteCode;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    String? userDefaultSiteCode = widget.lUserLogin.first.site_code;
     return Material(
         child: Container(
             width: double.infinity,
@@ -164,6 +173,7 @@ class _ManageFoodScreenState extends State<ManageFoodScreen> {
                                     width: 200,
                                     height: 30,
                                     child: SiteDropdown(
+                                      initialSiteCode: userDefaultSiteCode,
                                       headers_: widget.headers,
                                       onSelected: (siteCodeName) {
                                         setState(() {
@@ -186,11 +196,12 @@ class _ManageFoodScreenState extends State<ManageFoodScreen> {
                                     width: 320,
                                     height: 30,
                                     child: WardDropdown(
+                                      key: ValueKey(selectedSite),
                                       headers_: widget.headers,
                                       selectedSiteCode: selectedSite,
-                                      onSelected: (ward) {
+                                      onSelected: (wardCodeName) {
                                         setState(() {
-                                          selectedWard = ward;
+                                          selectedWard = wardCodeName;
                                           showCard = false;
                                           errorMessage = null;
                                         });

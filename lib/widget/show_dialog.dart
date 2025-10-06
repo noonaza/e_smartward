@@ -71,7 +71,7 @@ class dialog {
       animType: AnimType.scale,
       dismissOnTouchOutside: false,
       dismissOnBackKeyPress: false,
-      width: MediaQuery.of(context).size.width * 0.3,
+      width: MediaQuery.of(context).size.width * 0.5,
       body: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -188,33 +188,51 @@ class dialog {
 
   static Nodata(BuildContext context, String message) {
     return showDialog(
-      barrierDismissible: false,
       context: context,
-      builder: (context) {
+      useRootNavigator: true,
+      barrierDismissible: false,
+      builder: (ctx) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(20),
           ),
           title: Column(
-            children: [
+            mainAxisSize: MainAxisSize.min,
+            children: const [
               CircleAvatar(
-                child: Icon(Icons.check_circle_outline_outlined),
-                radius: 30,
-                backgroundColor: Color.fromARGB(255, 55, 107, 79),
+                radius: 32,
+                backgroundColor: Color.fromARGB(255, 214, 130, 34),
+                child: Icon(
+                  Icons.info_outline,
+                  color: Colors.white,
+                  size: 36,
+                ),
               ),
-              SizedBox(height: 30),
-              Text(message),
+              SizedBox(height: 16),
             ],
           ),
+          content: text(
+            context,
+            message,
+            fontSize: 16,
+            textAlign: TextAlign.center,
+            color: Color(0xFF555555),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
-            TextButton(
-              child: Text('ไม่มีข้อมูล admit ในระบบ'),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color.fromARGB(255, 214, 130, 34),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                );
+                Navigator.of(ctx, rootNavigator: true).pop();
               },
+              child: text(context, 'ตกลง', fontSize: 16, color: Colors.white),
             ),
           ],
         );

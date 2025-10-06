@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:e_smartward/Model/get_obs_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -257,9 +258,11 @@ class _CreateObsDialogState extends State<CreateObsDialog> {
                   final newObs = ListDataObsDetailModel(
                       set_name: tobsName.text,
                       set_value: jsonEncode(setValueMap),
-                      remark: tobsnote.text,
+                     remark: tobsnote.text,
                       take_time:
-                          "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]");
+                          "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]"
+                          
+                          );
                   widget.onAddObs(newObs);
                   Navigator.pop(context);
                 }

@@ -1,7 +1,4 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'package:e_smartward/screen/preview_dashboard.dart';
 import 'package:flutter/material.dart';
-
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/screen/admit_screen.dart';
 import 'package:e_smartward/screen/menu_food_screen.dart';
@@ -14,10 +11,10 @@ class MenuScreen extends StatefulWidget {
   Map<String, String> headers;
   List<ListUserModel> lUserLogin;
   MenuScreen({
-    Key? key,
+    super.key,
     required this.headers,
     required this.lUserLogin,
-  }) : super(key: key);
+  });
 
   @override
   _MenuScreenState createState() => _MenuScreenState();

@@ -179,9 +179,8 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
   }
 
   Future<void> loadFiles() async {
-    setState(() {
-      isLoading = true;
-    });
+    if (!mounted) return;
+    setState(() => isLoading = true);
 
     final files = await NoteApi().loadFile(
       context,
@@ -706,168 +705,228 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             GestureDetector(
-                                onTap: () async {
-                                  setState(() => isLoading = true);
-                                  await loadFiles();
-                                  setState(() => isLoading = false);
+                              onTap: () async {
+                                setState(() => isLoading = true);
+                                await loadFiles(); 
+                                setState(() => isLoading = false);
 
-                                  if (localFiles.isEmpty) {
-                                    return;
-                                  }
+                          
+                                bool isHttpUrl(String s) =>
+                                    s.startsWith('http://') ||
+                                    s.startsWith('https://');
+                                bool isImg(String p) {
+                                  final l = p.toLowerCase();
+                                  return l.endsWith('.jpg') ||
+                                      l.endsWith('.jpeg') ||
+                                      l.endsWith('.png') ||
+                                      l.endsWith('.webp') ||
+                                      l.endsWith('.gif') ||
+                                      l.endsWith('.bmp');
+                                }
 
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      final width =
-                                          MediaQuery.of(context).size.width;
-                                      final crossAxisCount = width >= 1100
-                                          ? 4
-                                          : width >= 800
-                                              ? 3
-                                              : 2;
+                                bool isPdf(String p) =>
+                                    p.toLowerCase().endsWith('.pdf');
 
-                                      return AlertDialog(
-                                        title: Text(
-                                            "รูปภาพ (${localFiles.length})"),
-                                        content: SizedBox(
-                                          width: double.maxFinite,
-                                          child: GridView.builder(
-                                            shrinkWrap: true,
-                                            itemCount: localFiles.length,
-                                            gridDelegate:
-                                                SliverGridDelegateWithFixedCrossAxisCount(
-                                              crossAxisCount: crossAxisCount,
-                                              crossAxisSpacing: 12,
-                                              mainAxisSpacing: 12,
-                                              childAspectRatio: 1,
-                                            ),
-                                            itemBuilder: (context, index) {
-                                              final file = localFiles[index];
-                                              final fileName =
-                                                  file.path.split('/').last;
-                                              final isPDF = fileName
-                                                  .toLowerCase()
-                                                  .endsWith('.pdf');
+                                final filesForGrid = localFiles
+                                    .where((f) =>
+                                        f.path.trim().isNotEmpty &&
+                                        isHttpUrl(f.path) &&
+                                        (isImg(f.path) || isPdf(f.path)))
+                                    .toList();
 
-                                              return GestureDetector(
-                                                onTap: () {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (context) =>
-                                                        AlertDialog(
-                                                      title: Text(fileName),
-                                                      content: isPDF
-                                                          ? const Icon(
-                                                              Icons
-                                                                  .picture_as_pdf,
-                                                              size: 100,
-                                                              color: Colors.red,
-                                                            )
-                                                          : Image.network(
-                                                              file.path),
+                                if (filesForGrid.isEmpty) {
+                          
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            'ไม่มีรูปภาพที่สามารถแสดงได้')),
+                                  );
+                                  return;
+                                }
+
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    final width =
+                                        MediaQuery.of(context).size.width;
+                                    final crossAxisCount = width >= 1100
+                                        ? 4
+                                        : (width >= 800 ? 3 : 2);
+
+                                    return AlertDialog(
+                                      content: SizedBox(
+                                        width: double.maxFinite,
+                                        height: 480,
+                                        child: GridView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: filesForGrid.length,
+                                          gridDelegate:
+                                              SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: crossAxisCount,
+                                            crossAxisSpacing: 12,
+                                            mainAxisSpacing: 12,
+                                            childAspectRatio: 1,
+                                          ),
+                                          itemBuilder: (context, index) {
+                                            final file = filesForGrid[index];
+                                            final fileName =
+                                                file.path.split('/').last;
+                                            final isPDF = isPdf(file.path);
+
+                                            return GestureDetector(
+                                              onTap: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      AlertDialog(
+                                                    title: Text(
+                                                      fileName,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
-                                                  );
-                                                },
-                                                child: ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  child: Stack(
-                                                    children: [
-                                                      Positioned.fill(
-                                                        child: isPDF
-                                                            ? Container(
-                                                                color: const Color(
-                                                                    0xFFF7F7F7),
-                                                                child:
-                                                                    const Center(
-                                                                  child: Icon(
-                                                                    Icons
-                                                                        .picture_as_pdf,
-                                                                    size: 56,
-                                                                    color: Colors
-                                                                        .red,
-                                                                  ),
-                                                                ),
-                                                              )
-                                                            : Image.network(
-                                                                file.path,
-                                                                fit: BoxFit
-                                                                    .cover,
-                                                              ),
-                                                      ),
-                                                      Positioned(
-                                                        left: 0,
-                                                        right: 0,
-                                                        bottom: 0,
-                                                        child: Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal: 6,
-                                                                  vertical: 4),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            gradient:
-                                                                LinearGradient(
-                                                              begin: Alignment
-                                                                  .bottomCenter,
-                                                              end: Alignment
-                                                                  .topCenter,
-                                                              colors: [
-                                                                Colors.black
-                                                                    .withOpacity(
-                                                                        0.6),
-                                                                Colors
-                                                                    .transparent,
-                                                              ],
+                                                    content: isPDF
+                                                        ? Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              const Icon(
+                                                                  Icons
+                                                                      .picture_as_pdf,
+                                                                  size: 80),
+                                                              const SizedBox(
+                                                                  height: 8),
+                                                              Text(file.remark
+                                                                      .isNotEmpty
+                                                                  ? file.remark
+                                                                  : '-'),
+                                                            ],
+                                                          )
+                                                        : ClipRRect(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                            child:
+                                                                Image.network(
+                                                              file.path,
+                                                              headers: widget
+                                                                  .headers,
+                                                              fit: BoxFit
+                                                                  .contain,
+                                                              errorBuilder: (_,
+                                                                      __,
+                                                                      ___) =>
+                                                                  const Icon(
+                                                                      Icons
+                                                                          .broken_image,
+                                                                      size: 80),
                                                             ),
                                                           ),
-                                                          child: Text(
-                                                            file.remark
-                                                                    .isNotEmpty
-                                                                ? file.remark
-                                                                : "-",
-                                                            maxLines: 2,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            style:
-                                                                const TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 12,
-                                                            ),
-                                                          ),
-                                                        ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                                context),
+                                                        child:
+                                                            const Text('ปิด'),
                                                       ),
                                                     ],
                                                   ),
+                                                );
+                                              },
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                child: Stack(
+                                                  children: [
+                                                    Positioned.fill(
+                                                      child: isPDF
+                                                          ? const Center(
+                                                              child: Icon(
+                                                                  Icons
+                                                                      .picture_as_pdf,
+                                                                  size: 40))
+                                                          : Image.network(
+                                                              file.path,
+                                                              headers: widget
+                                                                  .headers,
+                                                              fit: BoxFit.cover,
+                                                              errorBuilder: (_,
+                                                                      __,
+                                                                      ___) =>
+                                                                  const Center(
+                                                                      child: Icon(
+                                                                          Icons
+                                                                              .broken_image)),
+                                                            ),
+                                                    ),
+                                                    Positioned(
+                                                      left: 0,
+                                                      right: 0,
+                                                      bottom: 0,
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal: 6,
+                                                                vertical: 4),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          gradient:
+                                                              LinearGradient(
+                                                            begin: Alignment
+                                                                .bottomCenter,
+                                                            end: Alignment
+                                                                .topCenter,
+                                                            colors: [
+                                                              Colors.black
+                                                                  .withOpacity(
+                                                                      0.6),
+                                                              Colors
+                                                                  .transparent,
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          file.remark.isNotEmpty
+                                                              ? file.remark
+                                                              : "-",
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 12),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              );
-                                            },
-                                          ),
+                                              ),
+                                            );
+                                          },
                                         ),
-                                      );
-                                    },
-                                  );
-                                },
-                                child: Row(
-                                  children: [
-                                    Image.asset(
-                                      'assets/icons/pic1.png',
-                                      width: 25,
-                                      height: 25,
-                                    ),
-                                    text(
-                                      context,
-                                      'คลิกดูรูปภาพ (${widget.dataNote.file_count})',
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              child: Row(
+                                children: [
+                                  Image.asset('assets/icons/pic1.png',
+                                      width: 25, height: 25),
+                                  text(context, 'กดดูรูปภาพ',
                                       color: const Color.fromARGB(
-                                          255, 13, 81, 116),
-                                    ),
-                                  ],
-                                )),
+                                          255, 13, 81, 116)),
+                                ],
+                              ),
+                            ),
                           ],
-                        ),
+                        )
                       ],
                       SizedBox(
                         child: widget.typeCard == 'Observe' &&
@@ -906,20 +965,20 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                           _isSaved)
                         Align(
                           alignment: Alignment.centerRight,
-                          child: Text(
+                          child: text(
+                            context,
                             'ผู้บันทึก : ${widget.dataNote.save_by_name}',
-                            style: const TextStyle(fontSize: 13),
                           ),
                         ),
                       const SizedBox(height: 4),
-                      if (widget.note.date_slot != null)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: text(
-                            context,
-                            'วัน/เวลา ที่บันทึก : ${widget.dataNote.create_date}',
-                          ),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: text(
+                          context,
+                          'วัน/เวลา ที่บันทึก : ${widget.dataNote.create_date ?? ''}',
                         ),
+                      ),
                       const SizedBox(height: 5),
                       if (!_isSaved && noOrderId)
                         Align(
@@ -1115,6 +1174,8 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                               updatedItem.doctor;
                                           widget.dataNote.save_by_name =
                                               updatedItem.save_by_name;
+                                          widget.dataNote.create_date =
+                                              updatedItem.create_date;
                                           widget.dataNote
                                                   .smw_transaction_order_id =
                                               updatedItem

@@ -1,6 +1,5 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:async';
-import 'package:e_smartward/api/dashboard_api.dart';
 import 'package:e_smartward/widget/board_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

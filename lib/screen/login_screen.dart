@@ -4,12 +4,12 @@ import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/screen/dashboard_screen.dart';
 import 'package:e_smartward/screen/menu_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import '../util/tlconstant.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'preview_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -66,6 +66,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final formattedDate = DateFormat('yyyyMMdd').format(today);
     return Material(
         child: Stack(
       children: [
@@ -269,10 +271,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 5),
                       Text(
-                        'Update 20250828 | Version ${TlConstant.version} ',
+                        'Update $formattedDate | Version ${TlConstant.version}',
                         style:
                             const TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
+                      )
                     ],
                   ),
                 ),
@@ -304,10 +306,8 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       // {"user_login": 'noona', "pass_user": '1234'},
     );
-    String api = '${TlConstant.syncApi}/login';
+    String api = '${TlConstant.syncApi}/login_imed';
     final dio = Dio();
-
-    // dio.options.headers['Authorization'] = TlConstant.Authorization();
 
     try {
       final response = await dio.post(api, data: formData);

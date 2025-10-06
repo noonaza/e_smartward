@@ -399,49 +399,4 @@ class ManageFoodApi {
     }
   }
 
-  Future<List<ListPetModel>> loadApiPetAdmit(BuildContext context,
-      {required String hnNumber, required Map<String, String> headers_}) async {
-    List<ListPetModel> lDataPet = [];
-    String api = '${TlConstant.syncApi}/get_data_admit';
-    final dio = Dio();
-
-    try {
-      final response = await dio.post(
-        api,
-        data: {
-          'hn_number': hnNumber,
-        },
-        options: Options(
-          headers: headers_,
-        ),
-      );
-
-      if (response.data['code'] == 1) {
-        if (response.data['body'] is List) {
-          (response.data['body'] as List).map((item) {
-            return ListPetModel(
-              an: item['an'],
-              base_site_branch_id: item['base_site_branch_id'],
-              bed_number: item['bed_number'],
-              hn: hnNumber,
-              owner_name: item['owner_name'],
-              pet_name: item['pet_name'],
-              pet_type: item['pet_type'],
-              room_type: item['room_type'],
-              visit_id: item['visit_id'],
-              ward: item['ward'],
-            );
-          }).toList();
-        }
-      } else if (response.data['code'] == 401) {
-        dialog.token(context, response.data['message']);
-      } else {
-        dialog.Error(context, response.data['message']);
-      }
-    } catch (e) {
-      dialog.Error(context, 'Failed to load data. Please try again.');
-    }
-
-    return lDataPet;
-  }
 }

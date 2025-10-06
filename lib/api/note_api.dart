@@ -41,21 +41,22 @@ class NoteApi {
         if (body is List) {
           admit = body.map<ListPetModel>((item) {
             return ListPetModel(
-                visit_id: item['visit_id'],
-                hn: item['hn'],
-                an: item['an'],
-                owner_name: item['owner_name'],
-                pet_name: item['pet_name'],
-                pet_type: item['pet_type'],
-                base_site_branch_id: item['base_site_branch_id'],
-                ward: item['ward'],
-                room_type: item['room_type'],
-                bed_number: item['bed_number'],
-                              admit_date: item['admit_date'],
+              visit_id: item['visit_id'],
+              hn: item['hn'],
+              an: item['an'],
+              owner_name: item['owner_name'],
+              pet_name: item['pet_name'],
+              pet_type: item['pet_type'],
+              base_site_branch_id: item['base_site_branch_id'],
+              ward: item['ward'],
+              room_type: item['room_type'],
+              bed_number: item['bed_number'],
+              admit_date: item['admit_date'],
               admit_time: item['admit_time'],
               admit_datetimes: item['admit_datetimes'],
-                doctor: item['doctor']);
-                
+              doctor: item['doctor'],
+              image: item['image'],
+            );
           }).toList();
         }
       } else if (response.data['code'] == 401) {
@@ -80,6 +81,9 @@ class NoteApi {
     String api = '${TlConstant.syncApi}/get_transaction';
     final dio = Dio();
 
+    // ใช้ rootContext เสมอเวลาแสดง dialog
+    final rootContext = Navigator.of(context, rootNavigator: true).context;
+
     try {
       final response = await dio.post(
         api,
@@ -90,58 +94,11 @@ class NoteApi {
         },
         options: Options(headers: headers_),
       );
-
-      if (response.data['code'] == 1) {
+      final code = response.data['code'];
+      if (code == 1) {
         final body = response.data['body'];
-        if (body is List) {
+        if (body is List && body.isNotEmpty) {
           notes = body.map<NoteDetailModel>((item) {
-            final List<DataNoteModel> cardList = [];
-            if (item['data_card'] is List) {
-              for (var card in item['data_card']) {
-                cardList.add(DataNoteModel(
-                  smw_transaction_order_id: card['smw_transaction_order_id']
-                          is int
-                      ? card['smw_transaction_order_id']
-                      : int.tryParse(
-                          card['smw_transaction_order_id']?.toString() ?? ''),
-                  smw_admit_order_id: card['smw_admit_order_id'] is int
-                      ? card['smw_admit_order_id']
-                      : int.tryParse(
-                          card['smw_admit_order_id']?.toString() ?? ''),
-                  type_card: card['type_card']?.toString() ?? '',
-                  item_name: card['item_name']?.toString() ?? '',
-                  item_qty: card['item_qty'] ?? 0,
-                  unit_name: card['unit_name']?.toString() ?? '',
-                  dose_qty: card['dose_qty']?.toString() ?? '',
-                  meal_timing: card['meal_timing']?.toString() ?? '',
-                  drug_instruction: card['drug_instruction']?.toString() ?? '',
-                  remark: card['remark']?.toString() ?? '',
-                  item_code: card['item_code']?.toString() ?? '',
-                  note_to_team: card['note_to_team']?.toString() ?? '',
-                  caution: card['caution']?.toString() ?? '',
-                  drug_description: card['drug_description']?.toString() ?? '',
-                  time_slot: card['time_slot']?.toString() ?? '',
-                  drug_type_name: card['drug_type_name']?.toString() ?? '',
-                  pre_pare_status: card['pre_pare_status']?.toString() ?? '',
-                  date_slot: card['date_slot']?.toString() ?? '',
-                  slot: card['slot']?.toString() ?? '',
-                  create_date: card['create_date']?.toString() ?? '',
-                  save_by: card['save_by']?.toString() ?? '',
-                  save_by_name: card['save_by_name']?.toString() ?? '',
-                  doctor: card['doctor']?.toString() ?? '',
-                  comment: card['comment']?.toString() ?? '',
-                  status: card['status']?.toString() ?? '',
-                  file_count: card['file_count'] is int
-                      ? card['file_count']
-                      : int.tryParse(
-                          card['file_count']?.toString() ?? ''),
-                ));
-              }
-            }
-            if (item['id'] == null) {
-              print('object');
-            }
-
             return NoteDetailModel(
               id: item['id'] is int
                   ? item['id']
@@ -155,27 +112,70 @@ class NoteApi {
               create_by_name: item['create_by_name']?.toString(),
               slot: item['slot']?.toString(),
               date_slot: item['date_slot']?.toString(),
-              dataNote: cardList,
+              dataNote: (item['data_card'] is List)
+                  ? (item['data_card'] as List).map<DataNoteModel>((card) {
+                      return DataNoteModel(
+                        smw_transaction_order_id:
+                            card['smw_transaction_order_id'] is int
+                                ? card['smw_transaction_order_id']
+                                : int.tryParse(card['smw_transaction_order_id']
+                                        ?.toString() ??
+                                    ''),
+                        smw_admit_order_id: card['smw_admit_order_id'] is int
+                            ? card['smw_admit_order_id']
+                            : int.tryParse(
+                                card['smw_admit_order_id']?.toString() ?? ''),
+                        type_card: card['type_card']?.toString() ?? '',
+                        item_name: card['item_name']?.toString() ?? '',
+                        item_qty: card['item_qty'] ?? 0,
+                        unit_name: card['unit_name']?.toString() ?? '',
+                        dose_qty: card['dose_qty']?.toString() ?? '',
+                        meal_timing: card['meal_timing']?.toString() ?? '',
+                        drug_instruction:
+                            card['drug_instruction']?.toString() ?? '',
+                        remark: card['remark']?.toString() ?? '',
+                        item_code: card['item_code']?.toString() ?? '',
+                        note_to_team: card['note_to_team']?.toString() ?? '',
+                        caution: card['caution']?.toString() ?? '',
+                        drug_description:
+                            card['drug_description']?.toString() ?? '',
+                        time_slot: card['time_slot']?.toString() ?? '',
+                        drug_type_name:
+                            card['drug_type_name']?.toString() ?? '',
+                        pre_pare_status:
+                            card['pre_pare_status']?.toString() ?? '',
+                        date_slot: card['date_slot']?.toString() ?? '',
+                        slot: card['slot']?.toString() ?? '',
+                        create_date: card['create_date']?.toString() ?? '',
+                        save_by: card['save_by']?.toString() ?? '',
+                        save_by_name: card['save_by_name']?.toString() ?? '',
+                        doctor: card['doctor']?.toString() ?? '',
+                        comment: card['comment']?.toString() ?? '',
+                        status: card['status']?.toString() ?? '',
+                        file_count: card['file_count'] is int
+                            ? card['file_count']
+                            : int.tryParse(
+                                card['file_count']?.toString() ?? ''),
+                      );
+                    }).toList()
+                  : <DataNoteModel>[],
             );
           }).toList();
+        } else {
+          dialog.Nodata(
+              rootContext, 'ไม่พบข้อมูลการให้อาหาร / ยา สำหรับช่วงเวลานี้');
         }
-      } else if (response.data['code'] == 401) {
-        if (context.mounted) {
-          dialog.token(context, response.data['message']);
-        }
-      } else if (response.data['code'] == 0) {
-        if (context.mounted) {
-          dialog.Nodata(context, response.data['message']);
-        }
+      } else if (code == 401) {
+        dialog.token(rootContext, response.data['message'] ?? 'Unauthorized');
+      } else if (code == 0) {
+        dialog.Nodata(rootContext,
+            response.data['message'] ?? 'ไม่พบข้อมูล Admit ในระบบ');
       } else {
-        if (context.mounted) {
-          dialog.Error(context, response.data['message']);
-        }
+        dialog.Error(rootContext,
+            response.data['message'] ?? 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
       }
     } catch (e) {
-      if (context.mounted) {
-        dialog.Error(context, 'Failed to load group codes.');
-      }
+      dialog.Error(rootContext, 'Failed to load group codes.');
     }
 
     return notes;

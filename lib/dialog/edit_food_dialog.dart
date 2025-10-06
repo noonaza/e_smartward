@@ -13,11 +13,9 @@ import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_roundward_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/Model/update_order_model.dart';
-import 'package:e_smartward/api/admit_api.dart';
 import 'package:e_smartward/api/roundward_api.dart';
 import 'package:e_smartward/widget/action_slider.dart';
 import 'package:e_smartward/widget/button.dart';
-import 'package:e_smartward/widget/search_dropdown.dart';
 import 'package:e_smartward/widget/textfield.dart';
 import 'package:e_smartward/widget/time.dart';
 
@@ -83,28 +81,31 @@ class EditFoodDialog extends StatefulWidget {
 
     final dialog = AwesomeDialog(
       context: context,
-      dialogType: DialogType.noHeader,
+      dialogType: DialogType.question,
       animType: AnimType.scale,
       width: dialogWidth,
       dismissOnTouchOutside: false,
-      body: Builder(
-        builder: (dialogContext) => EditFoodDialog(
-          screen: screen,
-          food: food,
-          cb: cb_,
-          headers: headers,
-          drugTypeName: drugTypeName,
-          lUserLogin: lUserLogin,
-          lPetAdmit: lPetAdmit,
-          lListAn: lListAn,
-          mData: mData,
-          group: group,
-          indexFood: index_,
-          onRefresh: (updatedData, hasNew) {
-            onRefresh?.call(updatedData, hasNew);
-           
-          },
-        ),
+      customHeader: Image.asset(
+        'assets/gif/eat.gif',
+        width: 100,
+        height: 100,
+        fit: BoxFit.contain,
+      ),
+      body: EditFoodDialog(
+        screen: screen,
+        food: food,
+        cb: cb_,
+        headers: headers,
+        drugTypeName: drugTypeName,
+        lUserLogin: lUserLogin,
+        lPetAdmit: lPetAdmit,
+        lListAn: lListAn,
+        mData: mData,
+        group: group,
+        indexFood: index_,
+        onRefresh: (updatedData, hasNew) {
+          onRefresh?.call(updatedData, hasNew);
+        },
       ),
     );
 

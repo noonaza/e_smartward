@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:e_smartward/Model/create_transection_model.dart';
+import 'package:e_smartward/Model/get_obs_model.dart';
 import 'package:e_smartward/dialog/edit_Food_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
@@ -277,6 +278,12 @@ class _CardRoundwardDrugState extends State<CardRoundwardDrug> {
                                             "วิธีให้ ครั้งละ : ${drug.dose_qty_name ?? '-'} ${drug.unit_stock ?? '-'}",
                                             color: Colors.blue),
                                         const SizedBox(height: 4),
+                                        text(
+                                          context,
+                                          "ควรให้ : ${drug.meal_timing ?? '-'}",
+                                          color: Colors.blue,
+                                        ),
+                                        const SizedBox(height: 4),
                                         if (drug.data_trans != null &&
                                             drug.data_trans!.isNotEmpty) ...[
                                           text(context,
@@ -293,7 +300,7 @@ class _CardRoundwardDrugState extends State<CardRoundwardDrug> {
                                         const SizedBox(height: 4),
                                         text(
                                           context,
-                                          "วิธีให้ ครั้งละ : ${drug.dose_qty_name ?? '-'} ${drug.unit_stock ?? '-'}",
+                                          "วิธีให้ ครั้งละ : ${drug.dose_qty_name ?? '-'} ${drug.unit_name ?? '-'}",
                                           color:
                                               Color.fromARGB(255, 196, 133, 50),
                                         ),
@@ -316,7 +323,7 @@ class _CardRoundwardDrugState extends State<CardRoundwardDrug> {
                                         const SizedBox(height: 4),
                                         text(
                                           context,
-                                          "หมายเหตุ : ${drug.drug_description ?? '-'}",
+                                          "หมายเหตุ : ${drug.remark ?? '-'}",
                                           color:
                                               Color.fromARGB(255, 231, 91, 208),
                                         ),
@@ -727,7 +734,7 @@ class _CardRoundwardDrugState extends State<CardRoundwardDrug> {
       set_value: tempSetValue,
       remark: observe.remark,
       take_time: observe.take_time,
-      drug_type_name: observe.drug_type_name,
+     // drug_type_name: observe.drug_type_name,
       time_slot: observe.time_slot,
     );
 

@@ -8,6 +8,7 @@ import 'package:e_smartward/dialog/create_food_dialog.dart';
 import 'package:e_smartward/dialog/create_obs_dialog.dart';
 import 'package:e_smartward/dialog/edit_obs_dialog.dart';
 import 'package:e_smartward/widget/show_dialog.dart';
+import 'package:e_smartward/widget/textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
@@ -29,6 +30,9 @@ class AdmitScreen extends StatefulWidget {
   final List<Map<String, dynamic>> lDataCard;
   Map<String, String> headers;
   List<ListUserModel> lUserLogin;
+
+  final VoidCallback? onChangedVisit;
+  ValueNotifier<bool>? noteBtnVisible = ValueNotifier<bool>(false);
   final void Function(int index) onDelete;
 
   AdmitScreen({
@@ -37,6 +41,8 @@ class AdmitScreen extends StatefulWidget {
     required this.lUserLogin,
     required this.lDataCard,
     required this.onDelete,
+    this.noteBtnVisible,
+    this.onChangedVisit,
   });
 
   @override
@@ -54,9 +60,12 @@ class _AdmitScreenState extends State<AdmitScreen> {
 
   List<ListDataObsDetailModel> lDataCardObs = [];
   List<ListDataObsDetailModel> lSettingTime = [];
+  // List<GetObsModel> lGetObs = [];
+  late TextEditingController txtNote;
   List<String> selectedDrugTimes = [];
   List<ListPetModel> lPetAdmit = [];
   TextEditingController tHnNumber = TextEditingController();
+  TextEditingController tNote = TextEditingController();
   final List<Map<String, dynamic>> listFood = [];
   String? hnNumber;
   String? visit_id;
@@ -65,6 +74,9 @@ class _AdmitScreenState extends State<AdmitScreen> {
   bool isHideBtn = false;
   final drugListKey = GlobalKey<DrugListWidgetState>();
   final foodListKey = GlobalKey<FoodListWidgetState>();
+  final ValueNotifier<bool> noteBtnVisible = ValueNotifier<bool>(false);
+
+  void resetNoteVisibility() => noteBtnVisible.value = false;
 
   List<String> time = [
     'ทุกๆ 1 ชม.',
@@ -85,21 +97,13 @@ class _AdmitScreenState extends State<AdmitScreen> {
   @override
   void initState() {
     super.initState();
+    // tHnNumber.text = 'SV-122473-10';
+  }
 
-    // tHnNumber.text = 'SV-81472-05';
-    // 'CM-285962-03';
-
-    Future.delayed(
-      const Duration(milliseconds: 300),
-      () async {
-        lSettingTime = await AdmitApi().loadSettingTime(
-          context,
-          headers_: widget.headers,
-        );
-
-        setState(() {});
-      },
-    );
+  @override
+  void dispose() {
+    noteBtnVisible.dispose();
+    super.dispose();
   }
 
   @override
@@ -194,6 +198,22 @@ class _AdmitScreenState extends State<AdmitScreen> {
                                               Radius.circular(10)),
                                         ),
                                       ),
+                                      onChanged: (v) {
+                                        if (v.trim().isEmpty) {
+                                          isLoaded = true;
+                                          lPetAdmit.clear();
+                                          lDataCardDrug.clear();
+                                          lDataCardFood.clear();
+                                          lDataCardObs.clear();
+                                        } else {
+                                          hnNumber = null;
+                                          isLoaded = false;
+                                          lPetAdmit.clear();
+                                          lDataCardDrug.clear();
+                                          lDataCardFood.clear();
+                                          lDataCardObs.clear();
+                                        }
+                                      },
                                     ),
                                   ),
                                   const SizedBox(width: 20),
@@ -276,10 +296,13 @@ class _AdmitScreenState extends State<AdmitScreen> {
                           key: ValueKey(reloadCard),
                           hnNumber: hnNumber!,
                           lUserLogin: widget.lUserLogin,
+                          noteBtnVisible: noteBtnVisible,
                           headers: widget.headers,
                           cb: (lPetAdmit_) async {
+                            noteBtnVisible.value = false;
+
                             lPetAdmit = lPetAdmit_;
-                            visit_id = lPetAdmit_.first.visit_id;
+                            visit_id = lPetAdmit.first.visit_id;
 
                             lDataCardDrug = await AdmitApi().load(
                               context,
@@ -301,6 +324,8 @@ class _AdmitScreenState extends State<AdmitScreen> {
                               visitId: visit_id ?? '',
                               headers_: widget.headers,
                             );
+
+                            setState(() {});
 
                             lDataCardObs.clear();
 
@@ -333,15 +358,19 @@ class _AdmitScreenState extends State<AdmitScreen> {
                                 e.id != null &&
                                 e.id.toString().trim().isNotEmpty);
 
+                            final alreadyConfirmed =
+                                hasDrug || hasFood || hasObs;
+
                             setState(() {
                               isHideBtn = hasDrug || hasFood || hasObs;
                             });
+                            noteBtnVisible.value = alreadyConfirmed;
                           },
                         ),
                       ),
                     ],
                   ),
-                if (hnNumber != null && isLoaded)
+                if (hnNumber != null && isLoaded && visit_id != null)
                   Padding(
                     padding: const EdgeInsets.all(2.0),
                     child: SingleChildScrollView(
@@ -419,15 +448,18 @@ class _AdmitScreenState extends State<AdmitScreen> {
                               );
                             },
                             onAdd: () {
-                              CreateFoodDialog.show(context, width: width,
-                                  onAddFood: (ListDataCardModel food) {
-                                setState(() {
-                                  lDataCardFood.add(food);
-                                });
-                              },
-                                  headers: widget.headers,
-                                  rwAddFood_: () {},
-                                  screen: 'admit');
+                              CreateFoodDialog.show(
+                                context,
+                                width: width,
+                                screen: 'admit',
+                                onAddFood: (ListDataCardModel food) {
+                                  setState(() {
+                                    lDataCardFood.add(food);
+                                  });
+                                },
+                                headers: widget.headers,
+                                rwAddFood_: () {},
+                              );
                               (context);
                             },
                             onConfirmed: () {
@@ -474,49 +506,80 @@ class _AdmitScreenState extends State<AdmitScreen> {
                   ),
               ])),
             ),
-            if (hnNumber != null && isLoaded)
+            if (!isHideBtn && hnNumber != null)
+              Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: textFieldNote(
+                  context,
+                  'โน๊ตพิเศษ : ',
+                  controller: tNote,
+                  color: Colors.black,
+                ),
+              ),
+            if (hnNumber != null && isLoaded && visit_id != null)
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Builder(builder: (context) {
-                      bool hasValidTakeTime(String? timeSlot) {
-                        if (timeSlot == null) return false;
+                    Builder(
+                      builder: (context) {
+                        String? pickTimeString(
+                            {String? timeSlot, String? takeTime}) {
+                          final ts = (timeSlot ?? '').trim();
+                          final tt = (takeTime ?? '').trim();
+                          if (ts.isNotEmpty &&
+                              ts.toLowerCase() != 'null' &&
+                              ts != '-') return ts;
+                          if (tt.isNotEmpty &&
+                              tt.toLowerCase() != 'null' &&
+                              tt != '-') return tt;
+                          return null;
+                        }
 
-                        if (timeSlot.contains('เมื่อมีอาการ')) return true;
+                        bool hasValidTakeTimeString(String? raw) {
+                          if (raw == null) return false;
 
-                        final cleaned = timeSlot
-                            .replaceAll('[', '')
-                            .replaceAll(']', '')
-                            .replaceAll('"', '')
-                            .replaceAll("'", '')
-                            .trim();
+                          if (raw.contains('เมื่อมีอาการ')) return true;
 
-                        final times =
-                            cleaned.split(',').map((e) => e.trim()).toList();
+                          final cleaned = raw
+                              .replaceAll('[', '')
+                              .replaceAll(']', '')
+                              .replaceAll('"', '')
+                              .replaceAll("'", '')
+                              .trim();
 
-                        return times.any((t) =>
-                            t.isNotEmpty &&
-                            t != '-' &&
-                            t.toLowerCase() != 'null');
-                      }
+                          final times =
+                              cleaned.split(',').map((e) => e.trim()).toList();
+                          return times.any(
+                            (t) =>
+                                t.isNotEmpty &&
+                                t != '-' &&
+                                t.toLowerCase() != 'null',
+                          );
+                        }
 
-                      final isDrugValid = lDataCardDrug.every((e) =>
-                          hasValidTakeTime(e.time_slot) ||
-                          (e.time_slot?.contains('เมื่อมีอาการ') ?? false));
+                        final isDrugValid = lDataCardDrug.every((e) {
+                          final raw = pickTimeString(
+                              timeSlot: e.time_slot, takeTime: e.take_time);
+                          return hasValidTakeTimeString(raw);
+                        });
 
-                      final isFoodValid = lDataCardFood.every((e) =>
-                          hasValidTakeTime(e.time_slot) ||
-                          (e.time_slot?.contains('เมื่อมีอาการ') ?? false));
+                        final isFoodValid = lDataCardFood.every((e) {
+                          final raw = pickTimeString(
+                              timeSlot: e.time_slot, takeTime: e.take_time);
+                          return hasValidTakeTimeString(raw);
+                        });
 
-                      final allHaveTakeTime = isDrugValid && isFoodValid;
+                        final allHaveTakeTime = isDrugValid && isFoodValid;
 
-                      return Visibility(
-                        visible: !isHideBtn,
-                        child: IgnorePointer(
-                          ignoring: !allHaveTakeTime,
-                          child: actionSlider(context, 'ยืนยันการส่งขึ้นวอร์ด',
+                        return Visibility(
+                          visible: !isHideBtn,
+                          child: IgnorePointer(
+                            ignoring: !allHaveTakeTime,
+                            child: actionSlider(
+                              context,
+                              'ยืนยันการส่งขึ้นวอร์ด',
                               width: 350.0,
                               height: 30.0,
                               togglecolor:
@@ -525,58 +588,66 @@ class _AdmitScreenState extends State<AdmitScreen> {
                               iconColor: Colors.white,
                               asController: ActionSliderController(),
                               action: (controller) async {
-                            final dialog = AwesomeDialog(
-                              context: context,
-                              customHeader: Lottie.asset(
-                                "assets/animations/Send1.json",
-                                repeat: true,
-                                width: 200,
-                                height: 100,
-                                fit: BoxFit.contain,
-                              ),
-                              dialogType: DialogType.noHeader,
-                              animType: AnimType.scale,
-                              dismissOnTouchOutside: false,
-                              dismissOnBackKeyPress: false,
-                              width: MediaQuery.of(context).size.width * 0.3,
-                              body: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: const [
-                                  SizedBox(height: 10),
-                                  Text(
-                                    "กำลังส่งข้อมูลขึ้นวอร์ด กรุณารอสักครู่...",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: 14),
+                                final dialog = AwesomeDialog(
+                                  context: context,
+                                  customHeader: Lottie.asset(
+                                    "assets/animations/Send1.json",
+                                    repeat: true,
+                                    width: 200,
+                                    height: 100,
+                                    fit: BoxFit.contain,
                                   ),
-                                  SizedBox(height: 10),
-                                ],
-                              ),
-                            );
+                                  dialogType: DialogType.noHeader,
+                                  animType: AnimType.scale,
+                                  dismissOnTouchOutside: false,
+                                  dismissOnBackKeyPress: false,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.3,
+                                  body: const Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      SizedBox(height: 10),
+                                      Text(
+                                        "กำลังส่งข้อมูลขึ้นวอร์ด กรุณารอสักครู่...",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(fontSize: 14),
+                                      ),
+                                      SizedBox(height: 10),
+                                    ],
+                                  ),
+                                );
 
-                            dialog.show();
+                                dialog.show();
 
-                            await AdmitApi().CreateCard(
-                              context,
-                              headers_: widget.headers,
-                              mUser: widget.lUserLogin.first,
-                              mPetAdmit_: lPetAdmit.first,
-                              lDataCardDrug_: lDataCardDrug,
-                              lDataCardFood_: lDataCardFood,
-                              lDataObs_: lDataCardObs,
-                            );
+                                await AdmitApi().CreateCard(
+                                  context,
+                                  headers_: widget.headers,
+                                  mUser: widget.lUserLogin.first,
+                                  mPetAdmit_: lPetAdmit.first,
+                                  message: tNote.text,
+                                  lDataCardDrug_: lDataCardDrug,
+                                  lDataCardFood_: lDataCardFood,
+                                  lDataObs_: lDataCardObs,
+                                );
 
-                            dialog.dismiss();
-                            setState(() {
-                              foodListKey.currentState?.setConfirmed();
-                              drugListKey.currentState?.setConfirmed();
-                              reloadCard++;
-                            });
-                          }),
-                        ),
-                      );
-                    })
+                                setState(() {
+                                  foodListKey.currentState?.setConfirmed();
+                                  drugListKey.currentState?.setConfirmed();
+                                  reloadCard++;
+                                });
+
+                                dialog.dismiss();
+
+                                noteBtnVisible.value = true;
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               )

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:e_smartward/Model/get_obs_model.dart';
 import 'package:e_smartward/Model/list_data_obs_model.dart';
 import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
@@ -60,13 +61,55 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                         final Map<String, dynamic> setValue =
                             jsonDecode(cleanedJson);
 
+                        List<String> _parseToList(dynamic v) {
+                          if (v == null) return [];
+                          if (v is List) {
+                            return v
+                                .map((e) => e.toString().trim())
+                                .where((e) => e.isNotEmpty)
+                                .toList();
+                          }
+                          if (v is String) {
+                            final s = v.trim();
+                            // ลอง decode เป็น JSON array ก่อน
+                            try {
+                              final decoded = jsonDecode(s);
+                              if (decoded is List) {
+                                return decoded
+                                    .map((e) => e.toString().trim())
+                                    .where((e) => e.isNotEmpty)
+                                    .toList();
+                              }
+                            } catch (_) {/* ไม่ใช่ JSON ก็ไปทาง split */}
+                            // fallback: ตัด bracket/quote แล้ว split ด้วยคอมมา
+                            return s
+                                .replaceAll('[', '')
+                                .replaceAll(']', '')
+                                .replaceAll("'", '')
+                                .split(',')
+                                .map((e) => e.trim())
+                                .where((e) => e.isNotEmpty)
+                                .toList();
+                          }
+                          return [];
+                        }
+
+                        final colVal = setValue['col']?.toString();
+
+                        final List<String> levels =
+                            _parseToList(setValue['level']);
+
                         final List<String> displayItems = [];
-                        if (setValue['obs']?.toString() != '0') {
-                          displayItems.add('obs');
+                        if (setValue['detail']?.toString() != '0') {
+                          displayItems.add('detail');
+                        }
+                        if (setValue['level']?.toString() != '0') {
+                          displayItems.add('level');
                         }
                         if (setValue['col']?.toString() != '0') {
                           displayItems.add('col');
                         }
+                        final detail = setValue['detail']?.toString() ?? '-';
 
                         return GestureDetector(
                           onTap: isDisabled ? null : () => widget.onEdit(obs),
@@ -92,6 +135,11 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
+                                          // text(context, "${obs.set_name}",
+                                          //     fontWeight: FontWeight.bold,
+                                          //     color: Color.fromARGB(
+                                          //         255, 212, 97, 95)),
+                                          const SizedBox(height: 4),
                                           text(context,
                                               "คำสั่งพิเศษ : ${obs.set_name}",
                                               color: const Color.fromARGB(
@@ -101,6 +149,42 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                                               "หมายเหตุ : ${obs.remark ?? '-'}",
                                               color: const Color.fromARGB(
                                                   255, 215, 116, 114)),
+                                          const SizedBox(height: 4),
+                                          // if (levels.isNotEmpty) ...[
+                                          //   const SizedBox(height: 6),
+                                          //   Wrap(
+                                          //     spacing: 10,
+                                          //     runSpacing: 10,
+                                          //     children: levels.map((lv) {
+                                          //       return Container(
+                                          //         padding: const EdgeInsets
+                                          //             .symmetric(
+                                          //             horizontal: 18,
+                                          //             vertical: 8),
+                                          //         decoration: BoxDecoration(
+                                          //           color:
+                                          //               Colors.white, // พื้นขาว
+                                          //           borderRadius:
+                                          //               BorderRadius.circular(
+                                          //                   24), // เม็ดแคปซูล
+                                          //           border: Border.all(
+                                          //               color:
+                                          //                   Colors.red.shade400,
+                                          //               width: 1.6), // ขอบแดง
+                                          //         ),
+                                          //         child: Text(
+                                          //           lv,
+                                          //           style: TextStyle(
+                                          //             fontWeight:
+                                          //                 FontWeight.w700,
+                                          //             color: Colors.pink
+                                          //                 .shade400, // ตัวอักษรชมพู
+                                          //           ),
+                                          //         ),
+                                          //       );
+                                          //     }).toList(),
+                                          //   ),
+                                          // ],
                                           const SizedBox(height: 4),
                                           obs.time_slot?.toString().contains(
                                                       "เมื่อมีอาการ") ==
@@ -119,38 +203,41 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                                                   ],
                                                 )
                                               : const SizedBox.shrink(),
-                                          Wrap(
-                                            children: displayItems.map((item) {
-                                              return Padding(
-                                                padding:
-                                                    const EdgeInsets.all(4.0),
-                                                child: Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 15,
-                                                      vertical: 5),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color.fromARGB(
-                                                        255, 202, 64, 61),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            20),
-                                                    border: Border.all(
-                                                      color:
-                                                          const Color.fromARGB(
-                                                              255,
-                                                              215,
-                                                              116,
-                                                              114),
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                  child: text(context, item,
-                                                      color: Colors.white),
-                                                ),
-                                              );
-                                            }).toList(),
-                                          ),
+                                          // if (displayItems.isNotEmpty) ...[
+                                          //   Wrap(
+                                          //     spacing: 8,
+                                          //     runSpacing: 8,
+                                          //     children: displayItems.map((col) {
+                                          //       return Container(
+                                          //         padding: const EdgeInsets
+                                          //             .symmetric(
+                                          //             horizontal: 15,
+                                          //             vertical: 5),
+                                          //         decoration: BoxDecoration(
+                                          //           color: const Color.fromARGB(
+                                          //               255, 202, 64, 61),
+                                          //           borderRadius:
+                                          //               BorderRadius.circular(
+                                          //                   20),
+                                          //           border: Border.all(
+                                          //             color:
+                                          //                 const Color.fromARGB(
+                                          //                     255,
+                                          //                     215,
+                                          //                     116,
+                                          //                     114),
+                                          //             width: 2,
+                                          //           ),
+                                          //         ),
+                                          //         child: text(
+                                          //           context,
+                                          //           col, // << โชว์ค่า col เท่านั้น
+                                          //           color: Colors.white,
+                                          //         ),
+                                          //       );
+                                          //     }).toList(),
+                                          //   ),
+                                          // ],
                                           const SizedBox(height: 4),
                                           obs.take_time != null &&
                                                   obs.take_time!

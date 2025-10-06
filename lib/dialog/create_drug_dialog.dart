@@ -1,6 +1,4 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:convert';
-
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +16,6 @@ import 'package:e_smartward/api/roundward_api.dart';
 import 'package:e_smartward/widget/action_slider.dart';
 import 'package:e_smartward/widget/button.dart';
 import 'package:e_smartward/widget/search_dropdown.dart';
-import 'package:e_smartward/widget/show_dialog.dart';
 import 'package:e_smartward/widget/text.dart';
 import 'package:e_smartward/widget/textfield.dart';
 import 'package:e_smartward/widget/time.dart';
@@ -35,7 +32,7 @@ class CreateDrugDialog extends StatefulWidget {
   final String? drugTypeName;
 
   CreateDrugDialog({
-    Key? key,
+    super.key,
     required this.screen,
     required this.headers,
     required this.onAddDrug,
@@ -44,7 +41,7 @@ class CreateDrugDialog extends StatefulWidget {
     this.lPetAdmit,
     this.lListAn,
     this.drugTypeName,
-  }) : super(key: key);
+  });
 
   @override
   State<CreateDrugDialog> createState() => _CreateDrugDialogState();
@@ -183,8 +180,8 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
     tDrugUnitQty.addListener(checkIsEnabled);
     tDrugDose.addListener(checkIsEnabled);
     tDrugUnit.addListener(checkIsEnabled);
-    tDrugDescription.addListener(checkIsEnabled);
-    tDrugRemark.addListener(checkIsEnabled);
+    //tDrugDescription.addListener(checkIsEnabled);
+    //tDrugRemark.addListener(checkIsEnabled);
 
     selectedTimeList = List.generate(timeList.length, (index) => false);
     selected = List.generate(time.length, (index) => false);

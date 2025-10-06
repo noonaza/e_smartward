@@ -73,11 +73,13 @@ class _GroupDropdownState extends State<GroupDropdown> {
 class SiteDropdown extends StatefulWidget {
   final Map<String, String> headers_;
   final Function(String) onSelected;
+  final String? initialSiteCode;
 
   const SiteDropdown({
     super.key,
     required this.headers_,
     required this.onSelected,
+    this.initialSiteCode,
   });
 
   @override
@@ -91,11 +93,36 @@ class _SiteDropdownState extends State<SiteDropdown> {
   @override
   void initState() {
     super.initState();
-    ManageFoodApi().loadSite(context, headers_: widget.headers_).then((sites) {
-      setState(() {
-        groupSite = sites;
-      });
+    _loadSites();
+  }
+
+  Future<void> _loadSites() async {
+    final sites =
+        await ManageFoodApi().loadSite(context, headers_: widget.headers_);
+    SiteModel? defaultSite;
+
+    if (widget.initialSiteCode != null &&
+        widget.initialSiteCode!.trim().isNotEmpty) {
+      final code = widget.initialSiteCode!.trim().toLowerCase();
+      // เลือกคีย์ให้ถูกกับโมเดลคุณ: code_name หรือ code
+      defaultSite = sites.cast<SiteModel?>().firstWhere(
+            (s) => (s?.code_name ?? '').toLowerCase() == code,
+            orElse: () => null,
+          );
+    }
+
+    setState(() {
+      groupSite = sites;
+      selectedSite = defaultSite; // 👈 เซ็ต default ที่นี่
     });
+
+    // ถ้าอยากให้ callback ทำงานทันทีเมื่อมี default
+    if (defaultSite != null) {
+      // รอให้ widget build รอบนี้เสร็จก่อนค่อย callback
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onSelected(defaultSite!.code_name!);
+      });
+    }
   }
 
   @override
@@ -115,7 +142,7 @@ class _SiteDropdownState extends State<SiteDropdown> {
               Expanded(
                 child: text(
                   context,
-                  site.name!,
+                  site.name ?? '',
                   color: Colors.teal,
                   maxLines: 3,
                 ),
@@ -126,9 +153,7 @@ class _SiteDropdownState extends State<SiteDropdown> {
       }).toList(),
       onChanged: (site) {
         if (site != null) {
-          setState(() {
-            selectedSite = site;
-          });
+          setState(() => selectedSite = site);
           widget.onSelected(site.code_name!);
         }
       },
@@ -161,16 +186,25 @@ class _WardDropdownState extends State<WardDropdown> {
   @override
   void initState() {
     super.initState();
-    _loadWardData();
+    if ((widget.selectedSiteCode ?? '').isNotEmpty) {
+      _loadWardData();
+    }
   }
 
   @override
   void didUpdateWidget(covariant WardDropdown oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.selectedSiteCode != oldWidget.selectedSiteCode) {
+    if (widget.selectedSiteCode != oldWidget.selectedSiteCode &&
+        (widget.selectedSiteCode ?? '').isNotEmpty) {
       _loadWardData();
     }
   }
+  // void didUpdateWidget(covariant WardDropdown oldWidget) {
+  //   super.didUpdateWidget(oldWidget);
+  //   if (widget.selectedSiteCode != oldWidget.selectedSiteCode) {
+  //     _loadWardData();
+  //   }
+  // }
 
   void _loadWardData() async {
     if (widget.selectedSiteCode != null) {

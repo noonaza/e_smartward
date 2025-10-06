@@ -3,7 +3,6 @@ import 'package:dio/dio.dart';
 import 'package:e_smartward/Model/data_add_order_mpdel.dart';
 import 'package:e_smartward/Model/data_progress_model.dart';
 import 'package:e_smartward/Model/list_an_model.dart';
-import 'package:e_smartward/Model/list_data_card_model.dart';
 import 'package:e_smartward/Model/list_data_roundward_model.dart';
 import 'package:e_smartward/Model/list_file._model.dart';
 import 'package:e_smartward/Model/list_group_model.dart';
@@ -49,21 +48,21 @@ class RoundWardApi {
         if (body is List) {
           admit = body.map<ListPetModel>((item) {
             return ListPetModel(
-              visit_id: item['visit_id'],
-              hn: item['hn'],
-              an: item['an'],
-              owner_name: item['owner_name'],
-              pet_name: item['pet_name'],
-              pet_type: item['pet_type'],
-              base_site_branch_id: item['base_site_branch_id'],
-              ward: item['ward'],
-              room_type: item['room_type'],
-              bed_number: item['bed_number'],
-              doctor: item['doctor'],
-              admit_date: item['admit_date'],
-              admit_time: item['admit_time'],
-              admit_datetimes: item['admit_datetimes'],
-            );
+                visit_id: item['visit_id'],
+                hn: item['hn'],
+                an: item['an'],
+                owner_name: item['owner_name'],
+                pet_name: item['pet_name'],
+                pet_type: item['pet_type'],
+                base_site_branch_id: item['base_site_branch_id'],
+                ward: item['ward'],
+                room_type: item['room_type'],
+                bed_number: item['bed_number'],
+                doctor: item['doctor'],
+                admit_date: item['admit_date'],
+                admit_time: item['admit_time'],
+                admit_datetimes: item['admit_datetimes'],
+                image: item['image']);
           }).toList();
         }
       } else if (response.data['code'] == 401) {

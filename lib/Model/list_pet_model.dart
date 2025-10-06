@@ -15,9 +15,12 @@ class ListPetModel {
   String? room_type;
   String? bed_number;
   String? doctor;
-    String? admit_date;
+  String? floor;
+  String? admit_date;
   String? admit_time;
   String? admit_datetimes;
+  String? image;
+ int? smw_admit_id;
   ListPetModel({
     this.id,
     this.hn_number,
@@ -32,9 +35,12 @@ class ListPetModel {
     this.room_type,
     this.bed_number,
     this.doctor,
+    this.floor,
     this.admit_date,
     this.admit_time,
     this.admit_datetimes,
+    this.image,
+    this.smw_admit_id,
   });
 
   ListPetModel copyWith({
@@ -51,9 +57,12 @@ class ListPetModel {
     String? room_type,
     String? bed_number,
     String? doctor,
+    String? floor,
     String? admit_date,
     String? admit_time,
     String? admit_datetimes,
+    String? image,
+    int? smw_admit_id,
   }) {
     return ListPetModel(
       id: id ?? this.id,
@@ -69,9 +78,12 @@ class ListPetModel {
       room_type: room_type ?? this.room_type,
       bed_number: bed_number ?? this.bed_number,
       doctor: doctor ?? this.doctor,
+      floor: floor ?? this.floor,
       admit_date: admit_date ?? this.admit_date,
       admit_time: admit_time ?? this.admit_time,
       admit_datetimes: admit_datetimes ?? this.admit_datetimes,
+      image: image ?? this.image,
+      smw_admit_id: smw_admit_id ?? this.smw_admit_id,
     );
   }
 
@@ -90,9 +102,12 @@ class ListPetModel {
       'room_type': room_type,
       'bed_number': bed_number,
       'doctor': doctor,
+      'floor': floor,
       'admit_date': admit_date,
       'admit_time': admit_time,
       'admit_datetimes': admit_datetimes,
+      'image': image,
+      'smw_admit_id': smw_admit_id,
     };
   }
 
@@ -111,9 +126,12 @@ class ListPetModel {
       room_type: map['room_type'] != null ? map['room_type'] as String : null,
       bed_number: map['bed_number'] != null ? map['bed_number'] as String : null,
       doctor: map['doctor'] != null ? map['doctor'] as String : null,
+      floor: map['floor'] != null ? map['floor'] as String : null,
       admit_date: map['admit_date'] != null ? map['admit_date'] as String : null,
       admit_time: map['admit_time'] != null ? map['admit_time'] as String : null,
       admit_datetimes: map['admit_datetimes'] != null ? map['admit_datetimes'] as String : null,
+      image: map['image'] != null ? map['image'] as String : null,
+      smw_admit_id: map['smw_admit_id'] != null ? map['smw_admit_id'] as int : null,
     );
   }
 
@@ -124,7 +142,7 @@ class ListPetModel {
 
   @override
   String toString() {
-    return 'ListPetModel(id: $id, hn_number: $hn_number, visit_id: $visit_id, hn: $hn, an: $an, owner_name: $owner_name, pet_name: $pet_name, pet_type: $pet_type, base_site_branch_id: $base_site_branch_id, ward: $ward, room_type: $room_type, bed_number: $bed_number, doctor: $doctor, admit_date: $admit_date, admit_time: $admit_time, admit_datetimes: $admit_datetimes)';
+    return 'ListPetModel(id: $id, hn_number: $hn_number, visit_id: $visit_id, hn: $hn, an: $an, owner_name: $owner_name, pet_name: $pet_name, pet_type: $pet_type, base_site_branch_id: $base_site_branch_id, ward: $ward, room_type: $room_type, bed_number: $bed_number, doctor: $doctor, floor: $floor, admit_date: $admit_date, admit_time: $admit_time, admit_datetimes: $admit_datetimes, image: $image, smw_admit_id: $smw_admit_id)';
   }
 
   @override
@@ -145,9 +163,12 @@ class ListPetModel {
       other.room_type == room_type &&
       other.bed_number == bed_number &&
       other.doctor == doctor &&
+      other.floor == floor &&
       other.admit_date == admit_date &&
       other.admit_time == admit_time &&
-      other.admit_datetimes == admit_datetimes;
+      other.admit_datetimes == admit_datetimes &&
+      other.image == image &&
+      other.smw_admit_id == smw_admit_id;
   }
 
   @override
@@ -165,8 +186,11 @@ class ListPetModel {
       room_type.hashCode ^
       bed_number.hashCode ^
       doctor.hashCode ^
+      floor.hashCode ^
       admit_date.hashCode ^
       admit_time.hashCode ^
-      admit_datetimes.hashCode;
+      admit_datetimes.hashCode ^
+      image.hashCode ^
+      smw_admit_id.hashCode;
   }
 }

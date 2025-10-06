@@ -1,8 +1,9 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'package:dio/dio.dart';
-import 'package:e_smartward/widget/text.dart';
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:dio/dio.dart';
+import 'package:e_smartward/dialog/chat_dialog.dart';
+import 'package:flutter/material.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/util/tlconstant.dart';
@@ -13,6 +14,7 @@ class CardPet extends StatefulWidget {
   final List<ListUserModel> lUserLogin;
   final String hnNumber;
   final Map<String, String> headers;
+  final ValueNotifier<bool> noteBtnVisible;
   Function cb;
 
   CardPet({
@@ -20,6 +22,7 @@ class CardPet extends StatefulWidget {
     required this.lUserLogin,
     required this.hnNumber,
     required this.headers,
+    required this.noteBtnVisible,
     required this.cb,
   });
 
@@ -50,15 +53,16 @@ class _CardPetState extends State<CardPet> {
           scrollDirection: Axis.horizontal,
           itemCount: lPetAdmit.length,
           itemBuilder: (context, index) {
-            String hn = lPetAdmit[index].hn ?? '';
-            String name = lPetAdmit[index].pet_name ?? '';
-            String site = lPetAdmit[index].base_site_branch_id ?? '';
-            String ward = lPetAdmit[index].ward ?? '';
-            String bed = lPetAdmit[index].bed_number ?? '';
-            String doctor = lPetAdmit[index].doctor ?? '';
-            String date = lPetAdmit[index].admit_date ?? '';
+            final pet = lPetAdmit[index];
+            final hn = pet.hn ?? '';
+            final name = pet.pet_name ?? '';
+            final site = pet.base_site_branch_id ?? '';
+            final ward = pet.ward ?? '';
+            final bed = pet.bed_number ?? '';
+            final doctor = pet.doctor ?? '';
+            final date = pet.admit_date ?? '';
 
-            String formattedText =
+            final formattedText =
                 'HN: $hn\nName: $name\nSite: $site\nWard: $ward\nเตียง: $bed\nชื่อแพทย์: $doctor\nวันที่เข้ารักษา: $date';
 
             return Padding(
@@ -79,19 +83,80 @@ class _CardPetState extends State<CardPet> {
                             vertical: 15, horizontal: 30),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 50.0),
-                        child: text(context, formattedText,
-                            textAlign: TextAlign.start, color: Colors.teal),
+                        padding: const EdgeInsets.only(left: 100.0),
+                        child: Text(
+                          formattedText,
+                          textAlign: TextAlign.start,
+                          style: const TextStyle(color: Colors.teal),
+                        ),
                       ),
                     ),
                   ),
-                  const Positioned(
-                    left: 8,
-                    child: CircleAvatar(
-                      radius: 25,
-                      backgroundImage: AssetImage('assets/images/ward.png'),
+                  Positioned(
+                    right: 5,
+                    top: 30,
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: widget.noteBtnVisible,
+                      builder: (context, canShow, _) {
+                        if (!canShow) {
+                          return SizedBox.shrink();
+                        }
+                        return IconButton(
+                          icon: const Icon(Icons.note_alt,
+                              color: Colors.teal, size: 28),
+                          onPressed: () {
+                            final admitId = pet.visit_id?.toString() ?? '';
+                            showDialog(
+                              context: context,
+                              barrierDismissible: true,
+                              builder: (_) => ChatDialog(
+                                headers: widget.headers,
+                                visitId: admitId,
+                                lUserLogin: widget.lUserLogin,
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                   ),
+                  Positioned(
+                    left: 8,
+                    child: FutureBuilder<ImageInfo>(
+                      future: _getImageInfo(pet.image),
+                      builder: (context, snapshot) {
+                        ImageProvider imageProvider;
+
+                        if (snapshot.hasData) {
+                          final size = snapshot.data!.image;
+                          if (size.width == 80 && size.height == 80) {
+                        
+                            imageProvider =
+                                const AssetImage('assets/images/petnull.png');
+                          } else {
+                            imageProvider = NetworkImage(pet.image!.trim());
+                          }
+                        } else {
+                    
+                          imageProvider =
+                              const AssetImage('assets/images/petnull.png');
+                        }
+
+                        return Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.teal, width: 2),
+                            image: DecorationImage(
+                              fit: BoxFit.cover,
+                              image: imageProvider,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  )
                 ],
               ),
             );
@@ -121,6 +186,7 @@ class _CardPetState extends State<CardPet> {
           setState(() {
             lPetAdmit = (response.data['body'] as List).map((item) {
               return ListPetModel(
+                  id: item['id'],
                   an: item['an'],
                   base_site_branch_id: item['base_site_branch_id'],
                   bed_number: item['bed_number'],
@@ -131,10 +197,10 @@ class _CardPetState extends State<CardPet> {
                   room_type: item['room_type'],
                   visit_id: item['visit_id'],
                   ward: item['ward'],
-                  doctor: item['doctor']);
+                  doctor: item['doctor'],
+                  image: item['image']);
             }).toList();
             widget.cb(lPetAdmit);
-            // print('listPet: $lPetAdmit');
           });
         }
       } else if (response.data['code'] == 401) {
@@ -145,5 +211,24 @@ class _CardPetState extends State<CardPet> {
     } catch (e) {
       dialog.Error(context, 'Failed to load data. Please try again.');
     }
+  }
+
+  Future<ImageInfo> _getImageInfo(String? url) async {
+    if (url == null || url.trim().isEmpty || url.toLowerCase() == 'null') {
+      throw Exception("No image");
+    }
+
+    final completer = Completer<ImageInfo>();
+    final imageProvider = NetworkImage(url.trim());
+
+    imageProvider.resolve(const ImageConfiguration()).addListener(
+          ImageStreamListener((ImageInfo info, bool _) {
+            completer.complete(info);
+          }, onError: (dynamic _, __) {
+            completer.completeError("Load error");
+          }),
+        );
+
+    return completer.future;
   }
 }

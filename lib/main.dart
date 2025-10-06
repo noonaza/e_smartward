@@ -27,25 +27,17 @@ class _MyAppState extends State<MyApp> {
           textTheme: GoogleFonts.mitrTextTheme()),
       debugShowCheckedModeBanner: false,
       home:
-          // AdmitScreen(),
-          // RoundWardScreen()
-          // NewUserApprovalDialog()
-          //     ListUserScreen(
-          //   lUserLogin: [],
-          //   newUser: '',
-          // )
-
-          // ),
           LoginScreen(),
     );
   }
 }
 
 class MyCustomScrollBehavior extends MaterialScrollBehavior {
-  // Override behavior methods and getters like dragDevices
+
   @override
   Set<PointerDeviceKind> get dragDevices => {
         PointerDeviceKind.touch,
         PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
       };
 }
