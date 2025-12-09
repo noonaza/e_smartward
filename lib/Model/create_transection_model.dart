@@ -145,6 +145,9 @@ class DataTransectionModel {
   final String status;
   final String? comment;
   final String? doctor;
+  String? feed;
+  final String? col;
+  final String? levels;
   List<FileModel>? file;
 
   DataTransectionModel({
@@ -169,6 +172,9 @@ class DataTransectionModel {
     required this.status,
     this.comment,
     this.doctor,
+    this.feed,
+    this.col,
+    this.levels,
     required this.file,
   });
 
@@ -193,8 +199,11 @@ class DataTransectionModel {
       date_slot: json['date_slot'],
       slot: json['slot'],
       doctor: json['doctor'],
+      feed: json['feed'],
       status: json['status'],
       comment: json['comment'],
+      col: json['col'],
+      levels: json['levels'],
       file: (json['file'] as List<dynamic>?)
               ?.map((e) => FileModel.fromJson(e))
               .toList() ??
@@ -224,7 +233,10 @@ class DataTransectionModel {
       'slot': slot,
       'status': status,
       'doctor': doctor,
+      'feed': feed,
       'comment': comment,
+      'col': col,
+      'levels': levels,
       'file': file?.map((f) => f.toJson()).toList(),
     };
   }

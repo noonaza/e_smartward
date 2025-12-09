@@ -39,11 +39,6 @@ class DrugListWidgetState extends State<DrugListWidget> {
 
   List<DoctorModel> ListDoctors = [];
 
-  // bool get isHideBtn {
-  //   return widget.lDataCard
-  //       .every((e) => e.id != null && e.id.toString().trim().isNotEmpty);
-  // }
-
   final tooltipController = JustTheController();
 
   bool isConfirmed = false;
@@ -52,6 +47,33 @@ class DrugListWidgetState extends State<DrugListWidget> {
     setState(() {
       isConfirmed = true;
     });
+  }
+
+  String labelFromTypeSlot(String? t) {
+    switch (t) {
+      case 'weekly_once':
+        return 'สัปดาห์ละครั้ง';
+      case 'daily_custom':
+        return 'กำหนดรายวัน';
+      case 'monthly_custom':
+        return 'กำหนดรายเดือน';
+      default:
+        return '-';
+    }
+  }
+
+  String _labelFromTypeSlotStd(String? t) {
+    switch ((t ?? '').toUpperCase()) {
+      case 'DAYS':
+        return 'สัปดาห์ละครั้ง';
+      case 'DATE':
+        return 'กำหนดรายวัน';
+      case 'D_M':
+        return 'กำหนดรายเดือน';
+      case 'ALL':
+      default:
+        return 'ไม่กำหนด';
+    }
   }
 
   bool get _hasAnyId => widget.lDataCard
@@ -94,6 +116,16 @@ class DrugListWidgetState extends State<DrugListWidget> {
                           final drug = widget.lDataCard[index];
                           final isDisabled = widget.lDataCard[index].id != null;
                           final tooltipController = JustTheController();
+
+                          // ignore: unnecessary_type_check
+                          final String typeSlot = (drug is ListDataCardModel)
+                              ? (drug.type_slot ?? 'ALL')
+                              : ((drug).type_slot ?? 'ALL');
+                          final scheduleLabel = (drug.schedule_mode_label !=
+                                      null &&
+                                  drug.schedule_mode_label!.trim().isNotEmpty)
+                              ? drug.schedule_mode_label!
+                              : _labelFromTypeSlotStd(typeSlot);
 
                           return GestureDetector(
                             onTap:
@@ -194,6 +226,134 @@ class DrugListWidgetState extends State<DrugListWidget> {
                                                       : [SizedBox()],
                                             ),
                                             const SizedBox(height: 4),
+                                            drug.use_now != null &&
+                                                    drug.use_now!.isNotEmpty &&
+                                                    !(drug.use_now?.contains(
+                                                            "ให้ยาทันที") ??
+                                                        false)
+                                                ? SizedBox(
+                                                    width: double.infinity,
+                                                    child: Wrap(
+                                                      spacing: 8,
+                                                      runSpacing: 8,
+                                                      children: drug.use_now!
+                                                          .replaceAll('[', '')
+                                                          .replaceAll(']', '')
+                                                          .replaceAll("'", '')
+                                                          .split(',')
+                                                          .where((time) =>
+                                                              time.trim() !=
+                                                                  '0' &&
+                                                              time
+                                                                  .trim()
+                                                                  .isNotEmpty)
+                                                          .map((time) {
+                                                        final displayText =
+                                                            time.trim() == '1'
+                                                                ? 'ให้ยาทันที'
+                                                                : time.trim();
+                                                        return Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  right: 0),
+                                                          child: Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        12,
+                                                                    vertical:
+                                                                        6),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color:
+                                                                  Colors.blue,
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          15),
+                                                            ),
+                                                            child: text(
+                                                              context,
+                                                              color:
+                                                                  Colors.white,
+                                                              displayText,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  )
+                                                : const SizedBox.shrink(),
+                                            const SizedBox(height: 4),
+                                            text(
+                                              context,
+                                              "กำหนด : $scheduleLabel",
+                                              color: Colors.blue,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            drug.set_slot != null &&
+                                                    drug.set_slot!.isNotEmpty &&
+                                                    drug.set_slot!
+                                                        .replaceAll('[', '')
+                                                        .replaceAll(']', '')
+                                                        .replaceAll("'", '')
+                                                        .split(',')
+                                                        .any((e) =>
+                                                            e.trim().isNotEmpty)
+                                                ? SizedBox(
+                                                    child: Wrap(
+                                                      spacing: 8,
+                                                      runSpacing: 8,
+                                                      children: drug.set_slot!
+                                                          .replaceAll('[', '')
+                                                          .replaceAll(']', '')
+                                                          .replaceAll("'", '')
+                                                          .split(',')
+                                                          .where((day) => day
+                                                              .trim()
+                                                              .isNotEmpty)
+                                                          .map(
+                                                            (day) => Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                      right: 0),
+                                                              child: Container(
+                                                                padding: const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        12,
+                                                                    vertical:
+                                                                        6),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: const Color
+                                                                      .fromARGB(
+                                                                      255,
+                                                                      75,
+                                                                      116,
+                                                                      150),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              15),
+                                                                ),
+                                                                child: text(
+                                                                  context,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  day.trim(),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          )
+                                                          .toList(),
+                                                    ),
+                                                  )
+                                                : const SizedBox.shrink(),
+                                            const SizedBox(height: 4),
                                             drug.take_time != null &&
                                                     drug.take_time!
                                                         .isNotEmpty &&
@@ -244,10 +404,17 @@ class DrugListWidgetState extends State<DrugListWidget> {
                                                     ),
                                                   )
                                                 : const SizedBox.shrink(),
-                                                 const SizedBox(height: 4),
+                                            const SizedBox(height: 4),
+                                            const SizedBox(height: 4),
                                             text(
                                               context,
-                                              "วันที่สั่งยา : ${widget.lDataCard[index].order_date}",
+                                              "วันที่สั่งยา : ${((widget.lDataCard[index].order_date == null || widget.lDataCard[index].order_date!.isEmpty) ? widget.lDataCard[index].start_date_imed : widget.lDataCard[index].order_date)}",
+                                              color: Colors.blue,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            text(
+                                              context,
+                                              "วันที่เริ่มให้ยา: ${((widget.lDataCard[index].start_date_use == null || widget.lDataCard[index].start_date_use!.isEmpty) ? widget.lDataCard[index].start_date_use : widget.lDataCard[index].start_date_use)}",
                                               color: Colors.blue,
                                             ),
                                             Padding(
@@ -329,11 +496,10 @@ class DrugListWidgetState extends State<DrugListWidget> {
                                                               .isEmpty) ||
                                                       ((drug.take_time == null ||
                                                               drug.take_time!
-                                                                  .isEmpty) &&
-                                                          !(drug.time_slot
-                                                                  ?.toString()
-                                                                  .contains("เมื่อมีอาการ") ??
-                                                              false)))
+                                                                  .isEmpty) ||
+                                                          (drug.set_slot == null ||
+                                                                  drug.set_slot!.isEmpty) &&
+                                                              !(drug.time_slot?.toString().contains("เมื่อมีอาการ") ?? false)))
                                                     const Padding(
                                                       padding: EdgeInsets.only(
                                                           left: 6.0),
@@ -352,24 +518,22 @@ class DrugListWidgetState extends State<DrugListWidget> {
                                       ),
                                     ),
                                   ),
-                              
-                                    Positioned(
-                                      right: 8.0,
-                                      top: 10.0,
-                                      child: SizedBox(
-                                        child: widget.lDataCard[index].id !=
-                                                null
-                                            ? null
-                                            : IconButton(
-                                                icon: const Icon(Icons.cancel,
-                                                    size: 20,
-                                                    color: Color.fromARGB(
-                                                        255, 33, 150, 243)),
-                                                onPressed: () =>
-                                                    widget.onDelete(index),
-                                              ),
-                                      ),
+                                  Positioned(
+                                    right: 8.0,
+                                    top: 10.0,
+                                    child: SizedBox(
+                                      child: widget.lDataCard[index].id != null
+                                          ? null
+                                          : IconButton(
+                                              icon: const Icon(Icons.cancel,
+                                                  size: 20,
+                                                  color: Color.fromARGB(
+                                                      255, 33, 150, 243)),
+                                              onPressed: () =>
+                                                  widget.onDelete(index),
+                                            ),
                                     ),
+                                  ),
                                 ],
                               ),
                             ),

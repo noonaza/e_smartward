@@ -170,14 +170,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final owner = (r.pet.owner_name ?? '').isEmpty ? '-' : r.pet.owner_name!;
       final hn = (r.pet.hn_number ?? '').isEmpty ? '-' : r.pet.hn_number!;
       final petType = (r.pet.pet_type)!.isEmpty ? '-' : (r.pet.pet_type);
+       final imagespro = (r.pet.image)!.isEmpty ? '-' : (r.pet.image);
       final tone = r.status;
 
       return DataCard(
+        
         petNames: [name],
         petType: petType,
+        
         ownerName: owner,
         hn: hn,
         tone: tone,
+        images: imagespro,
         cornerIcons: images(tone,
             toDoFood: r.toDoFood, toDoDrug: r.toDoDrug, toDoiDrug: r.toDoiDrug),
       );

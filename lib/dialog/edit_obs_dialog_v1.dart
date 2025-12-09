@@ -3,9 +3,9 @@ import 'dart:convert';
 
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
-import 'package:e_smartward/Model/get_obs_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import 'package:e_smartward/Model/list_an_model.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_roundward_model.dart';
@@ -14,6 +14,7 @@ import 'package:e_smartward/widget/action_slider.dart';
 import 'package:e_smartward/widget/button.dart';
 import 'package:e_smartward/widget/textfield.dart';
 import 'package:e_smartward/widget/time.dart';
+
 import '../Model/list_data_card_model.dart';
 import '../Model/list_data_obs_model.dart';
 import '../Model/list_group_model.dart';
@@ -21,8 +22,7 @@ import '../Model/update_order_model.dart';
 import '../api/roundward_api.dart';
 import '../widget/text.dart';
 
-// ignore: must_be_immutable
-class EditObsDialog extends StatefulWidget {
+class EditObsDialogV1 extends StatefulWidget {
   final ListDataObsDetailModel Obs;
   final int indexObs;
   final Function(ListDataObsDetailModel updatedObs, int index_) cb;
@@ -36,7 +36,7 @@ class EditObsDialog extends StatefulWidget {
   final String? drugTypeName;
   String screen;
 
-  EditObsDialog({
+  EditObsDialogV1({
     Key? key,
     required this.Obs,
     required this.indexObs,
@@ -53,7 +53,7 @@ class EditObsDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<EditObsDialog> createState() => _EditDetailDialogState();
+  State<EditObsDialogV1> createState() => _EditDetailDialogState();
 
   static void showObs(
     BuildContext context,
@@ -96,7 +96,7 @@ class EditObsDialog extends StatefulWidget {
           ),
         ],
       ),
-      body: EditObsDialog(
+      body: EditObsDialogV1(
         Obs: Obs,
         indexObs: index_,
         cb: cb_,
@@ -116,7 +116,7 @@ class EditObsDialog extends StatefulWidget {
   }
 }
 
-class _EditDetailDialogState extends State<EditObsDialog> {
+class _EditDetailDialogState extends State<EditObsDialogV1> {
   TextEditingController tObsName = TextEditingController();
   TextEditingController tObsNote = TextEditingController();
   TextEditingController ttimeHour = TextEditingController();
@@ -166,10 +166,9 @@ class _EditDetailDialogState extends State<EditObsDialog> {
     selectedTimeList = List.generate(timeList.length, (index) => false);
 
     tObsName.text = widget.Obs.set_name ?? '';
-    // tObsName.text = widget.Obs.set_value ?? '';
     tObsNote.text = widget.Obs.remark ?? '';
 
-  
+    // ดึงข้อมูล set_value มาถอด JSON
     if (widget.Obs.set_value != null) {
       final decoded = jsonDecode(widget.Obs.set_value!);
       if (decoded['obs'] == 1) {
@@ -215,8 +214,6 @@ class _EditDetailDialogState extends State<EditObsDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           CustomCloseButton(context),
-          const SizedBox(height: 5),
-          text(context, 'กลุ่ม ${tObsName.text}'),
           const SizedBox(height: 5),
           textField1('คำสั่งพิเศษ', controller: tObsName),
           const SizedBox(height: 10),

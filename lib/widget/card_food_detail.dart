@@ -52,6 +52,34 @@ class FoodListWidgetState extends State<FoodListWidget> {
     });
   }
 
+  String labelFromTypeSlot(String? t) {
+    switch (t) {
+      case 'weekly_once':
+        return 'สัปดาห์ละครั้ง';
+      case 'daily_custom':
+        return 'กำหนดรายวัน';
+      case 'monthly_custom':
+        return 'กำหนดรายเดือน';
+      case 'all':
+      default:
+        return 'ไม่กำหนด';
+    }
+  }
+
+  String _labelFromTypeSlotStd(String? t) {
+    switch ((t ?? '').toUpperCase()) {
+      case 'DAYS':
+        return 'สัปดาห์ละครั้ง';
+      case 'DATE':
+        return 'กำหนดรายวัน';
+      case 'D_M':
+        return 'กำหนดรายเดือน';
+      case 'all':
+      default:
+        return 'ไม่กำหนด';
+    }
+  }
+
   bool get _hasAnyId => widget.lDataCard
       .any((e) => e.id != null && e.id.toString().trim().isNotEmpty);
 
@@ -94,6 +122,17 @@ class FoodListWidgetState extends State<FoodListWidget> {
                         final isDisabled = widget.lDataCard[index].id != null;
                         final tooltipController = JustTheController();
 
+                        
+                        // ignore: unnecessary_type_check
+                        final String typeSlot = (food is ListDataCardModel)
+                            ? (food.type_slot ?? 'ALL')
+                            : ((food).type_slot ?? 'ALL');
+                        final scheduleLabel =
+                            (food.schedule_mode_label != null &&
+                                    food.schedule_mode_label!.trim().isNotEmpty)
+                                ? food.schedule_mode_label!
+                                : _labelFromTypeSlotStd(typeSlot);
+
                         return GestureDetector(
                           onTap: isDisabled ? null : () => widget.onEdit(food),
                           child: Padding(
@@ -127,6 +166,80 @@ class FoodListWidgetState extends State<FoodListWidget> {
                                               "วิธีให้ : ${widget.lDataCard[index].id == null ? widget.lDataCard[index].dose_qty ?? '-' : widget.lDataCard[index].dose_qty_name ?? '-'} ${widget.lDataCard[index].unit_name ?? '-'}",
                                               color: const Color.fromARGB(
                                                   255, 185, 120, 15)),
+                                          const SizedBox(height: 4),
+                                          text(context,
+                                              "วิธีเตรียม :  ${widget.lDataCard[index].meal_take ?? '-'}",
+                                              color: const Color.fromARGB(
+                                                  255, 185, 120, 15)),
+                                          const SizedBox(height: 4),
+                                          text(
+                                            context,
+                                            "กำหนด : $scheduleLabel",
+                                            color: Color.fromARGB(
+                                                255, 185, 120, 15),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          food.set_slot != null &&
+                                                  food.set_slot!.isNotEmpty &&
+                                                  food.set_slot!
+                                                      .replaceAll('[', '')
+                                                      .replaceAll(']', '')
+                                                      .replaceAll("'", '')
+                                                      .split(',')
+                                                      .any((e) =>
+                                                          e.trim().isNotEmpty)
+                                              ? SizedBox(
+                                                  child: Wrap(
+                                                    spacing: 8,
+                                                    runSpacing: 8,
+                                                    children: food.set_slot!
+                                                        .replaceAll('[', '')
+                                                        .replaceAll(']', '')
+                                                        .replaceAll("'", '')
+                                                        .split(',')
+                                                        .where((day) => day
+                                                            .trim()
+                                                            .isNotEmpty)
+                                                        .map(
+                                                          (day) => Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    right: 0),
+                                                            child: Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                      horizontal:
+                                                                          12,
+                                                                      vertical:
+                                                                          6),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: const Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    185,
+                                                                    120,
+                                                                    15),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            15),
+                                                              ),
+                                                              child: text(
+                                                                context,
+                                                                color: Colors
+                                                                    .white,
+                                                                day.trim(),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                  ),
+                                                )
+                                              : const SizedBox.shrink(),
                                           const SizedBox(height: 4),
                                           food.time_slot?.toString().contains(
                                                       "เมื่อมีอาการ") ==
@@ -199,9 +312,75 @@ class FoodListWidgetState extends State<FoodListWidget> {
                                                 )
                                               : const SizedBox.shrink(),
                                           const SizedBox(height: 4),
+                                          food.use_now != null &&
+                                                  food.use_now!.isNotEmpty &&
+                                                  !(food.use_now?.contains(
+                                                          "ให้อาหารทันที") ??
+                                                      false)
+                                              ? SizedBox(
+                                                  width: double.infinity,
+                                                  child: Wrap(
+                                                    spacing: 8,
+                                                    runSpacing: 8,
+                                                    children: food.use_now!
+                                                        .replaceAll('[', '')
+                                                        .replaceAll(']', '')
+                                                        .replaceAll("'", '')
+                                                        .split(',')
+                                                        .where((time) =>
+                                                            time.trim() !=
+                                                                '0' &&
+                                                            time
+                                                                .trim()
+                                                                .isNotEmpty)
+                                                        .map((time) {
+                                                      final displayText =
+                                                          time.trim() == '1'
+                                                              ? 'ให้อาหารทันที'
+                                                              : time.trim();
+                                                      return Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(right: 0),
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      12,
+                                                                  vertical: 6),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: const Color
+                                                                .fromARGB(255,
+                                                                185, 120, 15),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        15),
+                                                          ),
+                                                          child: text(
+                                                            context,
+                                                            color: Colors.white,
+                                                            displayText,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                  ),
+                                                )
+                                              : const SizedBox.shrink(),
+                                          const SizedBox(height: 4),
                                           text(
                                             context,
-                                            "วันที่สั่งอาหาร : ${widget.lDataCard[index].order_date}",
+                                            "วันที่สั่งอาหาร : ${((widget.lDataCard[index].order_date == null || widget.lDataCard[index].order_date!.isEmpty) ? widget.lDataCard[index].start_date_imed : widget.lDataCard[index].order_date)}",
+                                            color: Color.fromARGB(
+                                                255, 185, 120, 15),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          text(
+                                            context,
+                                            "วันที่เริ่มให้อาหาร: ${((widget.lDataCard[index].start_date_use == null || widget.lDataCard[index].start_date_use!.isEmpty) ? widget.lDataCard[index].start_date_use : widget.lDataCard[index].start_date_use)}",
                                             color: Color.fromARGB(
                                                 255, 185, 120, 15),
                                           ),

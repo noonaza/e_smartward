@@ -1,10 +1,10 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:e_smartward/widget/admit_selectday.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-
 import 'package:e_smartward/Model/data_add_order_mpdel.dart';
 import 'package:e_smartward/Model/doctor_model.dart';
 import 'package:e_smartward/Model/list_an_model.dart';
@@ -111,6 +111,9 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
   TextEditingController tDrugUnitQty = TextEditingController();
 
   TextEditingController tSearchDoctor = TextEditingController();
+  ScheduleMode _scheduleMode = ScheduleMode.weeklyOnce; // ค่าเริ่มต้นที่ต้องการ
+  ScheduleResult? _schedule; // ถ้าอยากเก็บรายละเอียดอื่น ๆ จากตัวเลือก
+// ---------- Static refs ----------
   List<String> typeDrug = [
     '[T]ยาเม็ด',
     '[L]ยาหยอด',
@@ -138,6 +141,36 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
     'หลังอาหาร': false,
     'ไม่ระบุ': false,
   };
+
+  List<String> setDay = [
+    'สัปดาห์ละครั้ง',
+    'กำหนดรายวัน',
+    'กำหนดรายเดือน',
+    'ไม่กำหนด'
+  ];
+  Map<String, bool> selectedDay = {
+    'สัปดาห์ละครั้ง': false,
+    'กำหนดรายวัน': false,
+    'กำหนดรายเดือน': false,
+    'ไม่กำหนด': false
+  };
+
+  final Map<String, bool> selectedWeekdays = {
+    'จันทร์': false,
+    'อังคาร': false,
+    'พุธ': false,
+    'พฤหัสบดี': false,
+    'ศุกร์': false,
+    'เสาร์': false,
+    'อาทิตย์': false,
+  };
+
+  Map<String, bool> selectStatus = {
+    'ให้ยาทันที': false,
+  };
+  List<String> setValueStatus = [
+    'ให้ยาทันที',
+  ];
   String selectedTimeSlot = '';
   List<String> selectedTakeTimes = [];
 
@@ -145,6 +178,34 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
     String formattedHour = index.toString().padLeft(2, '0');
     return '$formattedHour:00';
   });
+  String _typeSlotFromMode(ScheduleMode m) {
+    switch (m) {
+      case ScheduleMode.weeklyOnce:
+        return 'DAYS';
+      case ScheduleMode.dailyCustom:
+        return 'DATE';
+      case ScheduleMode.monthlyCustom:
+        return 'D_M';
+      case ScheduleMode.all:
+        return 'ALL';
+    }
+  }
+
+  String labelFromTypeSlot(String? t) {
+    switch (t) {
+      case 'weekly_once':
+        return 'สัปดาห์ละครั้ง';
+      case 'daily_custom':
+        return 'กำหนดรายวัน';
+      case 'monthly_custom':
+        return 'กำหนดรายเดือน';
+      case 'all':
+        return 'ไม่กำหนด';
+      default:
+        return '-';
+    }
+  }
+
   bool isEnabled = false;
 
   List<bool> selected = [];
@@ -157,6 +218,58 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
   List<DropdownMenuItem<DoctorModel>> drugItems = [];
   DoctorModel? selectedDoctor;
   List<DoctorModel> ListDoctors = [];
+
+  String encodeTakeTime({
+    required List<bool> selectedTimeList,
+    required List<String> timeList,
+  }) {
+    final times = <String>[];
+    for (int i = 0; i < timeList.length; i++) {
+      if (selectedTimeList[i]) times.add(timeList[i]);
+    }
+    if (times.isEmpty) return '[]';
+    return "[${times.map((e) => "'$e'").join(',')}]"; // "['08:00','12:00']"
+  }
+
+  String resolveTimeSlot({
+    required List<bool> selected, // ผูกกับ List<String> time
+    required List<String>
+        time, // ['ทุกๆ 1 ชม.', ... , 'กำหนดเอง', 'เมื่อมีอาการ']
+    required String customNote, // ถ้าเลือก 'กำหนดเอง' ใส่ที่นี่
+  }) {
+    final idx = selected.indexWhere((v) => v == true);
+    if (idx < 0) return '';
+    final label = time[idx];
+    if (label == 'กำหนดเอง') return customNote.trim();
+    return label;
+  }
+
+  void checkIsEnablede() {
+    final ok = (tDrudName.text.trim().isNotEmpty) &&
+        ((int.tryParse(tDrugQty.text) ?? 0) >= 0) &&
+        (tDrugUnit.text.trim().isNotEmpty);
+    if (ok != isEnabled) {
+      setState(() => isEnabled = ok);
+    }
+  }
+
+  bool _isScheduleDetailValid() {
+    switch (_scheduleMode) {
+      case ScheduleMode.weeklyOnce:
+        return _schedule!.weekdayNames.isNotEmpty;
+
+      case ScheduleMode.dailyCustom:
+        // ต้องมี note/ค่า custom สำหรับรายวัน
+        return (_schedule!.dailyNote?.trim().isNotEmpty ?? false);
+
+      case ScheduleMode.monthlyCustom:
+        // ต้องมีวันของเดือนอย่างน้อย 1
+        return _schedule!.monthlyDays.isNotEmpty;
+
+      case ScheduleMode.all:
+        return _schedule!.monthlyDays.isNotEmpty;
+    }
+  }
 
   @override
   void initState() {
@@ -212,6 +325,7 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final result = _schedule;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -333,53 +447,117 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
           ),
           const SizedBox(height: 15),
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Wrap(
                   spacing: 8.0,
                   children: setValue.map((key) {
                     final isSelected = selectedValues[key] ?? false;
+
                     return ChoiceChip(
-                      label: text(
-                        context,
-                        key,
-                        color: isSelected ? Colors.white : Colors.teal,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      selected: isSelected,
-                      selectedColor: Color.fromARGB(255, 4, 138, 161),
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color:
-                              isSelected ? Colors.teal : Colors.teal.shade200,
+                        label: text(
+                          context,
+                          key,
+                          color: isSelected ? Colors.white : Colors.teal,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-                      onSelected: (selected) {
-                        setState(() {
-                          selectedValues.updateAll((key, value) => false);
-                          selectedValues[key] = selected;
+                        selected: isSelected,
+                        selectedColor: Color.fromARGB(255, 4, 138, 161),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color:
+                                isSelected ? Colors.teal : Colors.teal.shade200,
+                          ),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                        onSelected: (selected) {
+                          setState(() {
+                            selectedValues[key] = selected;
+                          });
+                          checkIsEnabled();
                         });
-                        checkIsEnabled();
-                      },
-                    );
                   }).toList()),
+              Wrap(
+                spacing: 8.0,
+                children: setValueStatus.map((key) {
+                  final isSelected = selectStatus[key] ?? false;
+
+                  return ChoiceChip(
+                    label: text(
+                      context,
+                      key,
+                      color: isSelected ? Colors.white : Colors.teal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    selected: isSelected,
+                    selectedColor: const Color.fromARGB(255, 4, 138, 161),
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(
+                        color: isSelected ? Colors.teal : Colors.teal.shade200,
+                      ),
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                    onSelected: (selected) {
+                      setState(() {
+                        selectStatus.updateAll((key, value) => false);
+                        selectStatus[key] = selected;
+                      });
+                      checkIsEnabled();
+                    },
+                  );
+                }).toList(),
+              ),
             ],
+          ),
+          const SizedBox(height: 15),
+          SchedulePicker(
+            allowAll: false,
+            key: const ValueKey('create_sched'),
+            initialMode: _scheduleMode,
+            initialWeeklySelectedNames: result?.weekdayNames.isNotEmpty == true
+                ? result!.weekdayNames
+                : const {},
+            initialDailyNote: result?.dailyNote,
+            initialMonthlyDate: result?.monthlyDate,
+            initialMonthlyDays: result?.monthlyDays ?? const <int>{},
+            onChanged: (cfg) {
+              setState(() {
+                _scheduleMode = cfg.mode;
+                _schedule = cfg;
+              });
+              checkIsEnabled();
+            },
           ),
           const SizedBox(height: 15),
           TimeSelection(
             time: time,
             timeList: timeList,
+            initialTakeTimes: selectedTakeTimes,
+            initialTimeSlot: selectedTimeSlot,
             onSelectionChanged: (selectedIndex, selectedList) {
               setState(() {
-                selectedTimeSlot = time[selectedIndex ?? 0];
-                selectedTakeTimes = [];
+                final idx = (selectedIndex == null ||
+                        selectedIndex < 0 ||
+                        selectedIndex >= time.length)
+                    ? 0
+                    : selectedIndex;
 
-                for (int i = 0; i < selectedList.length; i++) {
-                  if (selectedList[i]) {
-                    selectedTakeTimes.add(timeList[i]);
+                selectedTimeSlot = time[idx];
+
+                if (selectedTimeSlot == 'เมื่อมีอาการ') {
+                  selectedTakeTimes = [];
+                } else {
+                  selectedTakeTimes = [];
+                  for (int i = 0;
+                      i < selectedList.length && i < timeList.length;
+                      i++) {
+                    if (selectedList[i]) selectedTakeTimes.add(timeList[i]);
                   }
                 }
               });
@@ -405,6 +583,12 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
                 iconColor: Colors.white,
                 asController: ActionSliderController(),
                 action: (controller) async {
+                  String status = '0';
+
+                  if (selectStatus['ให้ยาทันที'] == true) {
+                    status = '1';
+                  }
+                  final typeSlot = _typeSlotFromMode(_scheduleMode);
                   if (widget.screen == 'roundward') {
                     final newDrug = DataAddOrderModel(
                       item_name: tDrudName.text,
@@ -417,9 +601,16 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
                       drug_type_name: selectedTypeDrug,
                       drug_description: tDrugDescription.text,
                       stock_out: 0,
+                      use_now: status,
                       remark: tDrugRemark.text,
+                      schedule_mode_label:
+                          _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
                       doctor_eid: selectedDoctor?.employee_id,
                       unit_stock: tDrugUnitQty.text,
+                      set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                      type_slot: _typeSlotFromMode(_scheduleMode),
+                      start_date_imed:
+                          DateFormat('yyyy-MM-dd').format(DateTime.now()),
                       meal_timing: selectedValues.entries
                           .where((entry) => entry.value)
                           .map((entry) => entry.key)
@@ -444,16 +635,23 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
                       item_name: tDrudName.text,
                       dose_qty: tDrugDose.text,
                       dose_qty_name: tDrugDose.text,
-                      // double.parse(
-                      //     tDrugDose.text.isEmpty ? '0' : tDrugDose.text),
+                    
                       unit_name: tDrugUnit.text,
                       item_qty: int.tryParse(tDrugQty.text) ?? 0,
                       start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
                           .format(DateTime.now()),
+                      start_date_imed:
+                          DateFormat('yyyy-MM-dd').format(DateTime.now()),
                       drug_type_name: selectedTypeDrug,
                       drug_description: tDrugDescription.text,
+                      set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                      schedule_mode_label:
+                          _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
+                      type_slot: _typeSlotFromMode(_scheduleMode),
                       stock_out: 0,
                       remark: tDrugRemark.text,
+                      use_now: status,
+                      
                       doctor_eid: selectedDoctor?.employee_id,
                       unit_stock: tDrugUnitQty.text,
                       meal_timing: selectedValues.entries
@@ -479,19 +677,32 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
   }
 
   void checkIsEnabled() {
-    setState(() {
-      isEnabled = tDrudName.text.trim().isNotEmpty &&
-          tDrugQty.text.trim().isNotEmpty &&
-          tDrugUnitQty.text.trim().isNotEmpty &&
-          tDrugDose.text.trim().isNotEmpty &&
-          tDrugUnit.text.trim().isNotEmpty &&
-          selectedTypeDrug != null &&
-          selectedDoctor != null &&
-          // tDrugDoc.text.trim().isNotEmpty &&
-          selectedValues.containsValue(true) &&
-          (selectedTimeSlot.isNotEmpty &&
-              (selectedTimeSlot == 'เมื่อมีอาการ' ||
-                  selectedTakeTimes.isNotEmpty));
-    });
+    final hasBasics = tDrudName.text.trim().isNotEmpty &&
+        tDrugQty.text.trim().isNotEmpty &&
+        tDrugUnitQty.text.trim().isNotEmpty &&
+        tDrugDose.text.trim().isNotEmpty &&
+        tDrugUnit.text.trim().isNotEmpty &&
+        selectedTypeDrug != null &&
+        selectedDoctor != null;
+
+    (selectedTimeSlot.isNotEmpty &&
+        (selectedTimeSlot == 'เมื่อมีอาการ' || selectedTakeTimes.isNotEmpty));
+    selectedTakeTimes.isNotEmpty;
+
+    final mealOk = selectedValues.containsValue(true);
+    final scheduleOk = _isScheduleDetailValid();
+    final timeOk = _isTimeOk();
+
+    final ok = hasBasics && mealOk && scheduleOk && timeOk;
+
+    if (ok != isEnabled) {
+      setState(() => isEnabled = ok);
+    }
+  }
+
+  bool _isTimeOk() {
+    if (selectedTimeSlot.isEmpty) return false;
+    if (selectedTimeSlot == 'เมื่อมีอาการ') return true; // ยกเว้นกรณีนี้
+    return selectedTakeTimes.isNotEmpty; // อื่นๆ ต้องมีเวลาอย่างน้อย 1
   }
 }

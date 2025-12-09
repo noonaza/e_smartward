@@ -190,7 +190,7 @@ class _CardPetState extends State<CardPet> {
                   an: item['an'],
                   base_site_branch_id: item['base_site_branch_id'],
                   bed_number: item['bed_number'],
-                  hn: hnNumber,
+                  hn: item['hn'],
                   owner_name: item['owner_name'],
                   pet_name: item['pet_name'],
                   pet_type: item['pet_type'],

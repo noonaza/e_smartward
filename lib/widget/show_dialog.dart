@@ -138,7 +138,7 @@ class dialog {
                     height: 80,
                     child: image == null
                         ? Image.asset('images/no-data.gif')
-                        : Image.asset('images/${image}'), //?? "alertList.gif"
+                        : Image.asset('images/$image'), //?? "alertList.gif"
                   ),
                   text(context, label)
                 ],

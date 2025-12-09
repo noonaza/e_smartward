@@ -1,7 +1,4 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 
 class DashboardModel {
   int? id;
@@ -24,8 +21,9 @@ class DashboardModel {
   String? status_now_slot;
   String? status_now;
   int? to_do_food;
+  String? image;
   int? to_do_drug;
-   int? to_do_idrug;
+  int? to_do_idrug;
 
   DashboardModel({
     this.id,
@@ -43,13 +41,14 @@ class DashboardModel {
     this.idoctor,
     this.take_time_all,
     this.slot_now,
+    this.image,
     this.date_slot_now,
     this.last_transaction,
     this.status_now_slot,
     this.status_now,
-    this.to_do_food,   
-    this.to_do_drug,  
-    this.to_do_idrug,  
+    this.to_do_food,
+    this.to_do_drug,
+    this.to_do_idrug,
   });
 
   factory DashboardModel.fromJson(Map<String, dynamic> json) {
@@ -68,6 +67,7 @@ class DashboardModel {
       ibed_number: json['ibed_number']?.toString(),
       idoctor: json['_doctor']?.toString(),
       take_time_all: _parseTimes(json['take_time_all']),
+      image: json['image']?.toString(),
       slot_now: json['slot_now']?.toString(),
       date_slot_now: json['date_slot_now']?.toString(),
       last_transaction: (json['last_transaction'] is Map<String, dynamic>)
@@ -76,9 +76,9 @@ class DashboardModel {
           : null,
       status_now_slot: json['status_now_slot']?.toString(),
       status_now: json['status_now']?.toString(),
-      to_do_food: _asInt(json['to_do_food']),  
+      to_do_food: _asInt(json['to_do_food']),
       to_do_drug: _asInt(json['to_do_drug']),
-      to_do_idrug: _asInt(json['to_do_idrug']),    
+      to_do_idrug: _asInt(json['to_do_idrug']),
     );
   }
 
@@ -99,13 +99,14 @@ class DashboardModel {
       'idoctor': idoctor,
       'take_time_all': take_time_all,
       'slot_now': slot_now,
+      'image': image,
       'date_slot_now': date_slot_now,
       'last_transaction': last_transaction?.toJson(),
       'status_now_slot': status_now_slot,
       'status_now': status_now,
-      'to_do_food': to_do_food,   
+      'to_do_food': to_do_food,
       'to_do_drug': to_do_drug,
-      'to_do_idrug': to_do_idrug,    
+      'to_do_idrug': to_do_idrug,
     };
   }
 
@@ -134,7 +135,6 @@ class DashboardModel {
     return null;
   }
 }
-
 
 class LastTransaction {
   int? id;

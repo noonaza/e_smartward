@@ -20,7 +20,7 @@ import 'package:e_smartward/dialog/check_drug_order.dart';
 import 'package:e_smartward/dialog/check_food_order.dart';
 import 'package:e_smartward/dialog/create_drug_dialog.dart';
 import 'package:e_smartward/dialog/create_food_dialog.dart';
-import 'package:e_smartward/dialog/create_obs_dialog.dart';
+import 'package:e_smartward/dialog/create_obs_dialog_v1.dart';
 import 'package:e_smartward/dialog/progress_note_dialog.dart';
 import 'package:e_smartward/widget/card_roundward.dart';
 import 'package:e_smartward/widget/dropdown.dart';
@@ -555,42 +555,65 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                             })),
 
                                                     Positioned(
-  left: 8,
-  child: FutureBuilder<ImageInfo>(
-    future: _getImageInfo(pet.image),
-    builder: (context, snapshot) {
-      ImageProvider imageProvider;
+                                                      left: 8,
+                                                      child: FutureBuilder<
+                                                          ImageInfo>(
+                                                        future: _getImageInfo(
+                                                            pet.image),
+                                                        builder: (context,
+                                                            snapshot) {
+                                                          ImageProvider
+                                                              imageProvider;
 
-      if (snapshot.hasData) {
-        final size = snapshot.data!.image;
-        if (size.width == 80 && size.height == 80) {
-          // ถ้าขนาด 80*80 → ใช้ default
-          imageProvider = const AssetImage('assets/images/petnull.png');
-        } else {
-          imageProvider = NetworkImage(pet.image!.trim());
-        }
-      } else {
-        // โหลดไม่ทันหรือ error → แสดง default
-        imageProvider = const AssetImage('assets/images/petnull.png');
-      }
+                                                          if (snapshot
+                                                              .hasData) {
+                                                            final size =
+                                                                snapshot.data!
+                                                                    .image;
+                                                            if (size.width ==
+                                                                    80 &&
+                                                                size.height ==
+                                                                    80) {
+                                                              // ถ้าขนาด 80*80 → ใช้ default
+                                                              imageProvider =
+                                                                  const AssetImage(
+                                                                      'assets/images/petnull.png');
+                                                            } else {
+                                                              imageProvider =
+                                                                  NetworkImage(pet
+                                                                      .image!
+                                                                      .trim());
+                                                            }
+                                                          } else {
+                                                            // โหลดไม่ทันหรือ error → แสดง default
+                                                            imageProvider =
+                                                                const AssetImage(
+                                                                    'assets/images/petnull.png');
+                                                          }
 
-      return Container(
-        width: 100,
-        height: 100,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.teal, width: 2),
-          image: DecorationImage(
-            fit: BoxFit.cover,
-            image: imageProvider,
-          ),
-        ),
-      );
-    },
-  ),
-)
-
-
+                                                          return Container(
+                                                            width: 100,
+                                                            height: 100,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                              border: Border.all(
+                                                                  color: Colors
+                                                                      .teal,
+                                                                  width: 2),
+                                                              image:
+                                                                  DecorationImage(
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                                image:
+                                                                    imageProvider,
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    )
 
 //
 // ),
@@ -731,15 +754,24 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                         group.type_name ??
                                                                             "-"] = data;
                                                                   }
+                                                                  final visitId =
+                                                                      anItem.visit_number ??
+                                                                          '';
+                                                                  final tempPet =
+                                                                      ListPetModel()
+                                                                        ..visit_id =
+                                                                            visitId;
+
                                                                   final newOrders =
                                                                       await RoundWardApi()
                                                                           .loadNewOrder(
                                                                     context,
                                                                     mPetAdmit_:
-                                                                        mPetAdmit_!,
+                                                                        tempPet,
                                                                     headers_: widget
                                                                         .headers,
                                                                   );
+
                                                                   setState(() {
                                                                     hasNewOrders =
                                                                         newOrders
@@ -1389,7 +1421,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                   final group =
                                                                       currentTab;
 
-                                                                  CreateObsDialog
+                                                                  CreateObsDialogV1
                                                                       .show(
                                                                     context,
                                                                     screen:
@@ -1445,98 +1477,208 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                               },
                                                             ),
                                                             SpeedDialChild(
-                                                                child: Stack(
-                                                                  children: [
-                                                                    Image.asset(
-                                                                      'assets/icons/add_cat.png',
-                                                                      width: 28,
-                                                                      height:
-                                                                          28,
-                                                                    ),
-                                                                    if (hasNewOrders)
-                                                                      Positioned(
-                                                                        right:
-                                                                            0,
-                                                                        top: 0,
-                                                                        child:
-                                                                            Container(
-                                                                          width:
-                                                                              8,
-                                                                          height:
-                                                                              8,
-                                                                          decoration:
-                                                                              const BoxDecoration(
-                                                                            color:
-                                                                                Colors.red,
-                                                                            shape:
-                                                                                BoxShape.circle,
-                                                                          ),
+                                                              child: Stack(
+                                                                children: [
+                                                                  Image.asset(
+                                                                    'assets/icons/add_cat.png',
+                                                                    width: 28,
+                                                                    height: 28,
+                                                                  ),
+                                                                  if (hasNewOrders)
+                                                                    Positioned(
+                                                                      right: 0,
+                                                                      top: 0,
+                                                                      child:
+                                                                          Container(
+                                                                        width:
+                                                                            8,
+                                                                        height:
+                                                                            8,
+                                                                        decoration:
+                                                                            const BoxDecoration(
+                                                                          color:
+                                                                              Colors.red,
+                                                                          shape:
+                                                                              BoxShape.circle,
                                                                         ),
                                                                       ),
-                                                                  ],
-                                                                ),
-                                                                backgroundColor:
-                                                                    Colors
-                                                                        .lightBlue
-                                                                        .shade100,
-                                                                label:
-                                                                    'รายการใหม่',
-                                                                onTap:
-                                                                    () async {
-                                                                  if (_isLoadingNewOrder)
+                                                                    ),
+                                                                ],
+                                                              ),
+                                                              backgroundColor:
+                                                                  Colors
+                                                                      .lightBlue
+                                                                      .shade100,
+                                                              label:
+                                                                  'รายการใหม่',
+                                                              onTap: () async {
+                                                                if (_isLoadingNewOrder) {
+                                                                  return;
+                                                                }
+                                                                _isLoadingNewOrder =
+                                                                    true;
+
+                                                                try {
+                                                              
+                                                                  await Future.delayed(
+                                                                      Duration(
+                                                                          milliseconds:
+                                                                              0));
+
+                                                             
+                                                                  if (_tabController ==
+                                                                          null ||
+                                                                      lGroupTabs
+                                                                          .isEmpty) {
+                                                                    debugPrint(
+                                                                        '[NewOrder] tabController=null หรือ lGroupTabs ว่าง');
+                                                                    ScaffoldMessenger.of(
+                                                                            context)
+                                                                        .showSnackBar(
+                                                                      const SnackBar(
+                                                                          content:
+                                                                              Text('ยังไม่มีแท็บให้แสดงรายการใหม่')),
+                                                                    );
                                                                     return;
-                                                                  _isLoadingNewOrder =
-                                                                      true;
-
-                                                                  try {
-                                                                    final currentTab =
-                                                                        lGroupTabs[
-                                                                            _tabController!.index];
-                                                                    if (mPetAdmit_?.visit_id !=
-                                                                            null &&
-                                                                        selectedAnModel !=
-                                                                            null) {
-                                                                      await showNewOrderDialog(
-                                                                        context,
-                                                                        mPetAdmit_!,
-                                                                        widget
-                                                                            .headers,
-                                                                        selectedAnModel!,
-                                                                        widget
-                                                                            .lUserLogin
-                                                                            .first,
-                                                                        selectedAnModel!,
-                                                                        currentTab,
-                                                                        (updatedData,
-                                                                            hasNew) async {
-                                                                          groupedCardData
-                                                                              .clear();
-                                                                          setState(
-                                                                              () {});
-
-                                                                          for (final group
-                                                                              in lGroupTabs) {
-                                                                            final data =
-                                                                                await RoundWardApi().loadDataRoundWard(
-                                                                              context,
-                                                                              headers_: widget.headers,
-                                                                              mListAn_: selectedAnModel!,
-                                                                              mGroup_: group,
-                                                                            );
-                                                                            groupedCardData[group.type_name ?? '-'] =
-                                                                                data;
-                                                                          }
-
-                                                                          if (mounted)
-                                                                            setState(() {});
-                                                                        },
-                                                                      );
-                                                                    }
-                                                                  } finally {
-                                                                    _isLoadingNewOrder =
-                                                                        false;
                                                                   }
-                                                                }),
+                                                                  if (_tabController!
+                                                                              .index <
+                                                                          0 ||
+                                                                      _tabController!
+                                                                              .index >=
+                                                                          lGroupTabs
+                                                                              .length) {
+                                                                    debugPrint(
+                                                                        '[NewOrder] tab index out of range: ${_tabController!.index}');
+                                                                    return;
+                                                                  }
+                                                                  final currentTab =
+                                                                      lGroupTabs[
+                                                                          _tabController!
+                                                                              .index];
+
+                                                         
+                                                                  final visitFromAn =
+                                                                      (selectedAnModel?.visit_number ??
+                                                                              '')
+                                                                          .trim();
+                                                                  final visitFromAdmit =
+                                                                      (mPetAdmit_?.visit_id ??
+                                                                              '')
+                                                                          .trim();
+                                                                  final visitId = visitFromAn
+                                                                              .isNotEmpty &&
+                                                                          visitFromAn !=
+                                                                              'null'
+                                                                      ? visitFromAn
+                                                                      : visitFromAdmit;
+
+                                                                  if (visitId
+                                                                          .isEmpty ||
+                                                                      visitId ==
+                                                                          'null') {
+                                                                    debugPrint(
+                                                                        '[NewOrder] visitId ว่าง (AN.visit_number="", Admit.visit_id="")');
+                                                                    ScaffoldMessenger.of(
+                                                                            context)
+                                                                        .showSnackBar(
+                                                                      const SnackBar(
+                                                                          content:
+                                                                              Text('ไม่พบ visit ของผู้ป่วยนี้')),
+                                                                    );
+                                                                    return;
+                                                                  }
+
+                                                                  if (selectedAnModel ==
+                                                                      null) {
+                                                                    debugPrint(
+                                                                        '[NewOrder] selectedAnModel = null');
+                                                                    ScaffoldMessenger.of(
+                                                                            context)
+                                                                        .showSnackBar(
+                                                                      const SnackBar(
+                                                                          content:
+                                                                              Text('ยังไม่ได้เลือก AN')),
+                                                                    );
+                                                                    return;
+                                                                  }
+
+                                                                  // 4) สร้าง tempPet ถ้าต้องใช้ฟังก์ชันแบบรับ ListPetModel
+                                                                  final tempPet = (visitFromAdmit
+                                                                              .isNotEmpty &&
+                                                                          visitFromAdmit !=
+                                                                              'null')
+                                                                      ? mPetAdmit_!
+                                                                      : (ListPetModel()
+                                                                        ..visit_id =
+                                                                            visitId);
+
+                                                                  if (!context
+                                                                      .mounted) {
+                                                                    return;
+                                                                  }
+
+                                                                  // 5) เปิด dialog (ฟังก์ชัน showNewOrderDialog ของคุณมี useRootNavigator อยู่แล้ว)
+                                                                  await showNewOrderDialog(
+                                                                    context,
+                                                                    tempPet, // ✅ ใส่ที่มี visit_id ชัวร์
+                                                                    widget
+                                                                        .headers,
+                                                                    selectedAnModel!, // mListAn_
+                                                                    widget
+                                                                        .lUserLogin
+                                                                        .first,
+                                                                    selectedAnModel!, // selectedAnModel
+                                                                    currentTab, // selectedGroup
+                                                                    (updatedData,
+                                                                        hasNew) async {
+                                                                      // โหลดการ์ดใหม่ทุกแท็บหลังปิด dialog
+                                                                      groupedCardData
+                                                                          .clear();
+                                                                      setState(
+                                                                          () {}); // กระตุกให้ UI ว่างก่อน
+
+                                                                      for (final group
+                                                                          in lGroupTabs) {
+                                                                        final data =
+                                                                            await RoundWardApi().loadDataRoundWard(
+                                                                          context,
+                                                                          headers_:
+                                                                              widget.headers,
+                                                                          mListAn_:
+                                                                              selectedAnModel!,
+                                                                          mGroup_:
+                                                                              group,
+                                                                        );
+                                                                        groupedCardData[group.type_name ??
+                                                                                '-'] =
+                                                                            data;
+                                                                      }
+                                                                      if (mounted) {
+                                                                        setState(
+                                                                            () {});
+                                                                      }
+                                                                    },
+                                                                  );
+                                                                } catch (e, st) {
+                                                                  debugPrint(
+                                                                      '[NewOrder] onTap error: $e\n$st');
+                                                                  if (context
+                                                                      .mounted) {
+                                                                    ScaffoldMessenger.of(
+                                                                            context)
+                                                                        .showSnackBar(
+                                                                      const SnackBar(
+                                                                          content:
+                                                                              Text('เปิดรายการใหม่ไม่สำเร็จ')),
+                                                                    );
+                                                                  }
+                                                                } finally {
+                                                                  _isLoadingNewOrder =
+                                                                      false;
+                                                                }
+                                                              },
+                                                            ),
                                                           ],
                                                         ),
                                                       ),
@@ -1573,7 +1715,6 @@ class _RoundWardScreenState extends State<RoundWardScreen>
     List<NewOrderModel> orders = [];
     bool isLoading = true;
     String? loadError;
-
     bool requestedOnce = false;
     bool busy = false;
 
@@ -1586,9 +1727,29 @@ class _RoundWardScreenState extends State<RoundWardScreen>
           loadError = null;
         });
 
+        // ใช้ visit_number เป็น visit_id
+        final visitId = ((mListAn_.visit_number ?? '').trim().isNotEmpty)
+            ? mListAn_.visit_number!.trim()
+            : ((mPetAdmit_.visit_id ?? '').trim());
+
+        if (visitId.isEmpty || visitId == 'null') {
+          setState(() {
+            loadError = 'ไม่พบ visit_id';
+            isLoading = false;
+          });
+          busy = false;
+          return;
+        }
+
+        final petForApi = (mPetAdmit_.visit_id != null &&
+                mPetAdmit_.visit_id!.trim().isNotEmpty &&
+                mPetAdmit_.visit_id != 'null')
+            ? mPetAdmit_
+            : (ListPetModel()..visit_id = visitId);
+
         final reloaded = await RoundWardApi().loadNewOrder(
           context,
-          mPetAdmit_: mPetAdmit_,
+          mPetAdmit_: petForApi,
           headers_: headers_,
         );
 
@@ -1606,16 +1767,20 @@ class _RoundWardScreenState extends State<RoundWardScreen>
       }
     }
 
+    if (!context.mounted) return;
+
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
+      useRootNavigator: true, // ✅ ให้ขึ้นบน root navigator
+      builder: (ctx) {
+        // ✅ ใช้ ctx ภายใน dialog
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (ctx, setState) {
             if (!requestedOnce) {
               requestedOnce = true;
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                refreshOrders(setState);
+                refreshOrders(setState); 
               });
             }
 
@@ -1651,7 +1816,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                             SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'รายการใหม่ จาก Imedx',
+                                'รายการใหม่ จาก iMed',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,
@@ -1770,9 +1935,9 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                 label: const Text(
                                                     'เพิ่มรายการใหม่เข้า'),
                                                 onPressed: () {
-                                                  openDrug() {
+                                                  void openDrug() {
                                                     CheckDrugOrderDialog.show(
-                                                      context,
+                                                      ctx, 
                                                       AddOrder(item),
                                                       0,
                                                       (newDrug, _) async {
@@ -1785,7 +1950,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
                                                         await RoundWardApi()
                                                             .AddOrder(
-                                                          context,
+                                                          ctx,
                                                           headers_: headers_,
                                                           mUser: userLogin,
                                                           mPetAdmit_:
@@ -1803,17 +1968,19 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                       mListAn: mListAn_,
                                                       onConfirmed: () async {
                                                         setState(() {
-                                                          orders.removeWhere((e) =>
-                                                              e.order_item_id ==
-                                                              item.order_item_id);
+                                                          orders.removeWhere(
+                                                            (e) =>
+                                                                e.order_item_id ==
+                                                                item.order_item_id,
+                                                          );
                                                         });
                                                       },
                                                     );
                                                   }
 
-                                                  openFood() {
+                                                  void openFood() {
                                                     CheckFoodOrderDialog.show(
-                                                      context,
+                                                      ctx, 
                                                       AddOrder(item),
                                                       0,
                                                       (newFood, _) async {
@@ -1826,7 +1993,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
                                                         await RoundWardApi()
                                                             .AddOrder(
-                                                          context,
+                                                          ctx,
                                                           headers_: headers_,
                                                           mUser: userLogin,
                                                           mPetAdmit_:
@@ -1844,9 +2011,11 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                       mListAn: mListAn_,
                                                       onConfirmed: () async {
                                                         setState(() {
-                                                          orders.removeWhere((e) =>
-                                                              e.order_item_id ==
-                                                              item.order_item_id);
+                                                          orders.removeWhere(
+                                                            (e) =>
+                                                                e.order_item_id ==
+                                                                item.order_item_id,
+                                                          );
                                                         });
                                                       },
                                                     );
@@ -1866,32 +2035,28 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              text(context,
+                                              Text(
                                                   'จำนวน : ${item.item_qty ?? "-"} ${item.unit_name ?? "-"}'),
                                               const SizedBox(height: 4),
                                               if (isDrug)
-                                                text(context,
+                                                Text(
                                                     'ขนาดยา : ${item.dose_qty ?? "-"} ${item.dose_unit_name ?? "-"}'),
                                               const SizedBox(height: 4),
-                                              text(context,
+                                              Text(
                                                   'ประเภท : ${item.drug_type_name ?? "-"}'),
                                               if ((item.note_to_team
                                                       ?.isNotEmpty ??
                                                   false)) ...[
                                                 const SizedBox(height: 4),
-                                                text(context,
+                                                Text(
                                                     'หมายเหตุ : ${item.note_to_team}'),
                                               ],
                                               const SizedBox(height: 4),
-                                              text(context,
+                                              Text(
                                                   'วิธีให้ : ${item.drug_instruction ?? "-"}'),
                                               const SizedBox(height: 4),
-                                              if (isDrug)
-                                                text(context,
-                                                    'วันที่สั่งยา : ${item.order_date ?? "-"} ${item.order_time ?? "-"}'),
-                                              if (isFood)
-                                                text(context,
-                                                    'วันที่สั่งอาหาร : ${item.order_date ?? "-"} ${item.order_time ?? "-"}'),
+                                              Text(
+                                                  '${isDrug ? 'วันที่สั่งยา' : 'วันที่สั่งอาหาร'} : ${item.order_date ?? "-"} ${item.order_time ?? "-"}'),
                                             ],
                                           ),
                                         ],
@@ -1922,7 +2087,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                             FilledButton.icon(
                               onPressed: () async {
                                 showDialog(
-                                  context: context,
+                                  context: ctx,
                                   barrierDismissible: false,
                                   builder: (_) => const Center(
                                       child: CircularProgressIndicator()),
@@ -1930,7 +2095,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
                                 final updatedData =
                                     await RoundWardApi().loadDataRoundWard(
-                                  context,
+                                  ctx,
                                   headers_: headers_,
                                   mListAn_: selectedAnModel,
                                   mGroup_: selectedGroup,
@@ -1938,9 +2103,10 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
                                 final hasNew = orders.isNotEmpty;
 
-                                Navigator.of(context, rootNavigator: true)
-                                    .pop();
-                                Navigator.of(context).pop(true);
+                                Navigator.of(ctx, rootNavigator: true)
+                                    .pop(); 
+                                Navigator.of(ctx, rootNavigator: true)
+                                    .pop(); 
 
                                 onRefresh(updatedData, hasNew);
                               },
@@ -2009,48 +2175,23 @@ class _RoundWardScreenState extends State<RoundWardScreen>
     setState(() {});
   }
 
-  bool _isProbablyPhoto(String? raw) {
-    if (raw == null) return false;
-    final u = raw.trim();
-    if (u.isEmpty || u.toLowerCase() == 'null') return false;
 
-    final s = u.toLowerCase();
-    const badHints = [
-      'noimage',
-      'no-image',
-      'placeholder',
-      'default',
-      'avatar',
-      'user.png',
-      'profile.png',
-      'blank.png'
-    ];
-    for (final h in badHints) {
-      if (s.contains(h)) return false;
+  Future<ImageInfo> _getImageInfo(String? url) async {
+    if (url == null || url.trim().isEmpty || url.toLowerCase() == 'null') {
+      throw Exception("No image");
     }
 
-    final looksLikeImage = RegExp(r'\.(jpg|jpeg|png)(\?.*)?$').hasMatch(s);
-    if (!looksLikeImage) return false;
+    final completer = Completer<ImageInfo>();
+    final imageProvider = NetworkImage(url.trim());
 
-    return true;
+    imageProvider.resolve(const ImageConfiguration()).addListener(
+          ImageStreamListener((ImageInfo info, bool _) {
+            completer.complete(info);
+          }, onError: (dynamic _, __) {
+            completer.completeError("Load error");
+          }),
+        );
+
+    return completer.future;
   }
-// ฟังก์ชันเช็คขนาดรูป
-Future<ImageInfo> _getImageInfo(String? url) async {
-  if (url == null || url.trim().isEmpty || url.toLowerCase() == 'null') {
-    throw Exception("No image");
-  }
-
-  final completer = Completer<ImageInfo>();
-  final imageProvider = NetworkImage(url.trim());
-
-  imageProvider.resolve(const ImageConfiguration()).addListener(
-    ImageStreamListener((ImageInfo info, bool _) {
-      completer.complete(info);
-    }, onError: (dynamic _, __) {
-      completer.completeError("Load error");
-    }),
-  );
-
-  return completer.future;
-}
 }

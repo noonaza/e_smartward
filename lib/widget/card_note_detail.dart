@@ -1,5 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 
+import 'dart:convert';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +48,7 @@ class CardNoteWidget extends StatefulWidget {
   Function cb;
 
   CardNoteWidget({
-    Key? key,
+    super.key,
     required this.foodName,
     required this.method,
     required this.time,
@@ -68,7 +70,7 @@ class CardNoteWidget extends StatefulWidget {
     required this.petAdmit,
     required this.visit,
     required this.cb,
-  }) : super(key: key);
+  });
 
   @override
   State<CardNoteWidget> createState() => _CardNoteWidgetState();
@@ -84,11 +86,16 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
   final savedStatuses = ['Complete', 'success', 'out', 'pass'];
 
   bool _isSaved = false;
-
+  String? selectedLevel;
+  String? selectedcol;
   bool get isSaved => localDataNote.smw_transaction_order_id != null;
   bool get noOrderId => localDataNote.smw_transaction_order_id == null;
   bool isDoctorLoading = true;
   List<FileModel>? file;
+  Map<String, dynamic>? instruction;
+  int colValue = 0;
+  int selectedCol = 0;
+  List<String> levelList = [];
   DoctorModel? selectedDoctor;
   late DataNoteModel localDataNote;
   List<DoctorModel> ListDoctors = [];
@@ -103,6 +110,35 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
     final baseName = withoutExtension.replaceAll(RegExp(r'\s+'), ' ').trim();
     return '$baseName.$extension'.toLowerCase();
   }
+
+  final List<String> prepOptions = [
+    'ทานเอง',
+    'ป้อน',
+    'ป้อนผ่านท่อ',
+    'ส่งให้กิน',
+  ];
+
+  void _initPrepFromFeed(String? feed) {
+    selectedPrep = {
+      for (final v in prepOptions) v: false,
+    };
+
+    if (feed == null || feed.trim().isEmpty) return;
+
+    final parts =
+        feed.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty);
+
+    for (final label in parts) {
+      if (selectedPrep.containsKey(label)) {
+        selectedPrep[label] = true;
+      }
+    }
+  }
+
+  // int selectedCol = 0;
+  late bool _canShowColButton;
+
+  late Map<String, bool> selectedPrep;
 
   Color getCardColor() {
     if (widget.isDisabled) {
@@ -168,12 +204,43 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
     }
   }
 
+  Map<String, dynamic> _safeDecodeSetValue(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return {};
+    try {
+      final v = jsonDecode(raw);
+      if (v is Map<String, dynamic>) return v;
+      if (v is Map) return v.map((k, v) => MapEntry(k.toString(), v));
+    } catch (_) {}
+    return {};
+  }
+
   @override
   void initState() {
     super.initState();
 
     _isSaved = widget.dataNote.smw_transaction_order_id != null;
     localDataNote = widget.dataNote;
+    selectedLevel = widget.dataNote.levels
+        ?.replaceAll('[', '')
+        .replaceAll(']', '')
+        .replaceAll('"', '')
+        .replaceAll("'", '')
+        .trim();
+
+    final raw = widget.dataNote.drug_instruction;
+
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final map = jsonDecode(raw);
+        selectedCol = map["col"] ?? 0;
+      } catch (_) {}
+    }
+    _initPrepFromFeed(widget.dataNote.feed);
+    _isSaved = widget.dataNote.smw_transaction_order_id != null;
+
+    //  selectedCol = widget.dataNote.col ?? 0;
+    _canShowColButton = selectedCol == 1;
+
     txtComment = TextEditingController(text: widget.dataNote.comment ?? '');
     localFiles = widget.dataNote.file ?? [];
     switch (widget.dataNote.status) {
@@ -228,6 +295,62 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final Map<String, dynamic> setValue =
+        _safeDecodeSetValue(widget.dataNote.drug_instruction);
+
+    List<String> levels = [];
+    if (setValue['level'] != null) {
+      if (setValue['level'] is List) {
+        levels = (setValue['level'] as List)
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      } else if (setValue['level'] is String) {
+        try {
+          final decoded = jsonDecode(setValue['level']);
+          if (decoded is List) {
+            levels = decoded
+                .map((e) => e.toString().trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
+          }
+        } catch (_) {}
+      }
+    }
+
+    List<String> parseToList(dynamic v) {
+      if (v == null) return [];
+      if (v is List) {
+        return v
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+      if (v is String) {
+        final s = v.trim();
+
+        final decoded = jsonDecode(s);
+        if (decoded is List) {
+          return decoded
+              .map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+        }
+
+        return s
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .replaceAll("'", '')
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+      return [];
+    }
+
+    parseToList(setValue['col']);
+
     final bool isDisabled = widget.note.id != null;
     final bool noOrderId = (widget.dataNote.smw_transaction_order_id == null ||
         widget.dataNote.smw_transaction_order_id == 0);
@@ -300,6 +423,49 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                           ],
                         ),
                       const SizedBox(height: 8),
+                      if (widget.typeCard == 'Food')
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: prepOptions.map((label) {
+                            final bool isSelected =
+                                selectedPrep[label] ?? false;
+
+                            return GestureDetector(
+                              onTap: _isSaved
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        selectedPrep[label] = !isSelected;
+                                      });
+                                    },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color.fromARGB(255, 185, 168, 100)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color:
+                                        const Color.fromARGB(255, 138, 119, 44),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: text(
+                                  context,
+                                  label,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : const Color.fromARGB(255, 138, 119, 44),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+
+                      const SizedBox(height: 8),
                       widget.dataNote.slot != null &&
                               widget.dataNote.slot!.isNotEmpty
                           ? Container(
@@ -315,6 +481,92 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                               ),
                             )
                           : const SizedBox.shrink(),
+                      const SizedBox(height: 8),
+
+                      // (widget.typeCard == 'Observe' &&
+                      //         !(_isSaved && selectedCol == 0))
+                      // ? const SizedBox()
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: levels.isNotEmpty
+                            ? levels.map((level) {
+                                final bool isSelected = selectedLevel == level;
+
+                                return GestureDetector(
+                                  onTap: _isSaved
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            selectedLevel = level;
+                                          });
+                                        },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? const Color.fromARGB(
+                                              255, 219, 133, 163)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: const Color.fromARGB(
+                                            255, 207, 108, 143),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: text(
+                                      context,
+                                      level,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : const Color.fromARGB(
+                                              255, 219, 133, 163),
+                                    ),
+                                  ),
+                                );
+                              }).toList()
+                            : [const SizedBox()],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      if (widget.typeCard == 'Observe' && _canShowColButton)
+                        GestureDetector(
+                          onTap: _isSaved
+                              ? null
+                              : () {
+                                  setState(() {
+                                    // สลับค่า 1 ↔ 0 แต่ไม่ไปยุ่งกับ _canShowColButton
+                                    selectedCol = selectedCol == 1 ? 0 : 1;
+                                  });
+                                },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: selectedCol == 1
+                                  ? const Color.fromARGB(255, 219, 133, 163)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color.fromARGB(255, 207, 108, 143),
+                                width: 2,
+                              ),
+                            ),
+                            child: text(
+                              context,
+                              "COL",
+                              color: selectedCol == 1
+                                  ? Colors.white
+                                  : const Color.fromARGB(255, 219, 133, 163),
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(),
+
                       const SizedBox(height: 12),
                       (widget.typeCard == 'Food' || widget.typeCard == 'Drug')
                           ? FoodDrugCheckboxGroup(
@@ -672,10 +924,9 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                             GestureDetector(
                               onTap: () async {
                                 setState(() => isLoading = true);
-                                await loadFiles(); 
+                                await loadFiles();
                                 setState(() => isLoading = false);
 
-                         
                                 bool isHttpUrl(String s) =>
                                     s.startsWith('http://') ||
                                     s.startsWith('https://');
@@ -700,7 +951,6 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                                     .toList();
 
                                 if (filesForGrid.isEmpty) {
-                                  // ไม่มีไฟล์ที่ใช้ได้
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                         content: Text(
@@ -722,156 +972,208 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                                       content: SizedBox(
                                         width: double.maxFinite,
                                         height: 480,
-                                        child: GridView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: filesForGrid.length,
-                                          gridDelegate:
-                                              SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: crossAxisCount,
-                                            crossAxisSpacing: 12,
-                                            mainAxisSpacing: 12,
-                                            childAspectRatio: 1,
-                                          ),
-                                          itemBuilder: (context, index) {
-                                            final file = filesForGrid[index];
-                                            final fileName =
-                                                file.path.split('/').last;
-                                            final isPDF = isPdf(file.path);
+                                        child: FutureBuilder<List<FileModel>>(
+                                          future: NoteApi()
+                                              .loadFile(
+                                                context,
+                                                orderId: widget.dataNote
+                                                        .smw_transaction_order_id ??
+                                                    0, // << แก้ตรงนี้
+                                                headers_: widget.headers,
+                                              )
+                                              .then((files) => files
+                                                  .map((f) => FileModel(
+                                                        path: f.path_file ?? '',
+                                                        remark: f.remark ?? '',
+                                                      ))
+                                                  .toList()),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return const Center(
+                                                child: SizedBox(
+                                                  height: 24,
+                                                  width: 24,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          strokeWidth: 2),
+                                                ),
+                                              );
+                                            }
 
-                                            return GestureDetector(
-                                              onTap: () {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) =>
-                                                      AlertDialog(
-                                                    title: Text(
-                                                      fileName,
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    content: isPDF
-                                                        ? Column(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: [
-                                                              const Icon(
-                                                                  Icons
-                                                                      .picture_as_pdf,
-                                                                  size: 80),
-                                                              const SizedBox(
-                                                                  height: 8),
-                                                              Text(file.remark
-                                                                      .isNotEmpty
-                                                                  ? file.remark
-                                                                  : '-'),
-                                                            ],
-                                                          )
-                                                        : ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                            child:
-                                                                Image.network(
-                                                              file.path,
-                                                              headers: widget
-                                                                  .headers,
-                                                              fit: BoxFit
-                                                                  .contain,
-                                                              errorBuilder: (_,
-                                                                      __,
-                                                                      ___) =>
+                                            final filesForGrid =
+                                                snapshot.data ?? <FileModel>[];
+                                            if (filesForGrid.isEmpty) {
+                                              return const Center(
+                                                child: Text(
+                                                  'ไม่มีรูปภาพ',
+                                                  style: TextStyle(
+                                                      color: Colors.grey),
+                                                ),
+                                              );
+                                            }
+
+                                            return GridView.builder(
+                                              shrinkWrap: true,
+                                              itemCount: filesForGrid.length,
+                                              gridDelegate:
+                                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                                crossAxisCount: crossAxisCount,
+                                                crossAxisSpacing: 12,
+                                                mainAxisSpacing: 12,
+                                                childAspectRatio: 1,
+                                              ),
+                                              itemBuilder: (context, index) {
+                                                final file =
+                                                    filesForGrid[index];
+                                                final fileName =
+                                                    file.path.split('/').last;
+                                                final isPDF = isPdf(file.path);
+
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (context) =>
+                                                          AlertDialog(
+                                                        title: Text(
+                                                          fileName,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                        content: isPDF
+                                                            ? Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
                                                                   const Icon(
                                                                       Icons
-                                                                          .broken_image,
+                                                                          .picture_as_pdf,
                                                                       size: 80),
+                                                                  const SizedBox(
+                                                                      height:
+                                                                          8),
+                                                                  Text(file
+                                                                          .remark
+                                                                          .isNotEmpty
+                                                                      ? file
+                                                                          .remark
+                                                                      : '-'),
+                                                                ],
+                                                              )
+                                                            : ClipRRect(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            8),
+                                                                child: Image
+                                                                    .network(
+                                                                  file.path,
+                                                                  fit: BoxFit
+                                                                      .contain,
+                                                                  errorBuilder: (_,
+                                                                          __,
+                                                                          ___) =>
+                                                                      const Icon(
+                                                                          Icons
+                                                                              .broken_image,
+                                                                          size:
+                                                                              80),
+                                                                ),
+                                                              ),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                    context),
+                                                            child: const Text(
+                                                                'ปิด'),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    child: Stack(
+                                                      children: [
+                                                        Positioned.fill(
+                                                          child: isPDF
+                                                              ? const Center(
+                                                                  child: Icon(
+                                                                      Icons
+                                                                          .picture_as_pdf,
+                                                                      size: 40),
+                                                                )
+                                                              : Image.network(
+                                                                  file.path,
+                                                                  fit: BoxFit
+                                                                      .cover,
+                                                                  errorBuilder: (_,
+                                                                          __,
+                                                                          ___) =>
+                                                                      const Center(
+                                                                    child: Icon(
+                                                                        Icons
+                                                                            .broken_image),
+                                                                  ),
+                                                                ),
+                                                        ),
+                                                        Positioned(
+                                                          left: 0,
+                                                          right: 0,
+                                                          bottom: 0,
+                                                          child: Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                              horizontal: 6,
+                                                              vertical: 4,
+                                                            ),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              gradient:
+                                                                  LinearGradient(
+                                                                begin: Alignment
+                                                                    .bottomCenter,
+                                                                end: Alignment
+                                                                    .topCenter,
+                                                                colors: [
+                                                                  Colors.black
+                                                                      .withOpacity(
+                                                                          0.6),
+                                                                  Colors
+                                                                      .transparent,
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            child: Text(
+                                                              file.remark
+                                                                      .isNotEmpty
+                                                                  ? file.remark
+                                                                  : "-",
+                                                              maxLines: 2,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style:
+                                                                  const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 12,
+                                                              ),
                                                             ),
                                                           ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                                context),
-                                                        child:
-                                                            const Text('ปิด'),
-                                                      ),
-                                                    ],
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
                                                 );
                                               },
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                child: Stack(
-                                                  children: [
-                                                    Positioned.fill(
-                                                      child: isPDF
-                                                          ? const Center(
-                                                              child: Icon(
-                                                                  Icons
-                                                                      .picture_as_pdf,
-                                                                  size: 40))
-                                                          : Image.network(
-                                                              file.path,
-                                                              headers: widget
-                                                                  .headers,
-                                                              fit: BoxFit.cover,
-                                                              errorBuilder: (_,
-                                                                      __,
-                                                                      ___) =>
-                                                                  const Center(
-                                                                      child: Icon(
-                                                                          Icons
-                                                                              .broken_image)),
-                                                            ),
-                                                    ),
-                                                    Positioned(
-                                                      left: 0,
-                                                      right: 0,
-                                                      bottom: 0,
-                                                      child: Container(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal: 6,
-                                                                vertical: 4),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          gradient:
-                                                              LinearGradient(
-                                                            begin: Alignment
-                                                                .bottomCenter,
-                                                            end: Alignment
-                                                                .topCenter,
-                                                            colors: [
-                                                              Colors.black
-                                                                  .withOpacity(
-                                                                      0.6),
-                                                              Colors
-                                                                  .transparent,
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        child: Text(
-                                                          file.remark.isNotEmpty
-                                                              ? file.remark
-                                                              : "-",
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style:
-                                                              const TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize: 12),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
                                             );
                                           },
                                         ),
@@ -944,13 +1246,7 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                             'วัน/เวลา ที่บันทึก : ${widget.dataNote.create_date}',
                           ),
                         ),
-                      // if ((widget.dataNote.drug_type_name ?? '').trim() ==
-                      //         '[I]ยาฉีด' &&
-                      //     (widget.dataNote.doctor?.isNotEmpty ?? false))
-                      //   Text(
-                      //     'แพทย์สั่งยา: ${widget.dataNote.doctor}',
-                      //     style: const TextStyle(fontSize: 13),
-                      //   ),
+
                       const SizedBox(height: 5),
                       if (!_isSaved && noOrderId)
                         Align(
@@ -975,6 +1271,12 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                                         (widget.dataNote.status ?? '')
                                             .trim()
                                             .isNotEmpty;
+
+                                    final selectedPrepString = selectedPrep
+                                        .entries
+                                        .where((e) => e.value == true)
+                                        .map((e) => e.key)
+                                        .join(", ");
 
                                     if (widget.dataNote.type_card !=
                                             'Observe' &&
@@ -1053,6 +1355,9 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                                               ? '${selectedDoctor!.prename} ${selectedDoctor!.full_nameth}'
                                               : null,
                                           comment: widget.dataNote.comment,
+                                          levels: selectedLevel ?? '',
+                                          feed: selectedPrepString.toString(),
+                                          col: selectedCol.toString(),
                                           file: widget.dataNote.file ?? [],
                                         )
                                       ],
@@ -1228,6 +1533,7 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
       } else {
         // print('Error deleting file: $FilePath\nMessage: $message');
       }
+      // ignore: empty_catches
     } catch (e) {}
   }
 

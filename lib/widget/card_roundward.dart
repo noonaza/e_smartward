@@ -4,6 +4,7 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:e_smartward/Model/create_transection_model.dart';
 import 'package:e_smartward/Model/get_obs_model.dart';
 import 'package:e_smartward/dialog/edit_Food_dialog.dart';
+import 'package:e_smartward/dialog/edit_obs_dialog_v2.dart';
 import 'package:flutter/material.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 
@@ -17,7 +18,7 @@ import 'package:e_smartward/Model/list_roundward_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/api/roundward_api.dart';
 import 'package:e_smartward/dialog/edit_drug_dialog.dart';
-import 'package:e_smartward/dialog/edit_obs_dialog.dart';
+
 import 'package:e_smartward/widget/text.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../Model/data_note_model.dart';
@@ -729,17 +730,17 @@ class _CardRoundwardDrugState extends State<CardRoundwardDrug> {
       "delete": 0,
     });
 
-    final ListDataObsDetailModel obsDetail = ListDataObsDetailModel(
+    final GetObsModel obsDetail = GetObsModel(
       set_name: observe.item_name,
       set_value: tempSetValue,
       remark: observe.remark,
       take_time: observe.take_time,
-     // drug_type_name: observe.drug_type_name,
+      // drug_type_name: observe.drug_type_name,
       time_slot: observe.time_slot,
     );
 
     Future.delayed(Duration.zero, () async {
-      EditObsDialog.showObs(
+      EditObsDialogV2.showObs(
         context,
         obsDetail,
         0,

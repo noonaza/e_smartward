@@ -1,12 +1,12 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:e_smartward/Model/get_obs_model.dart';
 import 'package:e_smartward/Model/list_data_card_model.dart';
 import 'package:e_smartward/Model/list_data_obs_model.dart';
 import 'package:e_smartward/api/admit_api.dart';
 import 'package:e_smartward/dialog/create_food_dialog.dart';
-import 'package:e_smartward/dialog/create_obs_dialog.dart';
-import 'package:e_smartward/dialog/edit_obs_dialog.dart';
+import 'package:e_smartward/dialog/create_obs_dialog_v2.dart';
+import 'package:e_smartward/dialog/edit_obs_dialog_v2.dart';
 import 'package:e_smartward/widget/show_dialog.dart';
 import 'package:e_smartward/widget/textfield.dart';
 import 'package:flutter/material.dart';
@@ -25,8 +25,7 @@ import 'package:e_smartward/widget/header.dart';
 import 'package:e_smartward/widget/text.dart';
 import 'package:lottie/lottie.dart';
 
-// ignore: must_be_immutable
-class AdmitScreen extends StatefulWidget {
+class AdmitScreenV2 extends StatefulWidget {
   final List<Map<String, dynamic>> lDataCard;
   Map<String, String> headers;
   List<ListUserModel> lUserLogin;
@@ -35,7 +34,7 @@ class AdmitScreen extends StatefulWidget {
   ValueNotifier<bool>? noteBtnVisible = ValueNotifier<bool>(false);
   final void Function(int index) onDelete;
 
-  AdmitScreen({
+  AdmitScreenV2({
     super.key,
     required this.headers,
     required this.lUserLogin,
@@ -49,18 +48,16 @@ class AdmitScreen extends StatefulWidget {
   _AdmitScreenState createState() => _AdmitScreenState();
 }
 
-class _AdmitScreenState extends State<AdmitScreen> {
-  // final GlobalKey<FoodListWidgetState> foodListKey =
-  //     GlobalKey<FoodListWidgetState>();
+class _AdmitScreenState extends State<AdmitScreenV2> {
   final GlobalKey<DrugListWidgetState> DrugListKey =
       GlobalKey<DrugListWidgetState>();
 
   List<ListDataCardModel> lDataCardDrug = [];
   List<ListDataCardModel> lDataCardFood = [];
 
-  List<ListDataObsDetailModel> lDataCardObs = [];
+  List<GetObsModel> lDataCardObs = [];
   List<ListDataObsDetailModel> lSettingTime = [];
-  // List<GetObsModel> lGetObs = [];
+
   late TextEditingController txtNote;
   List<String> selectedDrugTimes = [];
   List<ListPetModel> lPetAdmit = [];
@@ -78,15 +75,6 @@ class _AdmitScreenState extends State<AdmitScreen> {
 
   void resetNoteVisibility() => noteBtnVisible.value = false;
 
-  List<String> time = [
-    'ทุกๆ 1 ชม.',
-    'ทุกๆ 2 ชม.',
-    'ทุกๆ 3 ชม.',
-    'ทุกๆ 4 ชม.',
-    'กำหนดเอง',
-    'เมื่อมีอาการ',
-  ];
-
   List<Map<String, String>> items = [];
 
   List<String> timeList = List.generate(24, (index) {
@@ -94,10 +82,42 @@ class _AdmitScreenState extends State<AdmitScreen> {
     return '$formattedHour:00';
   });
 
+  String _deriveFloorFromBedNumber(String bedRaw) {
+    final base = bedRaw.trim();
+    if (base.isEmpty) return '';
+    final parts = base.split('-').where((e) => e.trim().isNotEmpty).toList();
+
+    if (parts.length >= 2) return parts[1].trim();
+    return '';
+  }
+
+  Future<List<GetObsModel>> GetObsByPet(
+    BuildContext context, {
+    required ListPetModel mPetAdmit,
+    required Map<String, String> headers_,
+  }) async {
+    final bed = (mPetAdmit.bed_number ?? '').trim();
+    if (bed.isEmpty) return [];
+
+    final floor = ((mPetAdmit.floor ?? '').trim().isNotEmpty)
+        ? (mPetAdmit.floor ?? '').trim()
+        : _deriveFloorFromBedNumber(bed);
+
+    if (floor.isEmpty) return [];
+
+    debugPrint('[GetObsByPet] floor="$floor", bed="$bed"');
+    return AdmitApi().GetObs(
+      context,
+      floor: floor,
+      bed_number: bed,
+      headers_: headers_,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    // tHnNumber.text = 'SV-122473-10';
+    tHnNumber.text = 'SR-168158-05';
   }
 
   @override
@@ -177,7 +197,6 @@ class _AdmitScreenState extends State<AdmitScreen> {
                                     context,
                                     'HN : ',
                                     color: Colors.teal,
-                                    // fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
                                   SizedBox(
@@ -302,67 +321,125 @@ class _AdmitScreenState extends State<AdmitScreen> {
                             noteBtnVisible.value = false;
 
                             lPetAdmit = lPetAdmit_;
-                            visit_id = lPetAdmit.first.visit_id;
+                            final selected =
+                                lPetAdmit.isNotEmpty ? lPetAdmit.first : null;
+                            if (selected == null) {
+                              setState(() {
+                                visit_id = null;
+                                lDataCardDrug.clear();
+                                lDataCardFood.clear();
+                                lDataCardObs.clear();
+                                isHideBtn = false;
+                                noteBtnVisible.value = false;
+                              });
+                              return;
+                            }
 
-                            lDataCardDrug = await AdmitApi().load(
+                            visit_id = selected.visit_id;
+
+                            final drugFuture = AdmitApi().load(
                               context,
                               type: 'ยา',
                               visitId: visit_id ?? '',
                               headers_: widget.headers,
                             );
-
-                            lDataCardFood = await AdmitApi().load(
+                            final foodFuture = AdmitApi().load(
                               context,
                               type: 'อาหาร',
                               visitId: visit_id ?? '',
                               headers_: widget.headers,
                             );
-
-                            final lDataCardObs_ = await AdmitApi().load(
+                            final obsFromVisitFuture = AdmitApi().load(
                               context,
                               type: 'OBS',
                               visitId: visit_id ?? '',
                               headers_: widget.headers,
                             );
 
-                            setState(() {});
+                            final results = await Future.wait([
+                              drugFuture,
+                              foodFuture,
+                              obsFromVisitFuture,
+                            ]);
+                            final drugs = results[0];
+                            final foods = results[1];
+                            final obsFromVisit = results[2] as List<dynamic>;
 
-                            lDataCardObs.clear();
+                            List<GetObsModel> obsFinal = [];
 
-                            if (lDataCardObs_.isEmpty) {
-                              lDataCardObs = await AdmitApi().loadObs(
-                                context,
-                                code: "OBSV-DEFAULT",
-                                setKey: "",
-                                headers_: widget.headers,
-                              );
+                            if (obsFromVisit.isEmpty) {
+                              String bedNumber =
+                                  (selected.bed_number ?? '').trim();
+
+                              String floor = (selected.floor ?? '').trim();
+                              if (floor.isEmpty) {
+                                floor = _deriveFloorFromBedNumber(bedNumber);
+                              }
+
+                              if (floor.isEmpty || bedNumber.isEmpty) {
+                                debugPrint(
+                                    '[AdmitScreen] skip GetObs: floor="$floor", bed="$bedNumber"');
+                                obsFinal = [];
+                              } else {
+                                obsFinal = await AdmitApi().GetObs(
+                                  context,
+                                  floor: floor,
+                                  bed_number: bedNumber,
+                                  headers_: widget.headers,
+                                );
+                              }
                             } else {
-                              for (var ee in lDataCardObs_) {
-                                lDataCardObs.add(ListDataObsDetailModel(
+                              for (final ee in obsFromVisit) {
+                                obsFinal.add(GetObsModel(
                                   id: ee.id,
-                                  code: "OBSV-DEFAULT",
+                                  code: 'OBSV-DEFAULT',
                                   set_name: ee.item_name,
                                   remark: ee.remark,
                                   set_value: ee.drug_instruction,
                                   take_time: ee.take_time,
+                                  time_slot: ee.time_slot,
                                 ));
                               }
                             }
-                            final hasDrug = lDataCardDrug.any((e) =>
-                                e.id != null &&
-                                e.id.toString().trim().isNotEmpty);
-                            final hasFood = lDataCardFood.any((e) =>
-                                e.id != null &&
-                                e.id.toString().trim().isNotEmpty);
-                            final hasObs = lDataCardObs_.any((e) =>
-                                e.id != null &&
-                                e.id.toString().trim().isNotEmpty);
 
+                            if (!mounted) return;
+                            setState(() {
+                              lDataCardDrug = drugs;
+                              lDataCardFood = foods;
+                              lDataCardObs = obsFinal;
+                              isHideBtn = obsFinal.any((e) => (e.id ?? '')
+                                      .toString()
+                                      .trim()
+                                      .isNotEmpty) ||
+                                  drugs.any((e) => (e.id ?? '')
+                                      .toString()
+                                      .trim()
+                                      .isNotEmpty) ||
+                                  foods.any((e) => (e.id ?? '')
+                                      .toString()
+                                      .trim()
+                                      .isNotEmpty);
+                            });
+                            noteBtnVisible.value = isHideBtn;
+
+                            final hasDrug = drugs.any((e) =>
+                                e.id != null &&
+                                e.id.toString().trim().isNotEmpty);
+                            final hasFood = foods.any((e) =>
+                                e.id != null &&
+                                e.id.toString().trim().isNotEmpty);
+                            final hasObs = obsFinal.any((e) =>
+                                e.id != null &&
+                                e.id.toString().trim().isNotEmpty);
                             final alreadyConfirmed =
                                 hasDrug || hasFood || hasObs;
 
+                            if (!mounted) return;
                             setState(() {
-                              isHideBtn = hasDrug || hasFood || hasObs;
+                              lDataCardDrug = drugs;
+                              lDataCardFood = foods;
+                              lDataCardObs = obsFinal;
+                              isHideBtn = alreadyConfirmed;
                             });
                             noteBtnVisible.value = alreadyConfirmed;
                           },
@@ -479,7 +556,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
                             },
                             onEdit: (obs) {
                               final index = lDataCardObs.indexOf(obs);
-                              EditObsDialog.showObs(context, obs, index,
+                              EditObsDialogV2.showObs(context, obs, index,
                                   screen: 'admit', (updatedObs, index) {
                                 setState(() {
                                   lDataCardObs[index] = updatedObs;
@@ -487,16 +564,18 @@ class _AdmitScreenState extends State<AdmitScreen> {
                               }, widget.headers);
                             },
                             onAdd: () {
-                              CreateObsDialog.show(context, width: width,
-                                  onAddObs: (obs) {
-                                setState(() {
-                                  lDataCardObs.add(obs);
-                                });
-                              },
-                                  headers: widget.headers,
-                                  rwAddObs_: () {},
-                                  screen: 'admit');
-                              (context);
+                              CreateObsDialogV2.show(
+                                context,
+                                width: width,
+                                onAddObs: (obs) {
+                                  setState(() {
+                                    lDataCardObs.add(obs);
+                                  });
+                                },
+                                headers: widget.headers,
+                                rwAddObs_: () {},
+                                screen: 'admit',
+                              );
                             },
                             onCopy: () {},
                           ),
@@ -571,7 +650,22 @@ class _AdmitScreenState extends State<AdmitScreen> {
                           return hasValidTakeTimeString(raw);
                         });
 
-                        final allHaveTakeTime = isDrugValid && isFoodValid;
+                        final isDrugslot = lDataCardDrug.every((e) {
+                          final raw = pickTimeString(
+                              timeSlot: e.type_slot, takeTime: e.time_slot);
+                          return hasValidTakeTimeString(raw);
+                        });
+
+                        final isFoodslot = lDataCardFood.every((e) {
+                          final raw = pickTimeString(
+                              timeSlot: e.type_slot, takeTime: e.type_slot);
+                          return hasValidTakeTimeString(raw);
+                        });
+
+                        final allHaveTakeTime = isDrugValid &&
+                            isFoodValid &&
+                            isFoodslot &&
+                            isDrugslot;
 
                         return Visibility(
                           visible: !isHideBtn,
@@ -622,7 +716,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
 
                                 dialog.show();
 
-                                await AdmitApi().CreateCard(
+                                await AdmitApi().CreateCardV2(
                                   context,
                                   headers_: widget.headers,
                                   mUser: widget.lUserLogin.first,
@@ -636,6 +730,7 @@ class _AdmitScreenState extends State<AdmitScreen> {
                                 setState(() {
                                   foodListKey.currentState?.setConfirmed();
                                   drugListKey.currentState?.setConfirmed();
+
                                   reloadCard++;
                                 });
 

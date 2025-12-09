@@ -1,6 +1,9 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:convert';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:dio/dio.dart';
+import 'package:e_smartward/api/admit_api.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -85,7 +88,11 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
   DoctorModel? selectedDoctor;
   // List<PlatformFile>? _paths;
   List<DoctorModel> ListDoctors = [];
-
+  String? selectedLevel;
+  String? selectedcol;
+  int colValue = 0;
+  int selectedCol = 0;
+  List<String> levelList = [];
   List<FileModel> mFile = [];
   List<FileModel>? file;
   String imgLastName = '';
@@ -152,15 +159,42 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
     }
   }
 
+  Map<String, dynamic> _safeDecodeSetValue(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return {};
+    try {
+      final v = jsonDecode(raw);
+      if (v is Map<String, dynamic>) return v;
+      if (v is Map) return v.map((k, v) => MapEntry(k.toString(), v));
+    } catch (_) {}
+    return {};
+  }
+
   @override
   void initState() {
     super.initState();
 
     _isSaved = widget.dataNote.smw_transaction_order_id != null;
     localDataNote = widget.dataNote;
+    selectedLevel = widget.dataNote.levels
+        ?.replaceAll('[', '')
+        .replaceAll(']', '')
+        .replaceAll('"', '')
+        .replaceAll("'", '')
+        .trim();
+
+    final raw = widget.dataNote.drug_description;
+
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final map = jsonDecode(raw);
+        selectedCol = map["col"] ?? 0;
+      } catch (_) {}
+    }
+
+    _isSaved = widget.dataNote.smw_transaction_order_id != null;
+
     txtComment = TextEditingController(text: widget.dataNote.comment ?? '');
     localFiles = widget.dataNote.file ?? [];
-
     switch (widget.dataNote.status) {
       case 'success':
         selectedCheckbox = 'ให้แล้ว';
@@ -174,8 +208,15 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
       default:
         selectedCheckbox = '';
     }
+  }
 
-    loadFiles();
+  void initDoctors() async {
+    final result =
+        await AdmitApi().loadDataDoctor(context, headers_: widget.headers);
+    setState(() {
+      ListDoctors = result;
+      isDoctorLoading = false;
+    });
   }
 
   Future<void> loadFiles() async {
@@ -204,23 +245,38 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
     });
   }
 
-  String resolveFileUrl(String raw) {
-    if (raw.startsWith('http://') || raw.startsWith('https://')) {
-      // normalize ให้แน่ใจว่า encode ถูกต้อง
-      return Uri.parse(raw).toString();
+  List<String> parseToList(dynamic v) {
+    if (v == null) return [];
+    if (v is List) {
+      return v
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
-    final base = TlConstant.syncApi; // ex: https://api.yourhost.com
-    final cleanedBase = base.replaceAll(RegExp(r'/+$'), '');
+    if (v is String) {
+      final s = v.trim();
 
-    // แปลง \ -> / แล้ว encode ทีละ segment (กันช่องว่าง/ภาษาไทย)
-    final encodedPath = raw
-        .replaceAll('\\', '/')
-        .split('/')
-        .where((s) => s.isNotEmpty)
-        .map(Uri.encodeComponent)
-        .join('/');
+      try {
+        final decoded = jsonDecode(s);
+        if (decoded is List) {
+          return decoded
+              .map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+        }
+      } catch (_) {}
 
-    return '$cleanedBase/$encodedPath';
+      return s
+          .replaceAll('[', '')
+          .replaceAll(']', '')
+          .replaceAll("'", '')
+          .replaceAll('"', '')
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    return [];
   }
 
   @override
@@ -231,6 +287,62 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final Map<String, dynamic> setValue =
+        _safeDecodeSetValue(widget.dataNote.drug_description);
+
+    List<String> levels = [];
+    if (setValue['level'] != null) {
+      if (setValue['level'] is List) {
+        levels = (setValue['level'] as List)
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      } else if (setValue['level'] is String) {
+        try {
+          final decoded = jsonDecode(setValue['level']);
+          if (decoded is List) {
+            levels = decoded
+                .map((e) => e.toString().trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
+          }
+        } catch (_) {}
+      }
+    }
+
+    List<String> parseToList(dynamic v) {
+      if (v == null) return [];
+      if (v is List) {
+        return v
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+      if (v is String) {
+        final s = v.trim();
+
+        final decoded = jsonDecode(s);
+        if (decoded is List) {
+          return decoded
+              .map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+        }
+
+        return s
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .replaceAll("'", '')
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+      return [];
+    }
+
+    parseToList(setValue['col']);
+
     final bool isDisabled = widget.note.id != null;
     final bool noOrderId = (widget.dataNote.smw_transaction_order_id == null ||
         widget.dataNote.smw_transaction_order_id == 0);
@@ -319,6 +431,90 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                               ),
                             )
                           : const SizedBox.shrink(),
+
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: levels.isNotEmpty
+                            ? levels.map((level) {
+                                final bool isSelected = selectedLevel == level;
+
+                                return GestureDetector(
+                                  onTap: _isSaved
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            selectedLevel = level;
+                                          });
+                                        },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? const Color.fromARGB(
+                                              255, 219, 133, 163)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: const Color.fromARGB(
+                                            255, 207, 108, 143),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: text(
+                                      context,
+                                      level,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : const Color.fromARGB(
+                                              255, 219, 133, 163),
+                                    ),
+                                  ),
+                                );
+                              }).toList()
+                            : [const SizedBox()],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      (widget.typeCard == 'Observe' &&
+                              !(_isSaved && selectedCol == 0))
+                          ? GestureDetector(
+                              onTap: _isSaved
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        selectedCol =
+                                            (selectedCol == 1) ? 0 : 1;
+                                      });
+                                    },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: selectedCol == 1
+                                      ? const Color.fromARGB(255, 219, 133, 163)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: const Color.fromARGB(
+                                        255, 207, 108, 143),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: text(
+                                  context,
+                                  "COL",
+                                  color: selectedCol == 1
+                                      ? Colors.white
+                                      : const Color.fromARGB(
+                                          255, 219, 133, 163),
+                                ),
+                              ),
+                            )
+                          : const SizedBox(),
+
                       const SizedBox(height: 12),
                       (widget.typeCard == 'Food' || widget.typeCard == 'Drug')
                           ? FoodDrugCheckboxGroup(
@@ -369,12 +565,22 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                               )
                             : GestureDetector(
                                 onTap: () async {
-                                  if (isDoctorLoading || ListDoctors.isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content:
-                                              Text('กำลังโหลดรายชื่อแพทย์...')),
-                                    );
+                                  setState(() {
+                                    isDoctorLoading = true;
+                                  });
+
+                                  final result =
+                                      await AdmitApi().loadDataDoctor(
+                                    context,
+                                    headers_: widget.headers,
+                                  );
+
+                                  setState(() {
+                                    ListDoctors = result;
+                                    isDoctorLoading = false;
+                                  });
+
+                                  if (ListDoctors.isEmpty) {
                                     return;
                                   }
 
@@ -395,68 +601,27 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 12),
                                   decoration: BoxDecoration(
-                                    // border: Border.all(color: Colors.grey),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(
-                                        Icons.person_search,
-                                        color: Colors.teal,
-                                        size: 20,
-                                      ),
+                                      const Icon(Icons.person_search,
+                                          color: Colors.teal, size: 20),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: text(
-                                            context,
-                                            selectedDoctor != null
-                                                ? '${selectedDoctor!.prename} ${selectedDoctor!.full_nameth}'
-                                                : 'คลิกเพื่อเลือกชื่อแพทย์ที่ทำการสั่งยา',
-                                            color: Colors.teal[900]),
+                                          context,
+                                          selectedDoctor != null
+                                              ? '${selectedDoctor!.prename} ${selectedDoctor!.full_nameth}'
+                                              : 'คลิกเพื่อเลือกชื่อแพทย์ที่ทำการสั่งยา',
+                                          color: Colors.teal[900],
+                                        ),
                                       ),
-                                      // const Icon(Icons.arrow_drop_down),
                                     ],
                                   ),
                                 ),
                               ),
-                      const SizedBox(height: 12),
-                      const SizedBox(height: 8),
-                      if (widget.typeCard == 'Food' ||
-                          widget.typeCard == 'Drug')
-                        text(
-                          context,
-                          'วิธีให้ : ${widget.dataNote.dose_qty} ${widget.dataNote.unit_name}',
-                        ),
 
-                      const SizedBox(height: 8),
-                      if (widget.typeCard == 'Food')
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            text(context, 'วิธีเตรียม / หมายเหตุอื่นๆ : '),
-                            text(
-                              context,
-                              '${widget.dataNote.remark}',
-                            ),
-                          ],
-                        ),
-                      const SizedBox(height: 8),
-                      (widget.typeCard == 'Food' || widget.typeCard == 'Drug')
-                          ? FoodDrugCheckboxGroup(
-                              typeCard: widget.typeCard,
-                              selectedValue: selectedCheckbox,
-                              isDisabled: isDisabled,
-                              prePareStatus:
-                                  widget.dataNote.pre_pare_status ?? '',
-                              onChanged: (newValue) {
-                                setState(() {
-                                  selectedCheckbox = newValue;
-                                  widget.dataNote.status =
-                                      getStatusFromCheckbox(newValue);
-                                });
-                              },
-                            )
-                          : const SizedBox.shrink(),
                       const SizedBox(height: 12),
                       widget.typeCard == 'Observe' &&
                               widget.dataNote.smw_transaction_order_id == null
@@ -707,10 +872,9 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                             GestureDetector(
                               onTap: () async {
                                 setState(() => isLoading = true);
-                                await loadFiles(); 
+                                await loadFiles();
                                 setState(() => isLoading = false);
 
-                          
                                 bool isHttpUrl(String s) =>
                                     s.startsWith('http://') ||
                                     s.startsWith('https://');
@@ -735,7 +899,6 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                     .toList();
 
                                 if (filesForGrid.isEmpty) {
-                          
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                         content: Text(
@@ -757,156 +920,208 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                       content: SizedBox(
                                         width: double.maxFinite,
                                         height: 480,
-                                        child: GridView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: filesForGrid.length,
-                                          gridDelegate:
-                                              SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: crossAxisCount,
-                                            crossAxisSpacing: 12,
-                                            mainAxisSpacing: 12,
-                                            childAspectRatio: 1,
-                                          ),
-                                          itemBuilder: (context, index) {
-                                            final file = filesForGrid[index];
-                                            final fileName =
-                                                file.path.split('/').last;
-                                            final isPDF = isPdf(file.path);
+                                        child: FutureBuilder<List<FileModel>>(
+                                          future: NoteApi()
+                                              .loadFile(
+                                                context,
+                                                orderId: widget.dataNote
+                                                        .smw_transaction_order_id ??
+                                                    0, // << แก้ตรงนี้
+                                                headers_: widget.headers,
+                                              )
+                                              .then((files) => files
+                                                  .map((f) => FileModel(
+                                                        path: f.path_file ?? '',
+                                                        remark: f.remark ?? '',
+                                                      ))
+                                                  .toList()),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return const Center(
+                                                child: SizedBox(
+                                                  height: 24,
+                                                  width: 24,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          strokeWidth: 2),
+                                                ),
+                                              );
+                                            }
 
-                                            return GestureDetector(
-                                              onTap: () {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) =>
-                                                      AlertDialog(
-                                                    title: Text(
-                                                      fileName,
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                    content: isPDF
-                                                        ? Column(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: [
-                                                              const Icon(
-                                                                  Icons
-                                                                      .picture_as_pdf,
-                                                                  size: 80),
-                                                              const SizedBox(
-                                                                  height: 8),
-                                                              Text(file.remark
-                                                                      .isNotEmpty
-                                                                  ? file.remark
-                                                                  : '-'),
-                                                            ],
-                                                          )
-                                                        : ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                            child:
-                                                                Image.network(
-                                                              file.path,
-                                                              headers: widget
-                                                                  .headers,
-                                                              fit: BoxFit
-                                                                  .contain,
-                                                              errorBuilder: (_,
-                                                                      __,
-                                                                      ___) =>
+                                            final filesForGrid =
+                                                snapshot.data ?? <FileModel>[];
+                                            if (filesForGrid.isEmpty) {
+                                              return const Center(
+                                                child: Text(
+                                                  'ไม่มีรูปภาพ',
+                                                  style: TextStyle(
+                                                      color: Colors.grey),
+                                                ),
+                                              );
+                                            }
+
+                                            return GridView.builder(
+                                              shrinkWrap: true,
+                                              itemCount: filesForGrid.length,
+                                              gridDelegate:
+                                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                                crossAxisCount: crossAxisCount,
+                                                crossAxisSpacing: 12,
+                                                mainAxisSpacing: 12,
+                                                childAspectRatio: 1,
+                                              ),
+                                              itemBuilder: (context, index) {
+                                                final file =
+                                                    filesForGrid[index];
+                                                final fileName =
+                                                    file.path.split('/').last;
+                                                final isPDF = isPdf(file.path);
+
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (context) =>
+                                                          AlertDialog(
+                                                        title: Text(
+                                                          fileName,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                        content: isPDF
+                                                            ? Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
                                                                   const Icon(
                                                                       Icons
-                                                                          .broken_image,
+                                                                          .picture_as_pdf,
                                                                       size: 80),
+                                                                  const SizedBox(
+                                                                      height:
+                                                                          8),
+                                                                  Text(file
+                                                                          .remark
+                                                                          .isNotEmpty
+                                                                      ? file
+                                                                          .remark
+                                                                      : '-'),
+                                                                ],
+                                                              )
+                                                            : ClipRRect(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            8),
+                                                                child: Image
+                                                                    .network(
+                                                                  file.path,
+                                                                  fit: BoxFit
+                                                                      .contain,
+                                                                  errorBuilder: (_,
+                                                                          __,
+                                                                          ___) =>
+                                                                      const Icon(
+                                                                          Icons
+                                                                              .broken_image,
+                                                                          size:
+                                                                              80),
+                                                                ),
+                                                              ),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                    context),
+                                                            child: const Text(
+                                                                'ปิด'),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    child: Stack(
+                                                      children: [
+                                                        Positioned.fill(
+                                                          child: isPDF
+                                                              ? const Center(
+                                                                  child: Icon(
+                                                                      Icons
+                                                                          .picture_as_pdf,
+                                                                      size: 40),
+                                                                )
+                                                              : Image.network(
+                                                                  file.path,
+                                                                  fit: BoxFit
+                                                                      .cover,
+                                                                  errorBuilder: (_,
+                                                                          __,
+                                                                          ___) =>
+                                                                      const Center(
+                                                                    child: Icon(
+                                                                        Icons
+                                                                            .broken_image),
+                                                                  ),
+                                                                ),
+                                                        ),
+                                                        Positioned(
+                                                          left: 0,
+                                                          right: 0,
+                                                          bottom: 0,
+                                                          child: Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                              horizontal: 6,
+                                                              vertical: 4,
+                                                            ),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              gradient:
+                                                                  LinearGradient(
+                                                                begin: Alignment
+                                                                    .bottomCenter,
+                                                                end: Alignment
+                                                                    .topCenter,
+                                                                colors: [
+                                                                  Colors.black
+                                                                      .withOpacity(
+                                                                          0.6),
+                                                                  Colors
+                                                                      .transparent,
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            child: Text(
+                                                              file.remark
+                                                                      .isNotEmpty
+                                                                  ? file.remark
+                                                                  : "-",
+                                                              maxLines: 2,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style:
+                                                                  const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 12,
+                                                              ),
                                                             ),
                                                           ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                                context),
-                                                        child:
-                                                            const Text('ปิด'),
-                                                      ),
-                                                    ],
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
                                                 );
                                               },
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                child: Stack(
-                                                  children: [
-                                                    Positioned.fill(
-                                                      child: isPDF
-                                                          ? const Center(
-                                                              child: Icon(
-                                                                  Icons
-                                                                      .picture_as_pdf,
-                                                                  size: 40))
-                                                          : Image.network(
-                                                              file.path,
-                                                              headers: widget
-                                                                  .headers,
-                                                              fit: BoxFit.cover,
-                                                              errorBuilder: (_,
-                                                                      __,
-                                                                      ___) =>
-                                                                  const Center(
-                                                                      child: Icon(
-                                                                          Icons
-                                                                              .broken_image)),
-                                                            ),
-                                                    ),
-                                                    Positioned(
-                                                      left: 0,
-                                                      right: 0,
-                                                      bottom: 0,
-                                                      child: Container(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal: 6,
-                                                                vertical: 4),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          gradient:
-                                                              LinearGradient(
-                                                            begin: Alignment
-                                                                .bottomCenter,
-                                                            end: Alignment
-                                                                .topCenter,
-                                                            colors: [
-                                                              Colors.black
-                                                                  .withOpacity(
-                                                                      0.6),
-                                                              Colors
-                                                                  .transparent,
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        child: Text(
-                                                          file.remark.isNotEmpty
-                                                              ? file.remark
-                                                              : "-",
-                                                          maxLines: 2,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style:
-                                                              const TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize: 12),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
                                             );
                                           },
                                         ),
@@ -1079,6 +1294,9 @@ class _NewNoteCardWidgetState extends State<NewNoteCardWidget> {
                                           doctor: selectedDoctor != null
                                               ? '${selectedDoctor!.prename} ${selectedDoctor!.full_nameth}'
                                               : null,
+                                          levels: selectedLevel ?? '',
+                                          feed: widget.dataNote.feed ?? '',
+                                          col: selectedCol.toString(),
                                           comment: widget.dataNote.comment,
                                           file: widget.dataNote.file ?? [],
                                         )

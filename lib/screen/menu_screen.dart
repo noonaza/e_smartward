@@ -1,6 +1,8 @@
+import 'package:e_smartward/screen/admit_screen_V2.dart';
+import 'package:e_smartward/screen/admit_screen_v1.dart';
 import 'package:flutter/material.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
-import 'package:e_smartward/screen/admit_screen.dart';
+// import 'package:e_smartward/screen/admit_screen.dart';
 import 'package:e_smartward/screen/menu_food_screen.dart';
 import 'package:e_smartward/screen/round_ward_screen.dart';
 import 'package:e_smartward/widget/header.dart';
@@ -64,7 +66,7 @@ class _MenuScreenState extends State<MenuScreen> {
                             Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => AdmitScreen(
+                                    builder: (context) => AdmitScreenV2(
                                           lUserLogin: widget.lUserLogin,
                                           headers: widget.headers,
                                           lDataCard: [],

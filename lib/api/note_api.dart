@@ -81,7 +81,6 @@ class NoteApi {
     String api = '${TlConstant.syncApi}/get_transaction';
     final dio = Dio();
 
-    // ใช้ rootContext เสมอเวลาแสดง dialog
     final rootContext = Navigator.of(context, rootNavigator: true).context;
 
     try {
@@ -149,7 +148,10 @@ class NoteApi {
                         create_date: card['create_date']?.toString() ?? '',
                         save_by: card['save_by']?.toString() ?? '',
                         save_by_name: card['save_by_name']?.toString() ?? '',
+                        levels: card['levels']?.toString() ?? '',
+                        col: card['col']?.toString() ?? '',
                         doctor: card['doctor']?.toString() ?? '',
+                        feed: card['feed']?.toString() ?? '',
                         comment: card['comment']?.toString() ?? '',
                         status: card['status']?.toString() ?? '',
                         file_count: card['file_count'] is int
@@ -194,7 +196,6 @@ class NoteApi {
       'date_slot': mNoteData.date_slot,
       'remark': mNoteData.remark,
       'tl_common_users_id': mNoteData.tl_common_users_id,
-      //'data_card': mNoteData.dataNote.map((e) => e.toJson()).toList(),
     };
 
     String api = '${TlConstant.syncApi}/save_transaction';
@@ -347,10 +348,13 @@ class NoteApi {
                 caution: card['caution']?.toString(),
                 drug_description: card['drug_description']?.toString(),
                 time_slot: card['time_slot']?.toString(),
+                drug_type_name: card['time_slot']?.toString(),
                 pre_pare_status: card['pre_pare_status']?.toString(),
                 date_slot: card['date_slot']?.toString(),
                 save_by: card['save_by']?.toString(),
                 slot: card['slot']?.toString(),
+                levels: card['levels']?.toString(),
+                col: card['col']?.toString(),
                 comment: card['comment']?.toString(),
                 status: card['status']?.toString(),
               ));

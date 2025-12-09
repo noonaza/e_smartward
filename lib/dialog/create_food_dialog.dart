@@ -1,6 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:e_smartward/widget/admit_selectday.dart';
+import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -107,6 +109,8 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
   TextEditingController tFoodQty = TextEditingController();
   TextEditingController tFoodUnitQty = TextEditingController();
   TextEditingController tSearchDoctor = TextEditingController();
+  ScheduleMode _scheduleMode = ScheduleMode.weeklyOnce; // ค่าเริ่มต้นที่ต้องการ
+  ScheduleResult? _schedule; // ถ้าอยากเก็บรายละเอียดอื่น ๆ จากตัวเลือก
   List<String> time = [
     'ทุกๆ 1 ชม.',
     'ทุกๆ 2 ชม.',
@@ -117,6 +121,78 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
     'กำหนดเอง',
     'เมื่อมีอาการ'
   ];
+  List<String> setDay = [
+    'สัปดาห์ละครั้ง',
+    'กำหนดรายวัน',
+    'กำหนดรายเดือน',
+    'ไม่กำหนด'
+  ];
+  Map<String, bool> selectedDay = {
+    'สัปดาห์ละครั้ง': false,
+    'กำหนดรายวัน': false,
+    'กำหนดรายเดือน': false,
+    'ไม่กำหนด': false
+  };
+
+  final Map<String, bool> selectedWeekdays = {
+    'จันทร์': false,
+    'อังคาร': false,
+    'พุธ': false,
+    'พฤหัสบดี': false,
+    'ศุกร์': false,
+    'เสาร์': false,
+    'อาทิตย์': false,
+  };
+  String _typeSlotFromMode(ScheduleMode m) {
+    switch (m) {
+      case ScheduleMode.weeklyOnce:
+        return 'DAYS';
+      case ScheduleMode.dailyCustom:
+        return 'DATE';
+      case ScheduleMode.monthlyCustom:
+        return 'D_M';
+      case ScheduleMode.all:
+        return 'ALL';
+    }
+  }
+
+  String labelFromTypeSlot(String? t) {
+    switch (t) {
+      case 'weekly_once':
+        return 'สัปดาห์ละครั้ง';
+      case 'daily_custom':
+        return 'กำหนดรายวัน';
+      case 'monthly_custom':
+        return 'กำหนดรายเดือน';
+      case 'all':
+        return 'ไม่กำหนด';
+      default:
+        return '-';
+    }
+  }
+
+  Map<String, bool> selectStatus = {
+    'ให้อาหารทันที': false,
+  };
+  List<String> setValueStatus = [
+    'ให้อาหารทันที',
+  ];
+
+  List<String> setValue = [
+    'วางให้ทาน',
+    'ปั่น',
+    'แช่น้ำอุ่น',
+    'สอดท่อกรองอาหาร',
+    'ชั่งน้ำหนักอาหาร',
+  ];
+  Map<String, bool> selectedValues = {
+    'วางให้ทาน': false,
+    'ปั่น': false,
+    'แช่น้ำอุ่น': false,
+    'สอดท่อกรองอาหาร': false,
+    'ชั่งน้ำหนักอาหาร': false,
+  };
+
   String selectedTimeSlot = '';
   List<String> selectedTakeTimes = [];
 
@@ -124,6 +200,55 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
     String formattedHour = index.toString().padLeft(2, '0');
     return '$formattedHour:00';
   });
+  String encodeTakeTime({
+    required List<bool> selectedTimeList,
+    required List<String> timeList,
+  }) {
+    final times = <String>[];
+    for (int i = 0; i < timeList.length; i++) {
+      if (selectedTimeList[i]) times.add(timeList[i]);
+    }
+    if (times.isEmpty) return '[]';
+    return "[${times.map((e) => "'$e'").join(',')}]";
+  }
+
+  String resolveTimeSlot({
+    required List<bool> selected,
+    required List<String> time,
+    required String customNote,
+  }) {
+    final idx = selected.indexWhere((v) => v == true);
+    if (idx < 0) return '';
+    final label = time[idx];
+    if (label == 'กำหนดเอง') return customNote.trim();
+    return label;
+  }
+
+  void checkIsEnablede() {
+    final ok = (tFoodName.text.trim().isNotEmpty) &&
+        ((int.tryParse(tFoodQty.text) ?? 0) >= 0) &&
+        (tFoodUnit.text.trim().isNotEmpty);
+    if (ok != isEnabled) {
+      setState(() => isEnabled = ok);
+    }
+  }
+
+  bool _isScheduleDetailValid() {
+    switch (_scheduleMode) {
+      case ScheduleMode.weeklyOnce:
+        return _schedule!.weekdayNames.isNotEmpty;
+
+      case ScheduleMode.dailyCustom:
+        // ต้องมี note/ค่า custom สำหรับรายวัน
+        return (_schedule!.dailyNote?.trim().isNotEmpty ?? false);
+
+      case ScheduleMode.monthlyCustom:
+        // ต้องมีวันของเดือนอย่างน้อย 1
+        return _schedule!.monthlyDays.isNotEmpty;
+      case ScheduleMode.all:
+        return _schedule!.monthlyDays.isNotEmpty;
+    }
+  }
 
   List<bool> selected = [];
   List<bool> selectedTimeList = [];
@@ -139,26 +264,36 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
 
   List<DoctorModel> ListDoctors = [];
 
-  void checkIsEnabled() {
-    setState(() {
-      isEnabled = tFoodName.text.trim().isNotEmpty &&
-          tFoodQty.text.trim().isNotEmpty &&
-          tFoodUnitQty.text.trim().isNotEmpty &&
-          tFoodDose.text.trim().isNotEmpty &&
-          tFoodRemark.text.trim().isNotEmpty &&
-          // selectedDoctor != null &&
-          tFoodUnit.text.trim().isNotEmpty &&
-          // tFooddoctor.text.trim().isNotEmpty &&
-          (selectedTimeSlot.isNotEmpty &&
-              (selectedTimeSlot == 'เมื่อมีอาการ' ||
-                  selectedTakeTimes.isNotEmpty));
-    });
-  }
+  final List<String> prepOptions = [
+    'วางให้ทาน',
+    'ปั่น',
+    'แช่น้ำอุ่น',
+    'สอดท่อกรองอาหาร',
+    'ชั่งน้ำหนักอาหาร',
+  ];
+
+  // void _initPrepFromFeed(String? feed) {
+  //   selectedPrep = {
+  //     for (final v in prepOptions) v: false,
+  //   };
+
+  //   if (feed == null || feed.trim().isEmpty) return;
+
+  //   final parts =
+  //       feed.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty);
+
+  //   for (final label in parts) {
+  //     if (selectedPrep.containsKey(label)) {
+  //       selectedPrep[label] = true;
+  //     }
+  //   }
+  // }
+
+  late Map<String, bool> selectedPrep;
 
   @override
   void initState() {
     super.initState();
-    //  initDoctors();
 
     tFoodName.addListener(checkIsEnabled);
     tFoodQty.addListener(checkIsEnabled);
@@ -169,43 +304,12 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
     // tFooddoctor.addListener(checkIsEnabled);
     selected = List.generate(time.length, (index) => false);
     selectedTimeList = List.generate(timeList.length, (index) => false);
-
-    // setState(() {
-    //   drugItems = ListDoctors.map((doctor) {
-    //     return DropdownMenuItem<DoctorModel>(
-    //       value: doctor,
-    //       child: Text(
-    //         '${doctor.employee_id}  ${doctor.full_nameth}',
-    //         style: const TextStyle(fontSize: 12),
-    //       ),
-    //     );
-    //   }).toList();
-    // });
   }
-
-  // void initDoctors() async {
-  //   List<DoctorModel> result =
-  //       await AdmitApi().loadDataDoctor(context, headers_: widget.headers);
-
-  //   setState(() {
-  //     ListDoctors = result;
-
-  //     drugItems = ListDoctors.map((doctor) {
-  //       return DropdownMenuItem<DoctorModel>(
-  //         value: doctor,
-  //         child: Text(
-  //           '${doctor.prename} ${doctor.full_nameth}',
-  //           style: const TextStyle(fontSize: 12),
-  //         ),
-  //       );
-  //     }).toList();
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) {
-    // final bool isEnabled = (selectedTimeSlot.isNotEmpty &&
-    //     (selectedTimeSlot == 'เมื่อมีอาการ' || selectedTakeTimes.isNotEmpty));
+    final result = _schedule;
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -269,28 +373,103 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
           const SizedBox(height: 10),
           textField1('สรรพคุณ', controller: tFoodDescription),
           const SizedBox(height: 10),
-          textField1('วิธีเตรียมอาหาร / หมายเหตุอื่นๆ',
-              controller: tFoodRemark),
+          textField1('หมายเหตุอื่นๆ', controller: tFoodRemark),
           const SizedBox(height: 15),
-          // SizedBox(
-          //   height: 35,
-          //   child: Dropdown.lModel<DoctorModel>(
-          //     context: context,
-          //     value: selectedDoctor,
-          //     items: drugItems,
-          //     tController: tSearchDoctor,
-          //     isSelect: true,
-          //     validator: '',
-          //     width: double.infinity,
-          //     onChanged: (value) {
-          //       setState(() {
-          //         selectedDoctor = value;
-          //         checkIsEnabled();
-          //       });
-          //     },
-          //     hintLabel: 'เลือกชื่อแพทย์ที่ทำการสั่งยา',
-          //     labelInSearch: 'ค้นหาชื่อหรือรหัสแพทย์',
-          //   ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Wrap(
+                  spacing: 8.0,
+                  children: setValue.map((key) {
+                    final isSelected = selectedValues[key] ?? false;
+
+                    return ChoiceChip(
+                        label: text(
+                          context,
+                          key,
+                          color: isSelected ? Colors.white : Colors.teal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        selected: isSelected,
+                        selectedColor: Color.fromARGB(255, 4, 138, 161),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color:
+                                isSelected ? Colors.teal : Colors.teal.shade200,
+                          ),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                        onSelected: (selected) {
+                          setState(() {
+                            selectedValues[key] = selected;
+                          });
+                          checkIsEnabled();
+                        });
+                  }).toList()),
+            ],
+          ),
+          const SizedBox(height: 15),
+          SchedulePicker(
+            allowAll: false,
+            key: const ValueKey('create_sched'),
+            initialMode: _scheduleMode,
+            initialWeeklySelectedNames: result?.weekdayNames.isNotEmpty == true
+                ? result!.weekdayNames
+                : const {},
+            initialDailyNote: result?.dailyNote,
+            initialMonthlyDate: result?.monthlyDate,
+            initialMonthlyDays: result?.monthlyDays ?? const <int>{},
+            onChanged: (cfg) {
+              setState(() {
+                _scheduleMode = cfg.mode;
+                _schedule = cfg;
+              });
+              checkIsEnabled();
+            },
+          ),
+
+          const SizedBox(height: 15),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Wrap(
+                spacing: 8.0,
+                children: setValueStatus.map((key) {
+                  final isSelected = selectStatus[key] ?? false;
+
+                  return ChoiceChip(
+                    label: text(
+                      context,
+                      key,
+                      color: isSelected ? Colors.white : Colors.teal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    selected: isSelected,
+                    selectedColor: const Color.fromARGB(255, 4, 138, 161),
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(
+                        color: isSelected ? Colors.teal : Colors.teal.shade200,
+                      ),
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                    onSelected: (selected) {
+                      setState(() {
+                        selectStatus.updateAll((key, value) => false);
+                        selectStatus[key] = selected;
+                      });
+                      checkIsEnabled();
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
           // ),
           const SizedBox(height: 15),
           TimeSelection(
@@ -329,7 +508,14 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
                 iconColor: Colors.white,
                 asController: ActionSliderController(),
                 action: (controller) async {
+                  final typeSlot = _typeSlotFromMode(_scheduleMode);
                   if (widget.screen == 'roundward') {
+                    String status = '0';
+
+                    if (selectStatus['ให้อาหารทันที'] == true) {
+                      status = '1';
+                    }
+
                     final newFood = DataAddOrderModel(
                       item_name: tFoodName.text,
                       type_card: 'Food',
@@ -341,9 +527,21 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
                       drug_type_name: "อาหารสัตว์",
                       drug_description: tFoodDescription.text,
                       stock_out: 0,
+                      use_now: status,
+                      set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                      type_slot: _typeSlotFromMode(_scheduleMode),
+                      start_date_imed:
+                          DateFormat('yyyy-MM-dd').format(DateTime.now()),
                       remark: tFoodRemark.text,
+                      schedule_mode_label:
+                          _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
                       //  doctor_eid: selectedDoctor?.employee_id,
                       unit_stock: tFoodUnitQty.text,
+                      meal_take: selectedValues.entries
+                          .where((entry) => entry.value)
+                          .map((entry) => entry.key)
+                          .join(','),
+
                       take_time:
                           "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
                       time_slot: selectedTimeSlot,
@@ -372,12 +570,22 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
                       stock_out: 0,
                       item_qty: int.parse(
                           tFoodQty.text.isEmpty ? '0' : tFoodQty.text),
-                      start_date_use:
+                      start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
+                          .format(DateTime.now()),
+                      start_date_imed:
                           DateFormat('yyyy-MM-dd').format(DateTime.now()),
                       drug_description: tFoodDescription.text,
                       remark: tFoodRemark.text,
                       unit_stock: tFoodUnitQty.text,
-                      //  doctor_eid: selectedDoctor?.full_nameth ?? '',
+                      set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                      type_slot: _typeSlotFromMode(_scheduleMode),
+                      schedule_mode_label:
+                          _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
+                      meal_take: selectedValues.entries
+                          .where((entry) => entry.value)
+                          .map((entry) => entry.key)
+                          .join(','),
+
                       take_time:
                           "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
                       time_slot: selectedTimeSlot,
@@ -393,5 +601,32 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
         ],
       ),
     );
+  }
+
+  void checkIsEnabled() {
+    final hasBasics = tFoodName.text.trim().isNotEmpty &&
+        tFoodQty.text.trim().isNotEmpty &&
+        tFoodUnitQty.text.trim().isNotEmpty &&
+        tFoodDose.text.trim().isNotEmpty &&
+        tFoodUnit.text.trim().isNotEmpty &&
+        (selectedTimeSlot.isNotEmpty &&
+            (selectedTimeSlot == 'เมื่อมีอาการ' ||
+                selectedTakeTimes.isNotEmpty));
+    selectedTakeTimes.isNotEmpty;
+
+    final scheduleOk = _isScheduleDetailValid();
+    final timeOk = _isTimeOk();
+
+    final ok = hasBasics && scheduleOk && timeOk;
+
+    if (ok != isEnabled) {
+      setState(() => isEnabled = ok);
+    }
+  }
+
+  bool _isTimeOk() {
+    if (selectedTimeSlot.isEmpty) return false;
+    if (selectedTimeSlot == 'เมื่อมีอาการ') return true;
+    return selectedTakeTimes.isNotEmpty;
   }
 }

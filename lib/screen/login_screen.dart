@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
-import 'package:e_smartward/screen/dashboard_screen.dart';
+// import 'package:e_smartward/screen/dashboard_screen.dart';
+import 'package:e_smartward/screen/dashboard_screenV2.dart';
 import 'package:e_smartward/screen/menu_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -66,8 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
-    final formattedDate = DateFormat('yyyyMMdd').format(today);
     return Material(
         child: Stack(
       children: [
@@ -92,36 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-        // Positioned(
-        //   top: 15,
-        //   right: 20,
-        //   child: InkWell(
-        //     onTap: () {
-        //       // Navigator.push(
-        //       //   context,
-        //       //   MaterialPageRoute(
-        //       //       builder: (context) => PreviewDashboard(
-        //       //             lDataCard: [],
-        //       //             petNames: [],
-        //       //           )),
-        //       // );
-
-        //       Navigator.push(
-        //         context,
-        //         MaterialPageRoute(
-        //             builder: (context) => DashboardScreen(
-        //                   lDataCard: [],
-        //                   petNames: [],
-        //                 )),
-        //       );
-        //     },
-        //     child: Image.asset(
-        //       'assets/icons/dbicon.png',
-        //       width: 35,
-        //       height: 35,
-        //     ),
-        //   ),
-        // ),
         Positioned(
           left: (MediaQuery.of(context).size.width / 2) -
               ((MediaQuery.of(context).size.width / 2.5) / 2),
@@ -231,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => DashboardScreen(
+                                  builder: (context) => const DashboardScreenV2(
                                     lDataCard: [],
                                     petNames: [],
                                   ),
@@ -269,9 +238,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       Text(
-                        'Update $formattedDate | Version ${TlConstant.version} 55555555',
+                        'Update 20251105 | Version ${TlConstant.version}',
                         style:
                             const TextStyle(color: Colors.grey, fontSize: 12),
                       )

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 text(
   BuildContext context,
-  String label, {
+  String label,{
   Color? color,
   FontWeight? fontWeight,
   TextAlign? textAlign,

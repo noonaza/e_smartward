@@ -416,13 +416,22 @@ class RoundWardApi {
     final List<Map<String, dynamic>> formattedData = [];
 
     for (var item in lDataOrder_) {
-      final Map<String, dynamic> data = item.toJson();
+      final Map<String, dynamic> data = jsonDecode(item.toJson());
 
       if (item.type_card == 'OBS') {
         Map<String, dynamic> setValue = {};
+
         try {
-          setValue = jsonDecode(item.take_time ?? '{}');
-        } catch (_) {}
+          final decoded = jsonDecode(item.take_time ?? '{}');
+
+          if (decoded is Map) {
+            setValue = decoded.map((k, v) => MapEntry(k.toString(), v));
+          } else {
+            setValue = {};
+          }
+        } catch (_) {
+          setValue = {};
+        }
 
         data['drug_instruction'] = jsonEncode({
           "obs": setValue['obs'] ?? 0,
@@ -431,6 +440,7 @@ class RoundWardApi {
           "delete": 0,
         });
       }
+
       formattedData.add(data);
     }
 
@@ -494,6 +504,7 @@ class RoundWardApi {
       "drug_description": updatedDrug.drug_description ?? '',
       "drug_type_name": updatedDrug.drug_type_name ?? '',
       "time_slot": updatedDrug.time_slot ?? '',
+      ""
       "unit_stock": updatedDrug.unit_stock ?? '',
       "status": updatedDrug.status ?? 'Order',
       "tl_common_users_id": mUser.id,

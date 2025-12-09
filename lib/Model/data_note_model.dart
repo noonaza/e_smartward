@@ -30,7 +30,10 @@ class DataNoteModel {
   String? create_date;
   String? comment;
   String? doctor;
+  String? feed;
   String? status;
+  String? col;
+  String? levels;
   int? file_count;
   List<FileModel>? file;
 
@@ -59,7 +62,10 @@ class DataNoteModel {
     this.create_date,
     this.comment,
     this.doctor,
+    this.feed,
     this.status,
+    this.col,
+    this.levels,
     this.file_count,
     this.file,
   });
@@ -93,7 +99,10 @@ class DataNoteModel {
     String? create_date,
     String? comment,
     String? doctor,
+    String? feed,
     String? status,
+    String? col,
+    String? levels,
     int? file_count,
     List<FileModel>? file,
   }) {
@@ -122,7 +131,10 @@ class DataNoteModel {
       create_date: create_date ?? this.create_date,
       comment: comment ?? this.comment,
       doctor: doctor ?? this.doctor,
+      feed: feed ?? this.feed,
       status: status ?? this.status,
+      col: col ?? this.col,
+      levels: levels ?? this.levels,
       file_count: file_count ?? this.file_count,
       file: file ?? this.file,
     );
@@ -154,9 +166,12 @@ class DataNoteModel {
       'create_date': create_date,
       'comment': comment,
       'doctor': doctor,
+      'feed': feed,
       'status': status,
+      'col': col,
+      'levels': levels,
       'file_count': file_count,
-      'file': file?.map((x) => x?.toMap()).toList(),
+      'file': file!.map((x) => x?.toMap()).toList(),
     };
   }
 
@@ -186,7 +201,10 @@ class DataNoteModel {
       create_date: map['create_date'] != null ? map['create_date'] as String : null,
       comment: map['comment'] != null ? map['comment'] as String : null,
       doctor: map['doctor'] != null ? map['doctor'] as String : null,
+      feed: map['feed'] != null ? map['feed'] as String : null,
       status: map['status'] != null ? map['status'] as String : null,
+      col: map['col'] != null ? map['col'] as String : null,
+      levels: map['levels'] != null ? map['levels'] as String : null,
       file_count: map['file_count'] != null ? map['file_count'] as int : null,
       file: map['file'] != null ? List<FileModel>.from((map['file'] as List<int>).map<FileModel?>((x) => FileModel.fromMap(x as Map<String,dynamic>),),) : null,
     );
@@ -199,7 +217,7 @@ class DataNoteModel {
 
   @override
   String toString() {
-    return 'DataNoteModel(smw_transaction_order_id: $smw_transaction_order_id, smw_admit_order_id: $smw_admit_order_id, type_card: $type_card, item_name: $item_name, item_qty: $item_qty, unit_name: $unit_name, dose_qty: $dose_qty, meal_timing: $meal_timing, drug_instruction: $drug_instruction, remark: $remark, item_code: $item_code, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, time_slot: $time_slot, pre_pare_status: $pre_pare_status, drug_type_name: $drug_type_name, date_slot: $date_slot, slot: $slot, save_by: $save_by, save_by_name: $save_by_name, create_date: $create_date, comment: $comment, doctor: $doctor, status: $status, file_count: $file_count, file: $file)';
+    return 'DataNoteModel(smw_transaction_order_id: $smw_transaction_order_id, smw_admit_order_id: $smw_admit_order_id, type_card: $type_card, item_name: $item_name, item_qty: $item_qty, unit_name: $unit_name, dose_qty: $dose_qty, meal_timing: $meal_timing, drug_instruction: $drug_instruction, remark: $remark, item_code: $item_code, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, time_slot: $time_slot, pre_pare_status: $pre_pare_status, drug_type_name: $drug_type_name, date_slot: $date_slot, slot: $slot, save_by: $save_by, save_by_name: $save_by_name, create_date: $create_date, comment: $comment, doctor: $doctor, feed: $feed, status: $status, col: $col, levels: $levels, file_count: $file_count, file: $file)';
   }
 
   @override
@@ -231,7 +249,10 @@ class DataNoteModel {
       other.create_date == create_date &&
       other.comment == comment &&
       other.doctor == doctor &&
+      other.feed == feed &&
       other.status == status &&
+      other.col == col &&
+      other.levels == levels &&
       other.file_count == file_count &&
       listEquals(other.file, file);
   }
@@ -262,7 +283,10 @@ class DataNoteModel {
       create_date.hashCode ^
       comment.hashCode ^
       doctor.hashCode ^
+      feed.hashCode ^
       status.hashCode ^
+      col.hashCode ^
+      levels.hashCode ^
       file_count.hashCode ^
       file.hashCode;
   }

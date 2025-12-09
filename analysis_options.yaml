@@ -13,6 +13,7 @@ analyzer:
     depend_on_referenced_packages: ignore
     invalid_use_of_protected_member: ignore
     library_private_types_in_public_api: ignore
+    must_be_immutable: ignore
     non_constant_identifier_names: ignore
     prefer_const_constructors: ignore
     sort_child_properties_last: ignore

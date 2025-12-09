@@ -44,7 +44,6 @@ class BoardDetail extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // avatar
                 Container(
                   width: avatar,
                   height: avatar,
@@ -54,19 +53,10 @@ class BoardDetail extends StatelessWidget {
                     border: Border.all(color: Colors.black12),
                   ),
                   child: ClipOval(
-                    child: Image.asset(
-                      data.petType == "CA"
-                          ? 'assets/images/dog1.png'
-                          : data.petType == "FE"
-                              ? 'assets/images/cat.png'
-                              : 'assets/images/duck1.png',
-                      fit: BoxFit.cover,
-                    ),
+                    child: _buildPetImage(),
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
                 Flexible(
                   fit: FlexFit.loose,
                   child: Column(
@@ -89,7 +79,7 @@ class BoardDetail extends StatelessWidget {
                       ),
                       SizedBox(height: isGreen ? 2 : 4),
                       Text(
-                        'คุณ : ${data.ownerName}',
+                        data.ownerName,
                         maxLines: 1,
                         softWrap: false,
                         overflow: TextOverflow.ellipsis,
@@ -137,6 +127,35 @@ class BoardDetail extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPetImage() {
+    final String? img = data.images;
+
+    // ถ้าไม่มี url หรือเป็นค่าว่าง → ใช้ภาพ default
+    if (img == null ||
+        img.trim().isEmpty ||
+        img.toLowerCase().trim() == 'null') {
+      return Image.asset(
+        'assets/images/petnull.png',
+        fit: BoxFit.cover,
+      );
+    }
+
+    return Image.network(
+      img,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Image.asset(
+          'assets/images/petnull.png',
+          fit: BoxFit.cover,
+        );
+      },
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child; // โหลดเสร็จ
+        return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+      },
     );
   }
 }

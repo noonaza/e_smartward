@@ -11,12 +11,18 @@ class GetObsModel {
   String? update_by;
   String? update_date;
   String? delete_by;
-    String? remark;
+  String? remark;
   String? delete_date;
+  String? item_code;
   String? take_time;
   String? time_slot;
   String? set_key;
   String? key_special;
+  String? meal_timing;
+  String? type_slot;
+  String? drug_description;
+  String? set_slot;
+  String? schedule_mode_label;
   GetObsModel({
     this.id,
     this.code,
@@ -29,10 +35,16 @@ class GetObsModel {
     this.delete_by,
     this.remark,
     this.delete_date,
+    this.item_code,
     this.take_time,
     this.time_slot,
     this.set_key,
     this.key_special,
+    this.meal_timing,
+    this.type_slot,
+    this.drug_description,
+    this.set_slot,
+    this.schedule_mode_label,
   });
 
   GetObsModel copyWith({
@@ -47,10 +59,16 @@ class GetObsModel {
     String? delete_by,
     String? remark,
     String? delete_date,
+    String? item_code,
     String? take_time,
     String? time_slot,
     String? set_key,
     String? key_special,
+    String? meal_timing,
+    String? type_slot,
+    String? drug_description,
+    String? set_slot,
+    String? schedule_mode_label,
   }) {
     return GetObsModel(
       id: id ?? this.id,
@@ -64,10 +82,16 @@ class GetObsModel {
       delete_by: delete_by ?? this.delete_by,
       remark: remark ?? this.remark,
       delete_date: delete_date ?? this.delete_date,
+      item_code: item_code ?? this.item_code,
       take_time: take_time ?? this.take_time,
       time_slot: time_slot ?? this.time_slot,
       set_key: set_key ?? this.set_key,
       key_special: key_special ?? this.key_special,
+      meal_timing: meal_timing ?? this.meal_timing,
+      type_slot: type_slot ?? this.type_slot,
+      drug_description: drug_description ?? this.drug_description,
+      set_slot: set_slot ?? this.set_slot,
+      schedule_mode_label: schedule_mode_label ?? this.schedule_mode_label,
     );
   }
 
@@ -84,10 +108,16 @@ class GetObsModel {
       'delete_by': delete_by,
       'remark': remark,
       'delete_date': delete_date,
+      'item_code': item_code,
       'take_time': take_time,
       'time_slot': time_slot,
       'set_key': set_key,
       'key_special': key_special,
+      'meal_timing': meal_timing,
+      'type_slot': type_slot,
+      'drug_description': drug_description,
+      'set_slot': set_slot,
+      'schedule_mode_label': schedule_mode_label,
     };
   }
 
@@ -104,10 +134,16 @@ class GetObsModel {
       delete_by: map['delete_by'] != null ? map['delete_by'] as String : null,
       remark: map['remark'] != null ? map['remark'] as String : null,
       delete_date: map['delete_date'] != null ? map['delete_date'] as String : null,
+      item_code: map['item_code'] != null ? map['item_code'] as String : null,
       take_time: map['take_time'] != null ? map['take_time'] as String : null,
       time_slot: map['time_slot'] != null ? map['time_slot'] as String : null,
       set_key: map['set_key'] != null ? map['set_key'] as String : null,
       key_special: map['key_special'] != null ? map['key_special'] as String : null,
+      meal_timing: map['meal_timing'] != null ? map['meal_timing'] as String : null,
+      type_slot: map['type_slot'] != null ? map['type_slot'] as String : null,
+      drug_description: map['drug_description'] != null ? map['drug_description'] as String : null,
+      set_slot: map['set_slot'] != null ? map['set_slot'] as String : null,
+      schedule_mode_label: map['schedule_mode_label'] != null ? map['schedule_mode_label'] as String : null,
     );
   }
 
@@ -118,7 +154,7 @@ class GetObsModel {
 
   @override
   String toString() {
-    return 'GetObsModel(id: $id, code: $code, set_name: $set_name, set_value: $set_value, create_by: $create_by, create_date: $create_date, update_by: $update_by, update_date: $update_date, delete_by: $delete_by, remark: $remark, delete_date: $delete_date, take_time: $take_time, time_slot: $time_slot, set_key: $set_key, key_special: $key_special)';
+    return 'GetObsModel(id: $id, code: $code, set_name: $set_name, set_value: $set_value, create_by: $create_by, create_date: $create_date, update_by: $update_by, update_date: $update_date, delete_by: $delete_by, remark: $remark, delete_date: $delete_date, item_code: $item_code, take_time: $take_time, time_slot: $time_slot, set_key: $set_key, key_special: $key_special, meal_timing: $meal_timing, type_slot: $type_slot, drug_description: $drug_description, set_slot: $set_slot, schedule_mode_label: $schedule_mode_label)';
   }
 
   @override
@@ -137,10 +173,16 @@ class GetObsModel {
       other.delete_by == delete_by &&
       other.remark == remark &&
       other.delete_date == delete_date &&
+      other.item_code == item_code &&
       other.take_time == take_time &&
       other.time_slot == time_slot &&
       other.set_key == set_key &&
-      other.key_special == key_special;
+      other.key_special == key_special &&
+      other.meal_timing == meal_timing &&
+      other.type_slot == type_slot &&
+      other.drug_description == drug_description &&
+      other.set_slot == set_slot &&
+      other.schedule_mode_label == schedule_mode_label;
   }
 
   @override
@@ -156,9 +198,15 @@ class GetObsModel {
       delete_by.hashCode ^
       remark.hashCode ^
       delete_date.hashCode ^
+      item_code.hashCode ^
       take_time.hashCode ^
       time_slot.hashCode ^
       set_key.hashCode ^
-      key_special.hashCode;
+      key_special.hashCode ^
+      meal_timing.hashCode ^
+      type_slot.hashCode ^
+      drug_description.hashCode ^
+      set_slot.hashCode ^
+      schedule_mode_label.hashCode;
   }
 }

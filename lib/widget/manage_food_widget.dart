@@ -527,113 +527,113 @@ class _ManageFoodWidgetState extends State<ManageFoodWidget> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Opacity(
-                                                opacity: isDisabled ? 0.5 : 1.0,
-                                                child: SizedBox(
-                                                  height: 30,
-                                                  child: Builder(
-                                                    builder: (context) {
-                                                      final List<String>
-                                                          takeTimeList =
-                                                          food.take_time
-                                                                  is String
-                                                              ? [
-                                                                  food.take_time
-                                                                      .toString()
-                                                                ]
-                                                              : (food.take_time
-                                                                      as List)
-                                                                  .map((e) => e
-                                                                      .toString()
-                                                                      .trim())
-                                                                  .toList();
+                                              // Opacity(
+                                              //   opacity: isDisabled ? 0.5 : 1.0,
+                                              //   child: SizedBox(
+                                              //     height: 30,
+                                              //     child: Builder(
+                                              //       builder: (context) {
+                                              //         final List<String>
+                                              //             takeTimeList =
+                                              //             food.take_time
+                                              //                     is String
+                                              //                 ? [
+                                              //                     food.take_time
+                                              //                         .toString()
+                                              //                   ]
+                                              //                 : (food.take_time
+                                              //                         as List)
+                                              //                     .map((e) => e
+                                              //                         .toString()
+                                              //                         .trim())
+                                              //                     .toList();
 
-                                                      final now =
-                                                          DateTime.now();
-                                                      final currentTime =
-                                                          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+                                              //         final now =
+                                              //             DateTime.now();
+                                              //         final currentTime =
+                                              //             '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
-                                                      return ListView.builder(
-                                                        scrollDirection:
-                                                            Axis.horizontal,
-                                                        itemCount:
-                                                            timeSlots.length,
-                                                        itemBuilder:
-                                                            (context, index) {
-                                                          final slot =
-                                                              timeSlots[index]
-                                                                  .trim();
-                                                          final bool
-                                                              isInTakeTime =
-                                                              takeTimeList
-                                                                  .contains(
-                                                                      slot);
-                                                          final bool
-                                                              isCurrentTime =
-                                                              currentTime ==
-                                                                  slot;
+                                              //         return ListView.builder(
+                                              //           scrollDirection:
+                                              //               Axis.horizontal,
+                                              //           itemCount:
+                                              //               timeSlots.length,
+                                              //           itemBuilder:
+                                              //               (context, index) {
+                                              //             final slot =
+                                              //                 timeSlots[index]
+                                              //                     .trim();
+                                              //             final bool
+                                              //                 isInTakeTime =
+                                              //                 takeTimeList
+                                              //                     .contains(
+                                              //                         slot);
+                                              //             final bool
+                                              //                 isCurrentTime =
+                                              //                 currentTime ==
+                                              //                     slot;
 
-                                                          Color bgColor;
-                                                          Color textColor;
+                                              //             Color bgColor;
+                                              //             Color textColor;
 
-                                                          if (isInTakeTime &&
-                                                              isCurrentTime) {
-                                                            bgColor =
-                                                                Colors.green;
-                                                            textColor =
-                                                                Colors.white;
-                                                          } else if (isInTakeTime) {
-                                                            bgColor = Colors
-                                                                .teal[700]!;
-                                                            textColor =
-                                                                Colors.white;
-                                                          } else {
-                                                            bgColor =
-                                                                Colors.white;
-                                                            textColor = Colors
-                                                                .teal[700]!;
-                                                          }
+                                              //             if (isInTakeTime &&
+                                              //                 isCurrentTime) {
+                                              //               bgColor =
+                                              //                   Colors.green;
+                                              //               textColor =
+                                              //                   Colors.white;
+                                              //             } else if (isInTakeTime) {
+                                              //               bgColor = Colors
+                                              //                   .teal[700]!;
+                                              //               textColor =
+                                              //                   Colors.white;
+                                              //             } else {
+                                              //               bgColor =
+                                              //                   Colors.white;
+                                              //               textColor = Colors
+                                              //                   .teal[700]!;
+                                              //             }
 
-                                                          return Container(
-                                                            margin:
-                                                                const EdgeInsets
-                                                                    .symmetric(
-                                                                    horizontal:
-                                                                        4),
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .symmetric(
-                                                                    horizontal:
-                                                                        13,
-                                                                    vertical:
-                                                                        4),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: bgColor,
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          20),
-                                                              border: Border.all(
-                                                                  color: Colors
-                                                                      .teal),
-                                                            ),
-                                                            child: Center(
-                                                              child: text(
-                                                                context,
-                                                                slot,
-                                                                color:
-                                                                    textColor,
-                                                              ),
-                                                            ),
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 8),
+                                              //             return Container(
+                                              //               margin:
+                                              //                   const EdgeInsets
+                                              //                       .symmetric(
+                                              //                       horizontal:
+                                              //                           4),
+                                              //               padding:
+                                              //                   const EdgeInsets
+                                              //                       .symmetric(
+                                              //                       horizontal:
+                                              //                           13,
+                                              //                       vertical:
+                                              //                           4),
+                                              //               decoration:
+                                              //                   BoxDecoration(
+                                              //                 color: bgColor,
+                                              //                 borderRadius:
+                                              //                     BorderRadius
+                                              //                         .circular(
+                                              //                             20),
+                                              //                 border: Border.all(
+                                              //                     color: Colors
+                                              //                         .teal),
+                                              //               ),
+                                              //               child: Center(
+                                              //                 child: text(
+                                              //                   context,
+                                              //                   slot,
+                                              //                   color:
+                                              //                       textColor,
+                                              //                 ),
+                                              //               ),
+                                              //             );
+                                              //           },
+                                              //         );
+                                              //       },
+                                              //     ),
+                                              //   ),
+                                              // ),
+                                              // const SizedBox(height: 8),
                                               Row(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment.end,
