@@ -538,7 +538,6 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                               ? null
                               : () {
                                   setState(() {
-                                    // สลับค่า 1 ↔ 0 แต่ไม่ไปยุ่งกับ _canShowColButton
                                     selectedCol = selectedCol == 1 ? 0 : 1;
                                   });
                                 },
@@ -1246,6 +1245,16 @@ class _CardNoteWidgetState extends State<CardNoteWidget> {
                             'วัน/เวลา ที่บันทึก : ${widget.dataNote.create_date}',
                           ),
                         ),
+
+                      const SizedBox(height: 4),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: text(
+                          context,
+                          'วันที่กำหนด : ${widget.dataNote.time_slot}',
+                        ),
+                      ),
 
                       const SizedBox(height: 5),
                       if (!_isSaved && noOrderId)

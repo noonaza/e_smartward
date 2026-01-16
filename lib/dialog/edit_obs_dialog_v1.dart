@@ -317,6 +317,8 @@ class _EditDetailDialogState extends State<EditObsDialogV1> {
                       drug_type_name: widget.drugTypeName ??
                           widget.mData?.drug_type_name ??
                           '',
+                            start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
+                          .format(DateTime.now()),
                     );
 
                     await RoundWardApi().updateOrderData(

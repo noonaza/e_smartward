@@ -29,6 +29,7 @@ class EditObsDialogV2 extends StatefulWidget {
   final int indexObs;
   final Function(GetObsModel updatedObs, int index_) cb;
   final void Function(List<ListRoundwardModel>, bool)? onRefresh;
+  final void Function(ListRoundwardModel updatedItem)? onLocalUpdate;
   Map<String, String> headers;
   final List<ListUserModel>? lUserLogin;
   final ListGroupModel? group;
@@ -52,6 +53,7 @@ class EditObsDialogV2 extends StatefulWidget {
     this.lPetAdmit,
     this.drugTypeName,
     required this.screen,
+    this.onLocalUpdate,
   }) : super(key: key);
 
   @override
@@ -71,6 +73,7 @@ class EditObsDialogV2 extends StatefulWidget {
     ListRoundwardModel? mData,
     ListGroupModel? group,
     void Function(List<ListRoundwardModel>, bool)? onRefresh,
+    final void Function(ListRoundwardModel updatedItem)? onLocalUpdate,
   }) {
     double screenWidth = MediaQuery.of(context).size.width;
     double dialogWidth;
@@ -124,10 +127,9 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
   final TextEditingController tObsNote = TextEditingController();
   final TextEditingController tObsDetail = TextEditingController();
   final TextEditingController ttimeHour = TextEditingController();
-  ScheduleMode _scheduleMode = ScheduleMode.weeklyOnce; // ค่าเริ่มต้นที่ต้องการ
+  ScheduleMode? _scheduleMode;
   ScheduleResult? _schedule; // ถ้าอยากเก็บรายละเอียดอื่น ๆ จากตัวเลือก
-  final bool _noSchedule = false;
-
+  bool get isPRN => selectedTimeSlot == 'เมื่อมีอาการ';
   // --- Static choices (ของเดิมคุณ) ---
   final List<String> typeDrug = [
     'ยาหยอด',
@@ -168,7 +170,7 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
     'สัปดาห์ละครั้ง': false,
     'กำหนดรายวัน': false,
     'กำหนดรายเดือน': false,
-    'ไม่กำหมด': false,
+    'ไม่กำหนด': false,
   };
 
   final Map<String, bool> selectedWeekdays = {
@@ -194,6 +196,8 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
     }
   }
 
+  bool get _isObsPopup => true;
+
   Map<ScheduleMode, String> kModeLabels = {
     ScheduleMode.weeklyOnce: 'สัปดาห์ละครั้ง',
     ScheduleMode.dailyCustom: 'กำหนดรายวัน',
@@ -214,6 +218,45 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
         return '-';
     }
   }
+
+  DateTime _buildStartDateFromSchedule(
+    ScheduleResult? s, {
+    String? orderDate,
+    String? initialStart,
+  }) {
+    final now = DateTime.now();
+
+    DateTime? init;
+    if (initialStart != null && initialStart.trim().isNotEmpty) {
+      init = _parseStartDateUse(initialStart);
+    }
+
+    DateTime? order;
+    if (orderDate != null && orderDate.isNotEmpty) {
+      try {
+        order = DateFormat('yyyy-MM-dd').parseStrict(orderDate);
+      } catch (_) {
+        try {
+          order = DateFormat('dd/MM/yyyy').parseStrict(orderDate);
+        } catch (_) {}
+      }
+    }
+
+    if (s?.mode == ScheduleMode.dailyCustom && s?.dailyDate != null) {
+      final d = s!.dailyDate!;
+
+      return DateTime(d.year, d.month, d.day, now.hour, now.minute, now.second);
+    }
+
+    if (order != null) {
+      return DateTime(
+          order.year, order.month, order.day, now.hour, now.minute, now.second);
+    }
+
+    return init ?? now;
+  }
+
+  bool isEnabled = false;
 
   bool _looksLikeList(String s) =>
       s.trim().startsWith('[') && s.trim().endsWith(']');
@@ -282,57 +325,139 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
   }
 
   ({
-    ScheduleMode mode,
+    ScheduleMode? mode,
     Set<String> weeklyNames,
     String? dailyNote,
     Set<int> monthlyDays,
   }) _parseDrugSlot(String? setSlot, String? typeSlot) {
     final s = (setSlot ?? '').trim();
-    final t = (typeSlot ?? '').trim().toUpperCase();
+    final t = (typeSlot ?? '').trim().toLowerCase();
+
+    bool isWeekly(String x) => ['weekly', 'days', 'weekly_once'].contains(x);
+    bool isDaily(String x) => ['daily', 'date', 'daily_custom'].contains(x);
+    bool isMonthly(String x) =>
+        ['monthly', 'd_m', 'monthly_custom'].contains(x);
+    bool isAll(String x) => ['all'].contains(x);
+
+    // ✅ ถ้าไม่มีทั้ง setSlot และ typeSlot => "ยังไม่เลือกอะไร"
+    if (s.isEmpty && t.isEmpty) {
+      return (mode: null, weeklyNames: {}, dailyNote: null, monthlyDays: {});
+    }
 
     if (s.isEmpty) {
+      if (isAll(t)) {
+        return (
+          mode: ScheduleMode.all,
+          weeklyNames: {},
+          dailyNote: null,
+          monthlyDays: {}
+        );
+      }
+      if (isDaily(t)) {
+        return (
+          mode: ScheduleMode.dailyCustom,
+          weeklyNames: {},
+          dailyNote: null,
+          monthlyDays: {}
+        );
+      }
+      if (isMonthly(t)) {
+        return (
+          mode: ScheduleMode.monthlyCustom,
+          weeklyNames: {},
+          dailyNote: null,
+          monthlyDays: {}
+        );
+      }
+      if (isWeekly(t)) {
+        return (
+          mode: ScheduleMode.weeklyOnce,
+          weeklyNames: {},
+          dailyNote: null,
+          monthlyDays: {}
+        );
+      }
+      // ถ้า typeSlot แปลก ๆ แต่ setSlot ว่าง ก็ยังไม่เลือก
+      return (mode: null, weeklyNames: {}, dailyNote: null, monthlyDays: {});
+    }
+
+    if (isDaily(t)) {
+      return (
+        mode: ScheduleMode.dailyCustom,
+        weeklyNames: {},
+        dailyNote: s,
+        monthlyDays: {}
+      );
+    }
+
+    if (isWeekly(t)) {
+      final wk = _parseWeeklyNames(s);
       return (
         mode: ScheduleMode.weeklyOnce,
+        weeklyNames: wk,
+        dailyNote: null,
+        monthlyDays: {}
+      );
+    }
+
+    if (isMonthly(t)) {
+      final days = _parseMonthlyDays(_looksLikeList(s) ? s : '[$s]');
+      return (
+        mode: ScheduleMode.monthlyCustom,
+        weeklyNames: {},
+        dailyNote: null,
+        monthlyDays: days
+      );
+    }
+
+    if (isAll(t)) {
+      return (
+        mode: ScheduleMode.all,
         weeklyNames: {},
         dailyNote: null,
         monthlyDays: {}
       );
     }
 
-    switch (t) {
-      case 'DAYS':
-      case 'WEEKLY':
-        return (
-          mode: ScheduleMode.weeklyOnce,
-          weeklyNames: _parseWeeklyNames(s),
-          dailyNote: null,
-          monthlyDays: {}
-        );
-      case 'DATE':
-      case 'DAILY':
-        return (
-          mode: ScheduleMode.dailyCustom,
-          weeklyNames: {},
-          dailyNote: s,
-          monthlyDays: {}
-        );
-      case 'D_M':
-      case 'MONTHLY':
-        final days = _parseMonthlyDays(_looksLikeList(s) ? s : '[$s]');
-        return (
-          mode: ScheduleMode.monthlyCustom,
-          weeklyNames: {},
-          dailyNote: null,
-          monthlyDays: days
-        );
-      default:
-        return (
-          mode: ScheduleMode.weeklyOnce,
-          weeklyNames: _parseWeeklyNames(s),
-          dailyNote: null,
-          monthlyDays: {}
-        );
+    // fallback เดิม
+    final wk = _parseWeeklyNames(s);
+    if (wk.isNotEmpty) {
+      return (
+        mode: ScheduleMode.weeklyOnce,
+        weeklyNames: wk,
+        dailyNote: null,
+        monthlyDays: {}
+      );
     }
+
+    final md = _parseMonthlyDays(_looksLikeList(s) ? s : '[$s]');
+    if (md.isNotEmpty) {
+      return (
+        mode: ScheduleMode.monthlyCustom,
+        weeklyNames: {},
+        dailyNote: null,
+        monthlyDays: md
+      );
+    }
+
+    return (
+      mode: ScheduleMode.dailyCustom,
+      weeklyNames: {},
+      dailyNote: s,
+      monthlyDays: {}
+    );
+  }
+
+  DateTime? _parseStartDateUse(String? s) {
+    if (s == null || s.trim().isEmpty) return null;
+    final v = s.trim();
+
+    for (final p in ['yyyy-MM-dd HH:mm:ss', 'yyyy-MM-dd HH:mm']) {
+      try {
+        return DateFormat(p).parseStrict(v);
+      } catch (_) {}
+    }
+    return null;
   }
 
   final List<String> setValue = ['col'];
@@ -346,9 +471,9 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
   String selectedTimeSlot = '';
   List<String> selectedTakeTimes = [];
 
-  final List<String> timeList = List.generate(24, (index) {
-    final h = index.toString().padLeft(2, '0');
-    return '$h:00';
+  List<String> timeList = List.generate(24, (index) {
+    String formattedHour = index.toString().padLeft(2, '0');
+    return '$formattedHour:00';
   });
 
   List<bool> selected = [];
@@ -413,21 +538,32 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
     }
   }
 
+  String toLabel(ScheduleMode m) {
+    switch (m) {
+      case ScheduleMode.weeklyOnce:
+        return 'สัปดาห์ละครั้ง';
+      case ScheduleMode.dailyCustom:
+        return 'กำหนดรายวัน';
+      case ScheduleMode.monthlyCustom:
+        return 'กำหนดรายเดือน';
+      case ScheduleMode.all:
+        return 'ไม่กำหนด';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
 
     selected = List.generate(time.length, (index) => false);
     selectedTimeList = List.generate(timeList.length, (index) => false);
-
     tObsName.text = widget.Obs.set_name ?? '';
-    tObsNote.text = widget.Obs.remark ?? '';
-
-    final svParsed = SetValueParser.parse(widget.Obs.set_value);
-
-    tObsDetail.text = SetValueParser.detailString(svParsed);
-
+    tObsNote.text = widget.mData?.remark ?? widget.Obs.remark ?? '';
     final decoded = _asMap(widget.Obs.set_value);
+    final svParsed = SetValueParser.parse(widget.Obs.set_value);
+    final itemName = (widget.mData?.item_name ?? '').trim();
+    final detailFromSetValue = (SetValueParser.detailString(svParsed)).trim();
+    tObsDetail.text = itemName.isNotEmpty ? itemName : detailFromSetValue;
 
     _extractLevel(decoded);
 
@@ -435,39 +571,80 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
       selectedValues.updateAll((k, v) => false);
       selectedValues['col'] = true;
       selectedValue = 'col';
+    } else if (_flag(decoded['obs'])) {
+      selectedValues.updateAll((k, v) => false);
+      selectedValues['obs'] = true;
+      selectedValue = 'obs';
     }
 
-    // time_slot เดิม ถ้ามี
-    selectedTimeSlot = (decoded['time_slot'] ?? '').toString();
+    selectedTimeSlot = (widget.Obs.time_slot ?? '').trim();
 
-    selectedDay.updateAll((k, v) => false);
-    switch (_scheduleMode) {
-      case ScheduleMode.weeklyOnce:
-        selectedDay['สัปดาห์ละครั้ง'] = true;
-        break;
-      case ScheduleMode.dailyCustom:
-        selectedDay['กำหนดรายวัน'] = true;
-        break;
-      case ScheduleMode.monthlyCustom:
-        selectedDay['กำหนดรายเดือน'] = true;
-        break;
-      case ScheduleMode.all:
-        selectedDay['ไม่กำหนด'] = true;
-    }
+    // selectedTimeSlot =
+    //     (decoded['time_slot'] ?? widget.mData?.time_slot ?? '').toString();
 
     if (widget.Obs.take_time != null) {
       final cleaned = widget.Obs.take_time!
-          .replaceAll('[', '')
-          .replaceAll(']', '')
-          .replaceAll("'", '')
-          .split(',');
-      selectedTakeTimes =
-          cleaned.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+          .replaceAll(RegExp(r"[\[\]']"), '')
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+      selectedTakeTimes = cleaned;
+    }
+    selectedTimeSlot = (widget.Obs.time_slot ?? '').trim();
+    if (selectedTimeSlot.isEmpty) selectedTimeSlot = 'กำหนดเอง';
+    final idx = time.indexOf(selectedTimeSlot);
+    if (idx != -1) selectedTimeIndex = idx;
 
-      for (int i = 0; i < timeList.length; i++) {
-        selectedTimeList[i] = selectedTakeTimes.contains(timeList[i]);
+    final parsed = _parseDrugSlot(widget.Obs.set_slot, widget.Obs.type_slot);
+    final startFromDb = _parseStartDateUse(widget.Obs.start_date_use);
+
+    _scheduleMode = parsed.mode;
+
+    _schedule = (parsed.mode == null)
+        ? null
+        : ScheduleResult(
+            mode: parsed.mode!,
+            modeLabel: toLabel(parsed.mode!),
+            weekdayNames: parsed.weeklyNames,
+            dailyNote: parsed.dailyNote,
+            monthlyDays: parsed.monthlyDays,
+            dailyDate:
+                (parsed.mode == ScheduleMode.dailyCustom) ? startFromDb : null,
+            monthlyDate: null,
+          );
+
+    selectedDay.updateAll((k, v) => false);
+
+    final mode = _scheduleMode; // ScheduleMode?
+    if (mode == null) {
+    } else {
+      switch (mode) {
+        case ScheduleMode.weeklyOnce:
+          selectedDay['กำหนดรายสัปดาห์'] = true;
+          break;
+        case ScheduleMode.dailyCustom:
+          selectedDay['กำหนดรายวัน'] = true;
+          break;
+        case ScheduleMode.monthlyCustom:
+          selectedDay['กำหนดรายเดือน'] = true;
+          break;
+        case ScheduleMode.all:
+          selectedDay['ไม่กำหนด'] = true;
+          break;
       }
     }
+
+    selectedWeekdays.updateAll((k, v) => false);
+    for (final name in parsed.weeklyNames) {
+      if (selectedWeekdays.containsKey(name)) {
+        selectedWeekdays[name] = true;
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -559,9 +736,19 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isNoSchedule = _noSchedule || _scheduleMode == ScheduleMode.all;
-    final parsed = _parseDrugSlot(widget.Obs.set_slot, widget.Obs.type_slot);
-    // final bool isEnabled = selectedTakeTimes.isNotEmpty || selectedTimeSlot == 'เมื่อมีอาการ';
+    // _parseDrugSlot(widget.Obs.set_slot, widget.Obs.type_slot);
+    // _parseStartDateUse(widget.Obs.start_date_use);
+
+    final String displayCode = (() {
+      final code = widget.mData?.item_code?.trim();
+      if (code == null || code.isEmpty) {
+        return 'กำหนดเอง';
+      }
+      return code;
+    })();
+    final titleText = (widget.screen == 'roundward')
+        ? displayCode
+        : (tObsName.text.isEmpty ? 'กำหนดเอง' : tObsName.text);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -569,15 +756,13 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
         children: [
           CustomCloseButton(context),
           const SizedBox(height: 5),
-          text(context, (tObsName.text.isEmpty) ? "กำหนดเอง" : tObsName.text,
+          text(context, titleText,
               color: const Color.fromARGB(255, 4, 138, 161)),
           const SizedBox(height: 10),
-
           textField1('คำสั่งพิเศษ', controller: tObsDetail),
           const SizedBox(height: 10),
           textField1('หมายเหตุ', controller: tObsNote),
           const SizedBox(height: 10),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
@@ -621,90 +806,111 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
             ],
           ),
           const SizedBox(height: 10),
-
-          SchedulePicker(
-            key: ValueKey('sched_${widget.Obs.set_name ?? widget.Obs}'),
-            initialMode: _scheduleMode,
-            initialWeeklySelectedNames:
-                (_schedule?.weekdayNames.isNotEmpty == true)
-                    ? _schedule!.weekdayNames
-                    : parsed.weeklyNames,
-            initialDailyNote: _schedule?.dailyNote ?? parsed.dailyNote,
-            initialMonthlyDate: _schedule?.monthlyDate,
-            initialMonthlyDays: _schedule?.monthlyDays ?? parsed.monthlyDays,
-            initialDailyDate: _schedule?.dailyDate,
-            onChanged: (cfg) {
-              const engToThai = {
-                'Mon': 'จันทร์',
-                'Tue': 'อังคาร',
-                'Wed': 'พุธ',
-                'Thu': 'พฤหัสบดี',
-                'Fri': 'ศุกร์',
-                'Sat': 'เสาร์',
-                'Sun': 'อาทิตย์',
-              };
-              Set<String> toThaiSet(Iterable<String> names) =>
-                  names.map((n) => engToThai[n.trim()] ?? n.trim()).toSet();
-
-              final normalized = cfg.mode == ScheduleMode.weeklyOnce
-                  ? toThaiSet(cfg.weekdayNames)
-                  : cfg.weekdayNames;
-
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              SchedulePicker(
+                allowAll: false,
+                trailingModeChip: _buildUnspecifiedButton(),
+                key: ValueKey(
+                  'create_sched_${isPRN ? 'prn' : 'normal'}_${_scheduleMode ?? 'none'}',
+                ),
+                initialMode: isPRN ? null : _scheduleMode,
+                initialWeeklySelectedNames: _schedule?.weekdayNames ?? const {},
+                initialDailyNote: _schedule?.dailyNote,
+                initialMonthlyDate: _schedule?.monthlyDate,
+                initialDailyDate: _schedule?.dailyDate,
+                initialMonthlyDays: _schedule?.monthlyDays ?? const <int>{},
+                onChanged: (cfg) {
+                  setState(() {
+                    _scheduleMode = cfg.mode;
+                    _schedule = cfg;
+                  });
+                  checkIsEnabled();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          _buildLevelSection(),
+          const SizedBox(height: 15),
+          TimeSelection(
+            key: ValueKey('time_reset_$_timeResetTick'),
+            time: time,
+            timeList: timeList,
+            initialTakeTimes: selectedTakeTimes,
+            initialTimeSlot: selectedTimeSlot,
+            onSelectionChanged: (selectedIndex, selectedList) {
               setState(() {
-                _scheduleMode = cfg.mode;
-                _schedule = ScheduleResult(
-                  mode: cfg.mode,
-                  modeLabel: kModeLabels[cfg.mode]!,
-                  weekdayNames: normalized,
-                  dailyNote: cfg.dailyNote,
-                  monthlyDate: cfg.monthlyDate,
-                  monthlyDays: cfg.monthlyDays,
-                  dailyDate: cfg.dailyDate,
-                );
+                final idx = (selectedIndex == null ||
+                        selectedIndex < 0 ||
+                        selectedIndex >= time.length)
+                    ? 0
+                    : selectedIndex;
+
+                selectedTimeSlot = time[idx];
+
+                if (selectedTimeSlot == 'เมื่อมีอาการ') {
+                  selectedTakeTimes = [];
+                  _scheduleMode = null;
+                  _schedule = null;
+                } else {
+                  selectedTakeTimes = [];
+                  for (int i = 0;
+                      i < selectedList.length && i < timeList.length;
+                      i++) {
+                    if (selectedList[i]) selectedTakeTimes.add(timeList[i]);
+                  }
+                }
               });
+
+              checkIsEnabled();
             },
           ),
-          const SizedBox(height: 10),
-
-          // --- แสดง LEVEL ---
-          _buildLevelSection(),
-
-          const SizedBox(height: 15),
-          if (!isNoSchedule)
-            TimeSelection(
-              time: time,
-              timeList: timeList,
-              initialTakeTimes: selectedTakeTimes,
-              initialTimeSlot: selectedTimeSlot,
-              onSelectionChanged: (selectedIndex, selectedList) {
-                setState(() {
-                  selectedTimeIndex = selectedIndex;
-                  selectedTimeSlot = time[selectedIndex ?? 0];
-                  selectedTakeTimes = [];
-                  for (int i = 0; i < selectedList.length; i++) {
-                    if (selectedList[i]) {
-                      selectedTakeTimes.add(timeList[i]);
-                    }
-                  }
-                });
-              },
-            ),
           Padding(
             padding: const EdgeInsets.only(top: 20),
             child: IgnorePointer(
-              ignoring: false,
-              // ignoring: !isEnabled,
-              child: actionSlider(context, 'ยืนยันการส่งสังเกตอาการเพิ่มเติม',
+              // ignoring: false,
+              ignoring: !isEnabled,
+              child: actionSlider(context, 'ยืนยันการให้อาหารเพิ่มเติม',
                   width: MediaQuery.of(context).size.width * 0.4,
                   height: 30.0,
-                  backgroundColor: const Color.fromARGB(255, 203, 230, 252),
-                  togglecolor: const Color.fromARGB(255, 76, 172, 175),
+                  backgroundColor: isEnabled
+                      ? const Color.fromARGB(255, 203, 230, 252)
+                      : Colors.grey[300]!,
+                  togglecolor: isEnabled
+                      ? const Color.fromARGB(255, 76, 172, 175)
+                      : Colors.grey,
                   icons: Icons.check,
                   iconColor: Colors.white,
                   asController: ActionSliderController(),
                   action: (controller) async {
+                final bool isPRN = selectedTimeSlot == 'เมื่อมีอาการ';
+
+                final bool noTimesSelected = selectedTakeTimes.isEmpty;
+
+                final String typeSlot = noTimesSelected
+                    ? 'ALL'
+                    : (_scheduleMode == null
+                        ? 'ALL'
+                        : _typeSlotFromMode(_scheduleMode!));
+
+                final String? setSlot = (typeSlot == 'ALL')
+                    ? null
+                    : buildSetSlot(_schedule, weeklyAsNumber: false);
+
+                final String takeTime = (typeSlot == 'ALL')
+                    ? '[]'
+                    : "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]";
+
+                final startDt = _buildStartDateFromSchedule(
+                  _schedule,
+                  orderDate: widget.Obs.order_date,
+                  initialStart: widget.Obs.start_date_use,
+                );
                 final String detailText = tObsDetail.text.trim();
-                final typeSlot = _typeSlotFromMode(_scheduleMode);
+
                 final setValueMap = {
                   "detail": detailText,
                   "level": _levelForSubmit(),
@@ -718,35 +924,31 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
                     : int.tryParse(setValueMap['col']?.toString() ?? '0') ?? 0;
 
                 if (widget.screen == 'roundward') {
-                  final data = ListDataCardModel(
-                    item_name: detailText,
-                    remark: tObsNote.text,
-                    stock_out: 0,
-                    start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
-                        .format(DateTime.now()),
-                    set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
-                    type_slot: _typeSlotFromMode(_scheduleMode),
-                    schedule_mode_label:
-                        _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
-                    take_time:
-                        "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
-                    time_slot: selectedTimeSlot,
-                    caution: cautionVal,
-                  );
+                  final String normalizedItemCode = (() {
+                    final v = widget.mData?.item_code?.trim();
+                    return (v == null || v.isEmpty) ? 'กำหนดเอง' : v;
+                  })();
 
                   final updatedObs = UpdateOrderModel(
                     item_name: detailText,
                     drug_instruction: jsonEncode(setValueMap),
                     remark: tObsNote.text,
                     caution: cautionVal.toString(),
-                    take_time: data.take_time,
-                    set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                    //take_time: data.take_time,
+                    //  set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
                     drug_description:
                         buildSetSlot(_schedule, weeklyAsNumber: false),
-                    type_slot: _typeSlotFromMode(_scheduleMode),
+                    // type_slot: _typeSlotFromMode(_scheduleMode),
                     drug_type_name: widget.drugTypeName ??
                         widget.mData?.drug_type_name ??
                         '',
+                    start_date_use:
+                        DateFormat('yyyy-MM-dd HH:mm').format(startDt),
+                    time_slot: selectedTimeSlot,
+
+                    set_slot: setSlot,
+                    type_slot: typeSlot,
+                    take_time: takeTime,
                   );
 
                   await RoundWardApi().updateOrderData(
@@ -759,15 +961,27 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
                     mData_: widget.mData!,
                   );
 
+                  widget.mData!.item_name = detailText;
+                  widget.mData!.remark = tObsNote.text;
+                  widget.mData!.drug_instruction = jsonEncode(setValueMap);
+                  widget.mData!.take_time = takeTime;
+                  widget.mData!.time_slot = selectedTimeSlot;
+                  widget.mData!.type_slot = typeSlot;
+                  widget.mData!.set_slot = setSlot;
+                  widget.mData!.item_code = normalizedItemCode;
+                  widget.mData!.caution = cautionVal.toString();
+                  widget.onLocalUpdate?.call(widget.mData!);
+
                   final updatedData = await RoundWardApi().loadDataRoundWard(
                     context,
                     headers_: widget.headers,
                     mListAn_: widget.lListAn!.first,
                     mGroup_: widget.group!,
                   );
+
                   widget.onRefresh?.call(updatedData, false);
                 } else {
-                  final setValueMap = {
+                  final setValueMap2 = {
                     "detail": detailText,
                     "level": _levelForSubmit(),
                     "col": selectedValue == 'col' ? 1 : 0,
@@ -775,21 +989,25 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
                     "delete": 0,
                   };
 
-                  final updatedObs = GetObsModel(
+                  final updatedObs2 = GetObsModel(
                     set_name: tObsName.text,
-                    set_value: jsonEncode(setValueMap),
+                    set_value: jsonEncode(setValueMap2),
                     remark: tObsNote.text,
-                    set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                    //  set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
                     drug_description:
                         buildSetSlot(_schedule, weeklyAsNumber: false),
-                    type_slot: _typeSlotFromMode(_scheduleMode),
+                    start_date_use:
+                        DateFormat('yyyy-MM-dd HH:mm').format(startDt),
+                    //  type_slot: _typeSlotFromMode(_scheduleMode),
                     schedule_mode_label:
                         _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
-                    take_time:
-                        "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+                    time_slot: selectedTimeSlot,
+                    set_slot: setSlot,
+                    type_slot: typeSlot,
+                    take_time: takeTime,
                   );
 
-                  widget.cb(updatedObs, widget.indexObs);
+                  widget.cb(updatedObs2, widget.indexObs);
                   Navigator.of(context).pop();
                 }
               }),
@@ -798,5 +1016,98 @@ class _EditDetailDialogState extends State<EditObsDialogV2> {
         ],
       ),
     );
+  }
+
+  int _timeResetTick = 0;
+
+  Widget _buildUnspecifiedButton() {
+    if (!_isObsPopup) return const SizedBox.shrink();
+
+    final bool isActive = (_scheduleMode == ScheduleMode.all);
+
+    return ChoiceChip(
+      label: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Text(
+          'ไม่กำหนด',
+          style: TextStyle(
+            color: isActive ? Colors.white : Colors.teal.shade800,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      selected: isActive,
+      backgroundColor: Colors.teal.shade50,
+      selectedColor: Colors.teal.shade700,
+      elevation: isActive ? 3 : 0,
+      pressElevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isActive ? Colors.teal.shade700 : Colors.teal.shade200,
+          width: 1.2,
+        ),
+      ),
+      onSelected: (_) {
+        setState(() {
+          _scheduleMode = ScheduleMode.all;
+          selectedTakeTimes.clear();
+          selectedTimeIndex = null;
+
+          for (var i = 0; i < selected.length; i++) {
+            selected[i] = false;
+          }
+          for (var i = 0; i < selectedTimeList.length; i++) {
+            selectedTimeList[i] = false;
+          }
+
+          _schedule = null;
+          selectedTimeSlot = 'ไม่กำหนด';
+
+          _timeResetTick++;
+        });
+        checkIsEnabled();
+      },
+    );
+  }
+
+  bool _isScheduleOkForObs() {
+    if (_scheduleMode == ScheduleMode.all) return true;
+    if (selectedTimeSlot.trim() == 'เมื่อมีอาการ') return true;
+    if (_scheduleMode == null || _schedule == null) return false;
+    switch (_scheduleMode!) {
+      case ScheduleMode.weeklyOnce:
+        return _schedule!.weekdayNames.isNotEmpty;
+
+      case ScheduleMode.dailyCustom:
+        return (_schedule!.dailyNote?.trim().isNotEmpty ?? false) &&
+            _schedule!.dailyDate != null;
+
+      case ScheduleMode.monthlyCustom:
+        return _schedule!.monthlyDays.isNotEmpty;
+
+      case ScheduleMode.all:
+        return true;
+    }
+  }
+
+  bool _isTimeOkForObs() {
+    if (selectedTimeSlot.trim() == 'เมื่อมีอาการ') return true;
+    if (_scheduleMode == ScheduleMode.all ||
+        selectedTimeSlot.trim() == 'ไม่ระบุ') {
+      return true;
+    }
+    return selectedTakeTimes.isNotEmpty;
+  }
+
+  void checkIsEnabled() {
+    final scheduleOk = _isScheduleOkForObs();
+    final timeOk = _isTimeOkForObs();
+
+    final ok = scheduleOk && timeOk;
+
+    if (ok != isEnabled) {
+      setState(() => isEnabled = ok);
+    }
   }
 }

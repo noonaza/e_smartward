@@ -20,7 +20,10 @@ class GetObsModel {
   String? key_special;
   String? meal_timing;
   String? type_slot;
+    String? order_item_id;
+      String? order_date;
   String? drug_description;
+    String? start_date_use;
   String? set_slot;
   String? schedule_mode_label;
   GetObsModel({
@@ -42,7 +45,10 @@ class GetObsModel {
     this.key_special,
     this.meal_timing,
     this.type_slot,
+    this.order_item_id,
+    this.order_date,
     this.drug_description,
+    this.start_date_use,
     this.set_slot,
     this.schedule_mode_label,
   });
@@ -66,7 +72,10 @@ class GetObsModel {
     String? key_special,
     String? meal_timing,
     String? type_slot,
+    String? order_item_id,
+    String? order_date,
     String? drug_description,
+    String? start_date_use,
     String? set_slot,
     String? schedule_mode_label,
   }) {
@@ -89,7 +98,10 @@ class GetObsModel {
       key_special: key_special ?? this.key_special,
       meal_timing: meal_timing ?? this.meal_timing,
       type_slot: type_slot ?? this.type_slot,
+      order_item_id: order_item_id ?? this.order_item_id,
+      order_date: order_date ?? this.order_date,
       drug_description: drug_description ?? this.drug_description,
+      start_date_use: start_date_use ?? this.start_date_use,
       set_slot: set_slot ?? this.set_slot,
       schedule_mode_label: schedule_mode_label ?? this.schedule_mode_label,
     );
@@ -115,7 +127,10 @@ class GetObsModel {
       'key_special': key_special,
       'meal_timing': meal_timing,
       'type_slot': type_slot,
+      'order_item_id': order_item_id,
+      'order_date': order_date,
       'drug_description': drug_description,
+      'start_date_use': start_date_use,
       'set_slot': set_slot,
       'schedule_mode_label': schedule_mode_label,
     };
@@ -141,7 +156,10 @@ class GetObsModel {
       key_special: map['key_special'] != null ? map['key_special'] as String : null,
       meal_timing: map['meal_timing'] != null ? map['meal_timing'] as String : null,
       type_slot: map['type_slot'] != null ? map['type_slot'] as String : null,
+      order_item_id: map['order_item_id'] != null ? map['order_item_id'] as String : null,
+      order_date: map['order_date'] != null ? map['order_date'] as String : null,
       drug_description: map['drug_description'] != null ? map['drug_description'] as String : null,
+      start_date_use: map['start_date_use'] != null ? map['start_date_use'] as String : null,
       set_slot: map['set_slot'] != null ? map['set_slot'] as String : null,
       schedule_mode_label: map['schedule_mode_label'] != null ? map['schedule_mode_label'] as String : null,
     );
@@ -154,7 +172,7 @@ class GetObsModel {
 
   @override
   String toString() {
-    return 'GetObsModel(id: $id, code: $code, set_name: $set_name, set_value: $set_value, create_by: $create_by, create_date: $create_date, update_by: $update_by, update_date: $update_date, delete_by: $delete_by, remark: $remark, delete_date: $delete_date, item_code: $item_code, take_time: $take_time, time_slot: $time_slot, set_key: $set_key, key_special: $key_special, meal_timing: $meal_timing, type_slot: $type_slot, drug_description: $drug_description, set_slot: $set_slot, schedule_mode_label: $schedule_mode_label)';
+    return 'GetObsModel(id: $id, code: $code, set_name: $set_name, set_value: $set_value, create_by: $create_by, create_date: $create_date, update_by: $update_by, update_date: $update_date, delete_by: $delete_by, remark: $remark, delete_date: $delete_date, item_code: $item_code, take_time: $take_time, time_slot: $time_slot, set_key: $set_key, key_special: $key_special, meal_timing: $meal_timing, type_slot: $type_slot, order_item_id: $order_item_id, order_date: $order_date, drug_description: $drug_description, start_date_use: $start_date_use, set_slot: $set_slot, schedule_mode_label: $schedule_mode_label)';
   }
 
   @override
@@ -180,7 +198,10 @@ class GetObsModel {
       other.key_special == key_special &&
       other.meal_timing == meal_timing &&
       other.type_slot == type_slot &&
+      other.order_item_id == order_item_id &&
+      other.order_date == order_date &&
       other.drug_description == drug_description &&
+      other.start_date_use == start_date_use &&
       other.set_slot == set_slot &&
       other.schedule_mode_label == schedule_mode_label;
   }
@@ -205,7 +226,10 @@ class GetObsModel {
       key_special.hashCode ^
       meal_timing.hashCode ^
       type_slot.hashCode ^
+      order_item_id.hashCode ^
+      order_date.hashCode ^
       drug_description.hashCode ^
+      start_date_use.hashCode ^
       set_slot.hashCode ^
       schedule_mode_label.hashCode;
   }

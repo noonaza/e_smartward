@@ -111,7 +111,7 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
   TextEditingController tDrugUnitQty = TextEditingController();
 
   TextEditingController tSearchDoctor = TextEditingController();
-  ScheduleMode _scheduleMode = ScheduleMode.weeklyOnce; // ค่าเริ่มต้นที่ต้องการ
+  ScheduleMode? _scheduleMode;
   ScheduleResult? _schedule; // ถ้าอยากเก็บรายละเอียดอื่น ๆ จากตัวเลือก
 // ---------- Static refs ----------
   List<String> typeDrug = [
@@ -143,13 +143,13 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
   };
 
   List<String> setDay = [
-    'สัปดาห์ละครั้ง',
+    'กำหนดรายสัปดาห์',
     'กำหนดรายวัน',
     'กำหนดรายเดือน',
     'ไม่กำหนด'
   ];
   Map<String, bool> selectedDay = {
-    'สัปดาห์ละครั้ง': false,
+    'กำหนดรายสัปดาห์': false,
     'กำหนดรายวัน': false,
     'กำหนดรายเดือน': false,
     'ไม่กำหนด': false
@@ -194,7 +194,7 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
   String labelFromTypeSlot(String? t) {
     switch (t) {
       case 'weekly_once':
-        return 'สัปดาห์ละครั้ง';
+        return 'กำหนดรายสัปดาห์';
       case 'daily_custom':
         return 'กำหนดรายวัน';
       case 'monthly_custom':
@@ -228,14 +228,13 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
       if (selectedTimeList[i]) times.add(timeList[i]);
     }
     if (times.isEmpty) return '[]';
-    return "[${times.map((e) => "'$e'").join(',')}]"; // "['08:00','12:00']"
+    return "[${times.map((e) => "'$e'").join(',')}]";
   }
 
   String resolveTimeSlot({
-    required List<bool> selected, // ผูกกับ List<String> time
-    required List<String>
-        time, // ['ทุกๆ 1 ชม.', ... , 'กำหนดเอง', 'เมื่อมีอาการ']
-    required String customNote, // ถ้าเลือก 'กำหนดเอง' ใส่ที่นี่
+    required List<bool> selected,
+    required List<String> time,
+    required String customNote,
   }) {
     final idx = selected.indexWhere((v) => v == true);
     if (idx < 0) return '';
@@ -254,22 +253,26 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
   }
 
   bool _isScheduleDetailValid() {
-    switch (_scheduleMode) {
+    if (_scheduleMode == null || _schedule == null) {
+      return false;
+    }
+
+    switch (_scheduleMode!) {
       case ScheduleMode.weeklyOnce:
         return _schedule!.weekdayNames.isNotEmpty;
 
       case ScheduleMode.dailyCustom:
-        // ต้องมี note/ค่า custom สำหรับรายวัน
         return (_schedule!.dailyNote?.trim().isNotEmpty ?? false);
 
       case ScheduleMode.monthlyCustom:
-        // ต้องมีวันของเดือนอย่างน้อย 1
         return _schedule!.monthlyDays.isNotEmpty;
 
       case ScheduleMode.all:
-        return _schedule!.monthlyDays.isNotEmpty;
+        return true; // หรือ business rule ของคุณ
     }
   }
+
+  bool get isPRN => selectedTimeSlot == 'เมื่อมีอาการ';
 
   @override
   void initState() {
@@ -325,7 +328,6 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final result = _schedule;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -518,14 +520,14 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
           const SizedBox(height: 15),
           SchedulePicker(
             allowAll: false,
-            key: const ValueKey('create_sched'),
-            initialMode: _scheduleMode,
-            initialWeeklySelectedNames: result?.weekdayNames.isNotEmpty == true
-                ? result!.weekdayNames
-                : const {},
-            initialDailyNote: result?.dailyNote,
-            initialMonthlyDate: result?.monthlyDate,
-            initialMonthlyDays: result?.monthlyDays ?? const <int>{},
+            key: ValueKey(
+                'create_sched_${isPRN ? 'prn' : 'normal'}_${_scheduleMode ?? 'none'}'),
+            initialMode: isPRN ? null : _scheduleMode,
+            initialWeeklySelectedNames: _schedule?.weekdayNames ?? const {},
+            initialDailyNote: _schedule?.dailyNote,
+            initialMonthlyDate: _schedule?.monthlyDate,
+            initialDailyDate: _schedule?.dailyDate,
+            initialMonthlyDays: _schedule?.monthlyDays ?? const <int>{},
             onChanged: (cfg) {
               setState(() {
                 _scheduleMode = cfg.mode;
@@ -552,6 +554,8 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
 
                 if (selectedTimeSlot == 'เมื่อมีอาการ') {
                   selectedTakeTimes = [];
+                  _scheduleMode = null;
+                  _schedule = null;
                 } else {
                   selectedTakeTimes = [];
                   for (int i = 0;
@@ -561,6 +565,7 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
                   }
                 }
               });
+
               checkIsEnabled();
             },
           ),
@@ -588,7 +593,17 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
                   if (selectStatus['ให้ยาทันที'] == true) {
                     status = '1';
                   }
-                  final typeSlot = _typeSlotFromMode(_scheduleMode);
+                  final bool isPRN = selectedTimeSlot == 'เมื่อมีอาการ';
+                  final String typeSlot =
+                      isPRN ? 'ALL' : _typeSlotFromMode(_scheduleMode!);
+                  final String? setSlot = (typeSlot == 'ALL')
+                      ? null
+                      : buildSetSlot(_schedule, weeklyAsNumber: false);
+                  final String takeTime = (typeSlot == 'ALL')
+                      ? '[]'
+                      : "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]";
+
+                  // final typeSlot = _typeSlotFromMode(_scheduleMode);
                   if (widget.screen == 'roundward') {
                     final newDrug = DataAddOrderModel(
                       item_name: tDrudName.text,
@@ -607,16 +622,20 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
                           _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
                       doctor_eid: selectedDoctor?.employee_id,
                       unit_stock: tDrugUnitQty.text,
-                      set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
-                      type_slot: _typeSlotFromMode(_scheduleMode),
+                      // set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                      set_slot: setSlot,
+                      type_slot: typeSlot,
                       start_date_imed:
                           DateFormat('yyyy-MM-dd').format(DateTime.now()),
                       meal_timing: selectedValues.entries
                           .where((entry) => entry.value)
                           .map((entry) => entry.key)
                           .join(','),
-                      take_time:
-                          "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+
+                      // take_time:
+                      //     "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+
+                      take_time: takeTime,
                       time_slot: selectedTimeSlot,
                     );
 
@@ -635,7 +654,6 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
                       item_name: tDrudName.text,
                       dose_qty: tDrugDose.text,
                       dose_qty_name: tDrugDose.text,
-                    
                       unit_name: tDrugUnit.text,
                       item_qty: int.tryParse(tDrugQty.text) ?? 0,
                       start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
@@ -644,22 +662,24 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
                           DateFormat('yyyy-MM-dd').format(DateTime.now()),
                       drug_type_name: selectedTypeDrug,
                       drug_description: tDrugDescription.text,
-                      set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                      // set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                      set_slot: setSlot,
                       schedule_mode_label:
                           _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
-                      type_slot: _typeSlotFromMode(_scheduleMode),
+                      type_slot: typeSlot,
                       stock_out: 0,
                       remark: tDrugRemark.text,
                       use_now: status,
-                      
                       doctor_eid: selectedDoctor?.employee_id,
                       unit_stock: tDrugUnitQty.text,
                       meal_timing: selectedValues.entries
                           .where((entry) => entry.value)
                           .map((entry) => entry.key)
                           .join(','),
-                      take_time:
-                          "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+                      // take_time:
+                      //      "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+                      take_time: takeTime,
+
                       time_slot: selectedTimeSlot,
                     );
 
@@ -685,12 +705,9 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
         selectedTypeDrug != null &&
         selectedDoctor != null;
 
-    (selectedTimeSlot.isNotEmpty &&
-        (selectedTimeSlot == 'เมื่อมีอาการ' || selectedTakeTimes.isNotEmpty));
-    selectedTakeTimes.isNotEmpty;
-
     final mealOk = selectedValues.containsValue(true);
-    final scheduleOk = _isScheduleDetailValid();
+    final scheduleOk = isPRN ? true : _isScheduleDetailValid();
+
     final timeOk = _isTimeOk();
 
     final ok = hasBasics && mealOk && scheduleOk && timeOk;
@@ -702,7 +719,7 @@ class _CreateDrugDialogState extends State<CreateDrugDialog> {
 
   bool _isTimeOk() {
     if (selectedTimeSlot.isEmpty) return false;
-    if (selectedTimeSlot == 'เมื่อมีอาการ') return true; // ยกเว้นกรณีนี้
-    return selectedTakeTimes.isNotEmpty; // อื่นๆ ต้องมีเวลาอย่างน้อย 1
+    if (selectedTimeSlot == 'เมื่อมีอาการ') return true;
+    return selectedTakeTimes.isNotEmpty;
   }
 }

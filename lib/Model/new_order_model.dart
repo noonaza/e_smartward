@@ -25,6 +25,12 @@ class NewOrderModel {
   String? order_eid;
   String? order_date;
   String? order_time;
+      String? meal_take;
+  String? start_date_imed;
+  String? type_slot;
+  String? set_slot;
+  String? use_now;
+
   NewOrderModel({
     this.visit_id,
     this.order_item_id,
@@ -49,6 +55,11 @@ class NewOrderModel {
     this.order_eid,
     this.order_date,
     this.order_time,
+    this.meal_take,
+    this.start_date_imed,
+    this.type_slot,
+    this.set_slot,
+    this.use_now,
   });
 
   NewOrderModel copyWith({
@@ -75,6 +86,11 @@ class NewOrderModel {
     String? order_eid,
     String? order_date,
     String? order_time,
+    String? meal_take,
+    String? start_date_imed,
+    String? type_slot,
+    String? set_slot,
+    String? use_now,
   }) {
     return NewOrderModel(
       visit_id: visit_id ?? this.visit_id,
@@ -100,6 +116,11 @@ class NewOrderModel {
       order_eid: order_eid ?? this.order_eid,
       order_date: order_date ?? this.order_date,
       order_time: order_time ?? this.order_time,
+      meal_take: meal_take ?? this.meal_take,
+      start_date_imed: start_date_imed ?? this.start_date_imed,
+      type_slot: type_slot ?? this.type_slot,
+      set_slot: set_slot ?? this.set_slot,
+      use_now: use_now ?? this.use_now,
     );
   }
 
@@ -128,6 +149,11 @@ class NewOrderModel {
       'order_eid': order_eid,
       'order_date': order_date,
       'order_time': order_time,
+      'meal_take': meal_take,
+      'start_date_imed': start_date_imed,
+      'type_slot': type_slot,
+      'set_slot': set_slot,
+      'use_now': use_now,
     };
   }
 
@@ -156,6 +182,11 @@ class NewOrderModel {
       order_eid: map['order_eid'] != null ? map['order_eid'] as String : null,
       order_date: map['order_date'] != null ? map['order_date'] as String : null,
       order_time: map['order_time'] != null ? map['order_time'] as String : null,
+      meal_take: map['meal_take'] != null ? map['meal_take'] as String : null,
+      start_date_imed: map['start_date_imed'] != null ? map['start_date_imed'] as String : null,
+      type_slot: map['type_slot'] != null ? map['type_slot'] as String : null,
+      set_slot: map['set_slot'] != null ? map['set_slot'] as String : null,
+      use_now: map['use_now'] != null ? map['use_now'] as String : null,
     );
   }
 
@@ -165,7 +196,7 @@ class NewOrderModel {
 
   @override
   String toString() {
-    return 'NewOrderModel(visit_id: $visit_id, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, item_name: $item_name, item_qty: $item_qty, unit_name: $unit_name, dose_qty: $dose_qty, dose_unit_name: $dose_unit_name, base_drug_usage_code: $base_drug_usage_code, drug_instruction: $drug_instruction, fix_item_type_id: $fix_item_type_id, item_type_name: $item_type_name, drug_type_id: $drug_type_id, drug_type_name: $drug_type_name, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, start_date_use: $start_date_use, end_date_use: $end_date_use, order_eid: $order_eid, order_date: $order_date, order_time: $order_time)';
+    return 'NewOrderModel(visit_id: $visit_id, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, item_name: $item_name, item_qty: $item_qty, unit_name: $unit_name, dose_qty: $dose_qty, dose_unit_name: $dose_unit_name, base_drug_usage_code: $base_drug_usage_code, drug_instruction: $drug_instruction, fix_item_type_id: $fix_item_type_id, item_type_name: $item_type_name, drug_type_id: $drug_type_id, drug_type_name: $drug_type_name, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, start_date_use: $start_date_use, end_date_use: $end_date_use, order_eid: $order_eid, order_date: $order_date, order_time: $order_time, meal_take: $meal_take, start_date_imed: $start_date_imed, type_slot: $type_slot, set_slot: $set_slot, use_now: $use_now)';
   }
 
   @override
@@ -195,7 +226,12 @@ class NewOrderModel {
       other.end_date_use == end_date_use &&
       other.order_eid == order_eid &&
       other.order_date == order_date &&
-      other.order_time == order_time;
+      other.order_time == order_time &&
+      other.meal_take == meal_take &&
+      other.start_date_imed == start_date_imed &&
+      other.type_slot == type_slot &&
+      other.set_slot == set_slot &&
+      other.use_now == use_now;
   }
 
   @override
@@ -222,6 +258,11 @@ class NewOrderModel {
       end_date_use.hashCode ^
       order_eid.hashCode ^
       order_date.hashCode ^
-      order_time.hashCode;
+      order_time.hashCode ^
+      meal_take.hashCode ^
+      start_date_imed.hashCode ^
+      type_slot.hashCode ^
+      set_slot.hashCode ^
+      use_now.hashCode;
   }
 }

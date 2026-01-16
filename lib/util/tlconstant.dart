@@ -10,10 +10,8 @@ class TlConstant {
   // static const String syncApi = 'http://192.168.98.10:8081';
   static const String syncApi = 'https://uat-api.thonglorpet.com/smart-ward';
   //static const String syncApi = 'https://e-api.thonglorpet.com/smart-ward';
-
   //static final String version = '2.0.2'; // userAdmin
-  static final String version = 'UAT V.2.2.3'; // userAdmin
-
+  static final String version = 'UAT V.2.2.4'; // userAdmin
   static int runID() => DateTime.now().millisecondsSinceEpoch;
   static String random() => Random().nextInt(999).toString().padLeft(3, '0');
 

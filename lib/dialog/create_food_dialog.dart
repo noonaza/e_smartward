@@ -109,7 +109,7 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
   TextEditingController tFoodQty = TextEditingController();
   TextEditingController tFoodUnitQty = TextEditingController();
   TextEditingController tSearchDoctor = TextEditingController();
-  ScheduleMode _scheduleMode = ScheduleMode.weeklyOnce; // ค่าเริ่มต้นที่ต้องการ
+  ScheduleMode? _scheduleMode;
   ScheduleResult? _schedule; // ถ้าอยากเก็บรายละเอียดอื่น ๆ จากตัวเลือก
   List<String> time = [
     'ทุกๆ 1 ชม.',
@@ -122,13 +122,13 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
     'เมื่อมีอาการ'
   ];
   List<String> setDay = [
-    'สัปดาห์ละครั้ง',
+    'กำหนดรายสัปดาห์',
     'กำหนดรายวัน',
     'กำหนดรายเดือน',
     'ไม่กำหนด'
   ];
   Map<String, bool> selectedDay = {
-    'สัปดาห์ละครั้ง': false,
+    'กำหนดรายสัปดาห์': false,
     'กำหนดรายวัน': false,
     'กำหนดรายเดือน': false,
     'ไม่กำหนด': false
@@ -159,7 +159,7 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
   String labelFromTypeSlot(String? t) {
     switch (t) {
       case 'weekly_once':
-        return 'สัปดาห์ละครั้ง';
+        return 'กำหนดรายสัปดาห์';
       case 'daily_custom':
         return 'กำหนดรายวัน';
       case 'monthly_custom':
@@ -170,6 +170,8 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
         return '-';
     }
   }
+
+  bool get isPRN => selectedTimeSlot == 'เมื่อมีอาการ';
 
   Map<String, bool> selectStatus = {
     'ให้อาหารทันที': false,
@@ -234,19 +236,22 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
   }
 
   bool _isScheduleDetailValid() {
-    switch (_scheduleMode) {
+    if (_scheduleMode == null || _schedule == null) {
+      return false;
+    }
+
+    switch (_scheduleMode!) {
       case ScheduleMode.weeklyOnce:
         return _schedule!.weekdayNames.isNotEmpty;
 
       case ScheduleMode.dailyCustom:
-        // ต้องมี note/ค่า custom สำหรับรายวัน
         return (_schedule!.dailyNote?.trim().isNotEmpty ?? false);
 
       case ScheduleMode.monthlyCustom:
-        // ต้องมีวันของเดือนอย่างน้อย 1
         return _schedule!.monthlyDays.isNotEmpty;
+
       case ScheduleMode.all:
-        return _schedule!.monthlyDays.isNotEmpty;
+        return true; // หรือ business rule ของคุณ
     }
   }
 
@@ -272,23 +277,6 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
     'ชั่งน้ำหนักอาหาร',
   ];
 
-  // void _initPrepFromFeed(String? feed) {
-  //   selectedPrep = {
-  //     for (final v in prepOptions) v: false,
-  //   };
-
-  //   if (feed == null || feed.trim().isEmpty) return;
-
-  //   final parts =
-  //       feed.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty);
-
-  //   for (final label in parts) {
-  //     if (selectedPrep.containsKey(label)) {
-  //       selectedPrep[label] = true;
-  //     }
-  //   }
-  // }
-
   late Map<String, bool> selectedPrep;
 
   @override
@@ -308,7 +296,7 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final result = _schedule;
+    var result = _schedule;
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -414,14 +402,14 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
           const SizedBox(height: 15),
           SchedulePicker(
             allowAll: false,
-            key: const ValueKey('create_sched'),
-            initialMode: _scheduleMode,
-            initialWeeklySelectedNames: result?.weekdayNames.isNotEmpty == true
-                ? result!.weekdayNames
-                : const {},
-            initialDailyNote: result?.dailyNote,
-            initialMonthlyDate: result?.monthlyDate,
-            initialMonthlyDays: result?.monthlyDays ?? const <int>{},
+            key: ValueKey(
+                'create_sched_${isPRN ? 'prn' : 'normal'}_${_scheduleMode ?? 'none'}'),
+            initialMode: isPRN ? null : _scheduleMode,
+            initialWeeklySelectedNames: _schedule?.weekdayNames ?? const {},
+            initialDailyNote: _schedule?.dailyNote,
+            initialMonthlyDate: _schedule?.monthlyDate,
+            initialDailyDate: _schedule?.dailyDate,
+            initialMonthlyDays: _schedule?.monthlyDays ?? const <int>{},
             onChanged: (cfg) {
               setState(() {
                 _scheduleMode = cfg.mode;
@@ -475,127 +463,141 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
           TimeSelection(
             time: time,
             timeList: timeList,
+            initialTakeTimes: selectedTakeTimes,
+            initialTimeSlot: selectedTimeSlot,
             onSelectionChanged: (selectedIndex, selectedList) {
               setState(() {
-                selectedTimeSlot = time[selectedIndex ?? 0];
-                selectedTakeTimes = [];
+                final idx = (selectedIndex == null ||
+                        selectedIndex < 0 ||
+                        selectedIndex >= time.length)
+                    ? 0
+                    : selectedIndex;
 
-                for (int i = 0; i < selectedList.length; i++) {
-                  if (selectedList[i]) {
-                    selectedTakeTimes.add(timeList[i]);
+                selectedTimeSlot = time[idx];
+
+                if (selectedTimeSlot == 'เมื่อมีอาการ') {
+                  selectedTakeTimes = [];
+
+                  _scheduleMode = null;
+                  _schedule = null;
+                } else {
+                  selectedTakeTimes = [];
+                  for (int i = 0;
+                      i < selectedList.length && i < timeList.length;
+                      i++) {
+                    if (selectedList[i]) selectedTakeTimes.add(timeList[i]);
                   }
                 }
-                checkIsEnabled();
               });
+
+              checkIsEnabled();
             },
           ),
           Padding(
             padding: const EdgeInsets.only(top: 20),
             child: IgnorePointer(
               ignoring: !isEnabled,
-              child: actionSlider(
-                context,
-                'ยืนยันการให้อาหารเพิ่มเติม',
-                width: MediaQuery.of(context).size.width * 0.4,
-                height: 30.0,
-                backgroundColor: isEnabled
-                    ? const Color.fromARGB(255, 203, 230, 252)
-                    : Colors.grey[300]!,
-                togglecolor: isEnabled
-                    ? const Color.fromARGB(255, 76, 172, 175)
-                    : Colors.grey,
-                icons: Icons.check,
-                iconColor: Colors.white,
-                asController: ActionSliderController(),
-                action: (controller) async {
-                  final typeSlot = _typeSlotFromMode(_scheduleMode);
-                  if (widget.screen == 'roundward') {
-                    String status = '0';
+              child: actionSlider(context, 'ยืนยันการให้อาหารเพิ่มเติม',
+                  width: MediaQuery.of(context).size.width * 0.4,
+                  height: 30.0,
+                  backgroundColor: isEnabled
+                      ? const Color.fromARGB(255, 203, 230, 252)
+                      : Colors.grey[300]!,
+                  togglecolor: isEnabled
+                      ? const Color.fromARGB(255, 76, 172, 175)
+                      : Colors.grey,
+                  icons: Icons.check,
+                  iconColor: Colors.white,
+                  asController: ActionSliderController(),
+                  action: (controller) async {
+                String status = '0';
 
-                    if (selectStatus['ให้อาหารทันที'] == true) {
-                      status = '1';
-                    }
+                if (selectStatus['ให้อาหารทันที'] == true) {
+                  status = '1';
+                }
+                final bool isPRN = selectedTimeSlot == 'เมื่อมีอาการ';
+                final String typeSlot =
+                    isPRN ? 'ALL' : _typeSlotFromMode(_scheduleMode!);
+                final String? setSlot = (typeSlot == 'ALL')
+                    ? null
+                    : buildSetSlot(_schedule, weeklyAsNumber: false);
+                final String takeTime = (typeSlot == 'ALL')
+                    ? '[]'
+                    : "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]";
 
-                    final newFood = DataAddOrderModel(
-                      item_name: tFoodName.text,
-                      type_card: 'Food',
-                      dose_qty: tFoodDose.text,
-                      unit_name: tFoodUnit.text,
-                      item_qty: tFoodQty.text,
-                      start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
-                          .format(DateTime.now()),
-                      drug_type_name: "อาหารสัตว์",
-                      drug_description: tFoodDescription.text,
-                      stock_out: 0,
-                      use_now: status,
-                      set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
-                      type_slot: _typeSlotFromMode(_scheduleMode),
-                      start_date_imed:
-                          DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                      remark: tFoodRemark.text,
-                      schedule_mode_label:
-                          _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
-                      //  doctor_eid: selectedDoctor?.employee_id,
-                      unit_stock: tFoodUnitQty.text,
-                      meal_take: selectedValues.entries
-                          .where((entry) => entry.value)
-                          .map((entry) => entry.key)
-                          .join(','),
+                if (widget.screen == 'roundward') {
+                  final newFood = DataAddOrderModel(
+                    item_name: tFoodName.text,
+                    type_card: 'Food',
+                    dose_qty: tFoodDose.text,
+                    unit_name: tFoodUnit.text,
+                    item_qty: tFoodQty.text,
+                    start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
+                        .format(DateTime.now()),
+                    drug_type_name: "อาหารสัตว์",
+                    drug_description: tFoodDescription.text,
+                    stock_out: 0,
+                    use_now: status,
+                    set_slot: setSlot,
+                    type_slot: typeSlot,
+                    take_time: takeTime,
+                    start_date_imed:
+                        DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                    remark: tFoodRemark.text,
+                    schedule_mode_label:
+                        _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
+                    unit_stock: tFoodUnitQty.text,
+                    meal_take: selectedValues.entries
+                        .where((e) => e.value)
+                        .map((e) => e.key)
+                        .join(','),
+                    time_slot: selectedTimeSlot,
+                  );
 
-                      take_time:
-                          "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
-                      time_slot: selectedTimeSlot,
-                    );
+                  await RoundWardApi().AddOrder(
+                    context,
+                    headers_: widget.headers,
+                    mUser: widget.lUserLogin!.first,
+                    mPetAdmit_: widget.lPetAdmit!.first,
+                    lDataOrder_: [newFood],
+                    mListAn_: widget.lListAn!.first,
+                  );
+                  await widget.rwAddFood();
+                  Navigator.of(context).pop();
+                } else {
+                  final newFood = ListDataCardModel(
+                    item_name: tFoodName.text,
+                    dose_qty: tFoodDose.text,
+                    dose_qty_name: tFoodDose.text,
+                    unit_name: tFoodUnit.text,
+                    drug_type_name: "อาหารสัตว์",
+                    stock_out: 0,
+                    use_now: status,
+                    item_qty: int.tryParse(tFoodQty.text) ?? 0,
+                    start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
+                        .format(DateTime.now()),
+                    start_date_imed:
+                        DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                    drug_description: tFoodDescription.text,
+                    remark: tFoodRemark.text,
+                    unit_stock: tFoodUnitQty.text,
+                    set_slot: setSlot,
+                    type_slot: typeSlot,
+                    schedule_mode_label:
+                        _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
+                    meal_take: selectedValues.entries
+                        .where((e) => e.value)
+                        .map((e) => e.key)
+                        .join(','),
+                    take_time: takeTime,
+                    time_slot: selectedTimeSlot,
+                  );
 
-                    await RoundWardApi().AddOrder(
-                      context,
-                      headers_: widget.headers,
-                      mUser: widget.lUserLogin!.first,
-                      mPetAdmit_: widget.lPetAdmit!.first,
-                      lDataOrder_: [newFood],
-                      mListAn_: widget.lListAn!.first,
-                    );
-                    await widget.rwAddFood();
-                    Navigator.of(context).pop();
-                  } else {
-                    final newFood = ListDataCardModel(
-                      item_name: tFoodName.text,
-                      dose_qty: tFoodDose.text,
-                      dose_qty_name: tFoodDose.text,
-
-                      // double.parse(
-                      //     tFoodDose.text.isEmpty ? '0' : tFoodDose.text),
-                      unit_name: tFoodUnit.text,
-                      drug_type_name: "อาหารสัตว์",
-                      stock_out: 0,
-                      item_qty: int.parse(
-                          tFoodQty.text.isEmpty ? '0' : tFoodQty.text),
-                      start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
-                          .format(DateTime.now()),
-                      start_date_imed:
-                          DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                      drug_description: tFoodDescription.text,
-                      remark: tFoodRemark.text,
-                      unit_stock: tFoodUnitQty.text,
-                      set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
-                      type_slot: _typeSlotFromMode(_scheduleMode),
-                      schedule_mode_label:
-                          _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
-                      meal_take: selectedValues.entries
-                          .where((entry) => entry.value)
-                          .map((entry) => entry.key)
-                          .join(','),
-
-                      take_time:
-                          "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
-                      time_slot: selectedTimeSlot,
-                    );
-                    widget.onAddFood(newFood);
-                    widget.rwAddFood();
-                    Navigator.pop(context);
-                  }
-                },
-              ),
+                  widget.onAddFood(newFood);
+                  widget.rwAddFood();
+                  Navigator.pop(context);
+                }
+              }),
             ),
           )
         ],
@@ -608,16 +610,14 @@ class _CreateFoodDialogState extends State<CreateFoodDialog> {
         tFoodQty.text.trim().isNotEmpty &&
         tFoodUnitQty.text.trim().isNotEmpty &&
         tFoodDose.text.trim().isNotEmpty &&
-        tFoodUnit.text.trim().isNotEmpty &&
-        (selectedTimeSlot.isNotEmpty &&
-            (selectedTimeSlot == 'เมื่อมีอาการ' ||
-                selectedTakeTimes.isNotEmpty));
-    selectedTakeTimes.isNotEmpty;
+        tFoodUnit.text.trim().isNotEmpty;
 
-    final scheduleOk = _isScheduleDetailValid();
+    final mealOk = selectedValues.containsValue(true);
+    final scheduleOk = isPRN ? true : _isScheduleDetailValid();
+
     final timeOk = _isTimeOk();
 
-    final ok = hasBasics && scheduleOk && timeOk;
+    final ok = hasBasics && mealOk && scheduleOk && timeOk;
 
     if (ok != isEnabled) {
       setState(() => isEnabled = ok);

@@ -110,14 +110,14 @@ class _AdmitScreenState extends State<AdmitScreenV2> {
       context,
       floor: floor,
       bed_number: bed,
-      headers_: headers_,
+      headers_: widget.headers,
     );
   }
 
   @override
   void initState() {
     super.initState();
-    tHnNumber.text = 'SR-168158-05';
+    tHnNumber.text = 'SV-5769-05';
   }
 
   @override
@@ -398,6 +398,9 @@ class _AdmitScreenState extends State<AdmitScreenV2> {
                                   set_value: ee.drug_instruction,
                                   take_time: ee.take_time,
                                   time_slot: ee.time_slot,
+                                  type_slot: ee.type_slot,
+                                  set_slot: ee.set_slot,
+                                  schedule_mode_label: null,
                                 ));
                               }
                             }

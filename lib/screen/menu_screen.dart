@@ -256,8 +256,8 @@ class _MenuScreenState extends State<MenuScreen> {
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(
+                    children: const [
+                      SizedBox(
                         width: 260,
                       ),
                     ],

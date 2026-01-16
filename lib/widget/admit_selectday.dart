@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:e_smartward/widget/text.dart';
@@ -15,9 +16,11 @@ class ScheduleResult {
   final DateTime? monthlyDate;
   final Set<int> monthlyDays;
   final DateTime? dailyDate;
+  final DateTime? initialDailyDate;
+
   final String modeLabel;
 
-  const ScheduleResult({
+  ScheduleResult({
     required this.mode,
     required this.modeLabel,
     this.weekdayNames = const {},
@@ -25,30 +28,34 @@ class ScheduleResult {
     this.monthlyDate,
     this.dailyDate,
     this.monthlyDays = const {},
+    this.initialDailyDate,
   });
 }
 
 class SchedulePicker extends StatefulWidget {
+  final DateTime? initialDailyDate;
   const SchedulePicker({
     super.key,
-    this.initialMode = ScheduleMode.weeklyOnce,
-    this.initialWeeklySelectedNames = const {'จันทร์', 'อังคาร'},
+    this.initialDailyDate,
+    this.initialMode,
+    this.initialWeeklySelectedNames = const <String>{},
     this.initialDailyNote,
     this.initialMonthlyDate,
-    final DateTime? initialDailyDate,
-    this.showNoSchedule = false,
-    this.onNoSchedule,
     this.dailyDate,
     this.initialMonthlyDays = const <int>{},
     this.onChanged,
+    this.showNoSchedule = false,
+    this.onNoSchedule,
     this.allowAll = true,
+    this.trailingModeChip,
   });
 
-  final ScheduleMode initialMode;
+  final ScheduleMode? initialMode;
   final Set<String> initialWeeklySelectedNames;
   final String? initialDailyNote;
   final DateTime? initialMonthlyDate;
-  final String? dailyDate;
+  final DateTime? dailyDate;
+final Widget? trailingModeChip;
   final Set<int> initialMonthlyDays;
   final ValueChanged<ScheduleResult>? onChanged;
   final bool showNoSchedule;
@@ -60,7 +67,7 @@ class SchedulePicker extends StatefulWidget {
 }
 
 class _SchedulePickerState extends State<SchedulePicker> {
-  ScheduleMode _mode = ScheduleMode.weeklyOnce;
+  ScheduleMode? _mode;
   bool _noSchedule = false;
 
   static const List<String> _thaiDayNames = <String>[
@@ -73,6 +80,7 @@ class _SchedulePickerState extends State<SchedulePicker> {
     'อาทิตย์'
   ];
   DateTime? _dailyDate;
+  final FocusNode _dailyFocus = FocusNode();
   final TextEditingController _dailyDateCtrl = TextEditingController();
 
   Future<void> _pickDailyDate() async {
@@ -91,6 +99,23 @@ class _SchedulePickerState extends State<SchedulePicker> {
     }
   }
 
+  String _normDay(String s) {
+    final t = s.trim();
+    const engToThai = {
+      'Mon': 'จันทร์',
+      'Tue': 'อังคาร',
+      'Wed': 'พุธ',
+      'Thu': 'พฤหัสบดี',
+      'Fri': 'ศุกร์',
+      'Sat': 'เสาร์',
+      'Sun': 'อาทิตย์',
+    };
+    return engToThai[t] ?? t;
+  }
+
+  Set<String> _normDaySet(Set<String> input) =>
+      input.map(_normDay).where((e) => e.isNotEmpty).toSet();
+
   final Set<int> _selectedMonthDays = <int>{};
 
   late Set<String> _selectedNames;
@@ -100,12 +125,30 @@ class _SchedulePickerState extends State<SchedulePicker> {
   void initState() {
     super.initState();
 
-    // 1) ตั้งค่าโหมดและวันสัปดาห์เริ่มต้น
+    _dailyCtrl.text = widget.initialDailyNote ?? '';
+    final d = widget.initialDailyDate;
+    if (d != null) {
+      _dailyDate = d;
+      _dailyDateCtrl.text = DateFormat('yyyy-MM-dd').format(d);
+    }
+
     _mode = widget.initialMode;
     if (!widget.allowAll && _mode == ScheduleMode.all) {
-      _mode = ScheduleMode.weeklyOnce;
+      _mode = null;
     }
-    _selectedNames = {...widget.initialWeeklySelectedNames};
+    if (_mode == null) {
+      _noSchedule = true;
+      _selectedNames = <String>{};
+      _selectedMonthDays.clear();
+      _dailyCtrl.clear();
+      _dailyDate = null;
+      _dailyDateCtrl.clear();
+    } else {
+      _noSchedule = (_mode == ScheduleMode.all);
+      _selectedNames = _normDaySet(widget.initialWeeklySelectedNames);
+    }
+
+    _selectedNames = _normDaySet(widget.initialWeeklySelectedNames);
 
     _dailyCtrl.text = widget.initialDailyNote ?? '';
 
@@ -123,7 +166,7 @@ class _SchedulePickerState extends State<SchedulePicker> {
   }
 
   Map<ScheduleMode, String> kModeLabels = {
-    ScheduleMode.weeklyOnce: 'สัปดาห์ละครั้ง',
+    ScheduleMode.weeklyOnce: 'กำหนดรายสัปดาห์',
     ScheduleMode.dailyCustom: 'กำหนดรายวัน',
     ScheduleMode.monthlyCustom: 'กำหนดรายเดือน',
     ScheduleMode.all: 'ไม่กำหนด',
@@ -132,29 +175,117 @@ class _SchedulePickerState extends State<SchedulePicker> {
   @override
   void didUpdateWidget(covariant SchedulePicker oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialMode != widget.initialMode) {
-      setState(() {
-        _mode = widget.initialMode;
-        if (!widget.allowAll && _mode == ScheduleMode.all) {
-          _mode = ScheduleMode.weeklyOnce;
+
+    final ScheduleMode? nextMode =
+        (!widget.allowAll && widget.initialMode == ScheduleMode.all)
+            ? null
+            : widget.initialMode;
+
+    final nextSelectedNames = _normDaySet(widget.initialWeeklySelectedNames);
+    final nextDailyNote = widget.initialDailyNote ?? '';
+    final nextDailyDate = widget.initialDailyDate;
+    final nextMonthlyDays = widget.initialMonthlyDays;
+
+    bool changed = false;
+
+    if (_mode != nextMode) {
+      _mode = nextMode;
+      _noSchedule = (_mode == null || _mode == ScheduleMode.all);
+
+      if (_mode == null) {
+        _selectedNames.clear();
+        _selectedMonthDays.clear();
+        _dailyCtrl.clear();
+        _dailyDate = null;
+        _dailyDateCtrl.clear();
+      }
+      changed = true;
+    }
+
+    if (_mode != null && _mode == ScheduleMode.weeklyOnce) {
+      if (_selectedNames.length != nextSelectedNames.length ||
+          !_selectedNames.containsAll(nextSelectedNames)) {
+        _selectedNames = nextSelectedNames;
+        changed = true;
+      }
+    } else {
+      if (_selectedNames.isNotEmpty) {
+        _selectedNames = <String>{};
+        changed = true;
+      }
+    }
+
+    if (_mode != null && _mode == ScheduleMode.dailyCustom) {
+      if (_dailyDate != nextDailyDate) {
+        _dailyDate = nextDailyDate;
+        if (_dailyDate != null) {
+          _dailyDateCtrl.text = DateFormat('yyyy-MM-dd').format(_dailyDate!);
+        } else {
+          _dailyDateCtrl.clear();
         }
-        _noSchedule = (_mode == ScheduleMode.all);
+        changed = true;
+      }
+
+      if (!_dailyFocus.hasFocus && _dailyCtrl.text != nextDailyNote) {
+        _dailyCtrl.value = TextEditingValue(
+          text: nextDailyNote,
+          selection: TextSelection.collapsed(offset: nextDailyNote.length),
+        );
+        changed = true;
+      }
+    } else {
+      if (_dailyDate != null ||
+          _dailyDateCtrl.text.isNotEmpty ||
+          _dailyCtrl.text.isNotEmpty) {
+        _dailyDate = null;
+        _dailyDateCtrl.clear();
+        _dailyCtrl.clear();
+        changed = true;
+      }
+    }
+
+    if (_mode != null && _mode == ScheduleMode.monthlyCustom) {
+      final monthChanged =
+          _selectedMonthDays.length != nextMonthlyDays.length ||
+              !_selectedMonthDays.containsAll(nextMonthlyDays);
+
+      if (monthChanged) {
+        _selectedMonthDays
+          ..clear()
+          ..addAll(nextMonthlyDays);
+        changed = true;
+      }
+    } else {
+      if (_selectedMonthDays.isNotEmpty) {
+        _selectedMonthDays.clear();
+        changed = true;
+      }
+    }
+
+    if (changed && mounted) {
+      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _emit();
       });
     }
   }
 
   @override
   void dispose() {
+    _dailyFocus.dispose();
     _dailyCtrl.dispose();
+    _dailyDateCtrl.dispose();
     super.dispose();
   }
 
   void _emit() {
+    if (_mode == null) return;
+
     widget.onChanged?.call(
       ScheduleResult(
-        mode: _mode,
-        modeLabel: kModeLabels[_mode]!,
-        weekdayNames: _noSchedule ? {} : {..._selectedNames},
+        mode: _mode!,
+        modeLabel: kModeLabels[_mode!]!,
+        weekdayNames: _noSchedule ? {} : _normDaySet(_selectedNames),
         dailyNote: _noSchedule
             ? null
             : (_dailyCtrl.text.trim().isEmpty ? null : _dailyCtrl.text.trim()),
@@ -168,8 +299,6 @@ class _SchedulePickerState extends State<SchedulePicker> {
 
   @override
   Widget build(BuildContext context) {
-    // Theme.of(context); // ไม่ได้ใช้งาน ลบทิ้งได้
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -186,6 +315,7 @@ class _SchedulePickerState extends State<SchedulePicker> {
                   ScheduleMode.monthlyCustom),
               if (widget.allowAll)
                 _modeBtn(kModeLabels[ScheduleMode.all]!, ScheduleMode.all),
+                 if (widget.trailingModeChip != null) widget.trailingModeChip!,
             ],
           ),
         ),
@@ -193,143 +323,142 @@ class _SchedulePickerState extends State<SchedulePicker> {
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 180),
           child: () {
-            switch (_mode) {
-              case ScheduleMode.weeklyOnce:
-                return _InfoBox(
-                  key: const ValueKey('weekly'),
-                  child: Wrap(
-                    spacing: 4,
-                    runSpacing: 5,
-                    children: _thaiDayNames.map((name) {
-                      final on = _selectedNames.contains(name);
-                      return FilterChip(
-                        label: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          child: Text(
-                            name,
-                            style: TextStyle(
-                              color: on ? Colors.white : Colors.teal,
-                              fontWeight: FontWeight.bold,
-                            ),
+            if (_mode case ScheduleMode.weeklyOnce) {
+              return _InfoBox(
+                key: const ValueKey('weekly'),
+                child: Wrap(
+                  spacing: 4,
+                  runSpacing: 5,
+                  children: _thaiDayNames.map((name) {
+                    final on = _selectedNames.contains(name);
+                    return FilterChip(
+                      label: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        child: Text(
+                          name,
+                          style: TextStyle(
+                            color: on ? Colors.white : Colors.teal,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        selected: on,
-                        showCheckmark: false,
-                        selectedColor: const Color(0xFF22A699),
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(
-                            color: on
-                                ? const Color(0xFF22A699)
-                                : Colors.teal.shade200,
-                          ),
+                      ),
+                      selected: on,
+                      showCheckmark: false,
+                      selectedColor: const Color(0xFF22A699),
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: on
+                              ? const Color(0xFF22A699)
+                              : Colors.teal.shade200,
                         ),
-                        onSelected: (v) {
-                          setState(() {
-                            if (v) {
-                              _selectedNames.add(name);
-                            } else {
-                              _selectedNames.remove(name);
-                            }
-                          });
-                          _emit();
-                        },
-                      );
-                    }).toList(),
-                  ),
-                );
-
-              case ScheduleMode.dailyCustom:
-                return _InfoBox(
-                  key: const ValueKey('dailyCustom'),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ช่องกรอกจำนวนวัน (ของเดิม)
-                      textField1(
-                        'กรอกจำนวนวัน',
-                        controller: _dailyCtrl,
-                        onChanged: (_) => _emit(),
                       ),
-                      const SizedBox(height: 10),
-
-                      textFieldCalendar(
-                        'เลือกวันที่เริ่มต้น',
-                        controller: _dailyDateCtrl,
-                        readOnly: true,
-                        onTap: _pickDailyDate,
-                        trailingIcon: const Icon(Icons.calendar_month,
-                            color: Color(0xFF22A699)),
-                        onTrailingTap: _pickDailyDate,
-                        showClear: true,
-                        onClear: () {
-                          _dailyDate = null;
-                          _emit();
-                        },
-                      )
-                    ],
-                  ),
-                );
-
-              case ScheduleMode.monthlyCustom:
-                return _InfoBox(
-                  key: const ValueKey('monthly'),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      text(context, 'ไม่กำหนด', color: Colors.teal),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: List.generate(31, (i) {
-                          final day = i + 1; // 1..31
-                          final on = _selectedMonthDays.contains(day);
-                          return FilterChip(
-                            label: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              child: Text(
-                                '$day',
-                                style: TextStyle(
-                                  color: on ? Colors.white : Colors.teal,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      onSelected: (v) {
+                        setState(() {
+                          if (v) {
+                            _selectedNames.add(name);
+                          } else {
+                            _selectedNames.remove(name);
+                          }
+                        });
+                        _emit();
+                      },
+                    );
+                  }).toList(),
+                ),
+              );
+            } else if (_mode case ScheduleMode.dailyCustom) {
+              return _InfoBox(
+                key: const ValueKey('dailyCustom'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    textField1(
+                      'กรอกจำนวนวัน',
+                      controller: _dailyCtrl,
+                      focusNode: _dailyFocus,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      maxLength: 3,
+                      onChanged: (_) => _emit(),
+                    ),
+                    const SizedBox(height: 10),
+                    textFieldCalendar(
+                      'เลือกวันที่เริ่มต้น',
+                      controller: _dailyDateCtrl,
+                      readOnly: true,
+                      onTap: _pickDailyDate,
+                      trailingIcon: const Icon(Icons.calendar_month,
+                          color: Color(0xFF22A699)),
+                      onTrailingTap: _pickDailyDate,
+                      showClear: true,
+                      onClear: () {
+                        _dailyDate = null;
+                        _emit();
+                      },
+                    )
+                  ],
+                ),
+              );
+            } else if (_mode case ScheduleMode.monthlyCustom) {
+              return _InfoBox(
+                key: const ValueKey('monthly'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    text(context, 'ไม่กำหนด', color: Colors.teal),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: List.generate(31, (i) {
+                        final day = i + 1; // 1..31
+                        final on = _selectedMonthDays.contains(day);
+                        return FilterChip(
+                          label: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            child: Text(
+                              '$day',
+                              style: TextStyle(
+                                color: on ? Colors.white : Colors.teal,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            selected: on,
-                            showCheckmark: false,
-                            selectedColor: const Color(0xFF22A699),
-                            backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              side: BorderSide(
-                                color: on
-                                    ? const Color(0xFF22A699)
-                                    : Colors.teal.shade200,
-                              ),
+                          ),
+                          selected: on,
+                          showCheckmark: false,
+                          selectedColor: const Color(0xFF22A699),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: on
+                                  ? const Color(0xFF22A699)
+                                  : Colors.teal.shade200,
                             ),
-                            onSelected: (v) {
-                              setState(() {
-                                if (v) {
-                                  _selectedMonthDays.add(day);
-                                } else {
-                                  _selectedMonthDays.remove(day);
-                                }
-                              });
-                              _emit();
-                            },
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-                );
-              case ScheduleMode.all:
-                return const SizedBox.shrink();
-            }
+                          ),
+                          onSelected: (v) {
+                            setState(() {
+                              if (v) {
+                                _selectedMonthDays.add(day);
+                              } else {
+                                _selectedMonthDays.remove(day);
+                              }
+                            });
+                            _emit();
+                          },
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              );
+            } else if (_mode case ScheduleMode.all) {
+              return const SizedBox.shrink();
+            } else if (_mode case null) {}
           }(),
         ),
       ],
@@ -364,7 +493,7 @@ class _SchedulePickerState extends State<SchedulePicker> {
           _mode = mode;
 
           if (mode == ScheduleMode.all) {
-            _noSchedule = true; // 👈 เข้าสถานะไม่กำหนด
+            _noSchedule = true;
             _selectedNames.clear();
             _selectedMonthDays.clear();
             _dailyCtrl.clear();
@@ -382,12 +511,10 @@ class _SchedulePickerState extends State<SchedulePicker> {
 
 class _InfoBox extends StatelessWidget {
   const _InfoBox({
-    Key? key,
+    super.key,
     required this.child,
-    this.icon,
-  }) : super(key: key);
+  });
   final Widget child;
-  final Widget? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -404,7 +531,6 @@ class _InfoBox extends StatelessWidget {
   }
 }
 
-// --------- HELPERS (serialize) ----------
 String typeSlotFromMode(ScheduleMode m) {
   switch (m) {
     case ScheduleMode.weeklyOnce:

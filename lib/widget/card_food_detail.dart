@@ -55,7 +55,7 @@ class FoodListWidgetState extends State<FoodListWidget> {
   String labelFromTypeSlot(String? t) {
     switch (t) {
       case 'weekly_once':
-        return 'สัปดาห์ละครั้ง';
+        return 'กำหนดรายสัปดาห์';
       case 'daily_custom':
         return 'กำหนดรายวัน';
       case 'monthly_custom':
@@ -69,7 +69,7 @@ class FoodListWidgetState extends State<FoodListWidget> {
   String _labelFromTypeSlotStd(String? t) {
     switch ((t ?? '').toUpperCase()) {
       case 'DAYS':
-        return 'สัปดาห์ละครั้ง';
+        return 'กำหนดรายสัปดาห์';
       case 'DATE':
         return 'กำหนดรายวัน';
       case 'D_M':
@@ -122,7 +122,6 @@ class FoodListWidgetState extends State<FoodListWidget> {
                         final isDisabled = widget.lDataCard[index].id != null;
                         final tooltipController = JustTheController();
 
-                        
                         // ignore: unnecessary_type_check
                         final String typeSlot = (food is ListDataCardModel)
                             ? (food.type_slot ?? 'ALL')

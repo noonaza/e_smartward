@@ -2,8 +2,8 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:e_smartward/screen/login_screen.dart';
 import 'package:e_smartward/widget/text.dart';
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 
+// ignore: camel_case_types
 class dialog {
   static load(BuildContext context) {
     return showDialog(
@@ -138,7 +138,7 @@ class dialog {
                     height: 80,
                     child: image == null
                         ? Image.asset('images/no-data.gif')
-                        : Image.asset('images/$image'), //?? "alertList.gif"
+                        : Image.asset('images/$image'), 
                   ),
                   text(context, label)
                 ],

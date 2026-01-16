@@ -41,6 +41,12 @@ class ListRoundwardModel {
   String? dose_qty_name;
   String? update_by;
   String? total_useable;
+  String? meal_take;
+  String? start_date_imed;
+  String? type_slot;
+  String? set_slot;
+   String? use_now;
+   String? schedule_mode_label;
   int? used_count;
   String? remaining;
 
@@ -81,6 +87,12 @@ class ListRoundwardModel {
     this.dose_qty_name,
     this.update_by,
     this.total_useable,
+    this.meal_take,
+    this.start_date_imed,
+    this.type_slot,
+    this.set_slot,
+    this.use_now,
+    this.schedule_mode_label,
     this.used_count,
     this.remaining,
     this.data_trans,
@@ -122,6 +134,12 @@ class ListRoundwardModel {
     String? dose_qty_name,
     String? update_by,
     String? total_useable,
+    String? meal_take,
+    String? start_date_imed,
+    String? type_slot,
+    String? set_slot,
+    String? use_now,
+    String? schedule_mode_label,
     int? used_count,
     String? remaining,
     List<ListDataRoundwardModel>? data_trans,
@@ -162,6 +180,12 @@ class ListRoundwardModel {
       dose_qty_name: dose_qty_name ?? this.dose_qty_name,
       update_by: update_by ?? this.update_by,
       total_useable: total_useable ?? this.total_useable,
+      meal_take: meal_take ?? this.meal_take,
+      start_date_imed: start_date_imed ?? this.start_date_imed,
+      type_slot: type_slot ?? this.type_slot,
+      set_slot: set_slot ?? this.set_slot,
+      use_now: use_now ?? this.use_now,
+      schedule_mode_label: schedule_mode_label ?? this.schedule_mode_label,
       used_count: used_count ?? this.used_count,
       remaining: remaining ?? this.remaining,
       data_trans: data_trans ?? this.data_trans,
@@ -205,9 +229,15 @@ class ListRoundwardModel {
       'dose_qty_name': dose_qty_name,
       'update_by': update_by,
       'total_useable': total_useable,
+      'meal_take': meal_take,
+      'start_date_imed': start_date_imed,
+      'type_slot': type_slot,
+      'set_slot': set_slot,
+      'use_now': use_now,
+      'schedule_mode_label': schedule_mode_label,
       'used_count': used_count,
       'remaining': remaining,
-      'data_trans': data_trans!.map((x) => x.toMap()).toList(),
+      'data_trans': data_trans?.map((x) => x?.toMap()).toList(),
     };
   }
 
@@ -248,6 +278,12 @@ class ListRoundwardModel {
       dose_qty_name: map['dose_qty_name'] != null ? map['dose_qty_name'] as String : null,
       update_by: map['update_by'] != null ? map['update_by'] as String : null,
       total_useable: map['total_useable'] != null ? map['total_useable'] as String : null,
+      meal_take: map['meal_take'] != null ? map['meal_take'] as String : null,
+      start_date_imed: map['start_date_imed'] != null ? map['start_date_imed'] as String : null,
+      type_slot: map['type_slot'] != null ? map['type_slot'] as String : null,
+      set_slot: map['set_slot'] != null ? map['set_slot'] as String : null,
+      use_now: map['use_now'] != null ? map['use_now'] as String : null,
+      schedule_mode_label: map['schedule_mode_label'] != null ? map['schedule_mode_label'] as String : null,
       used_count: map['used_count'] != null ? map['used_count'] as int : null,
       remaining: map['remaining'] != null ? map['remaining'] as String : null,
       data_trans: map['data_trans'] != null ? List<ListDataRoundwardModel>.from((map['data_trans'] as List<int>).map<ListDataRoundwardModel?>((x) => ListDataRoundwardModel.fromMap(x as Map<String,dynamic>),),) : null,
@@ -261,7 +297,7 @@ class ListRoundwardModel {
 
   @override
   String toString() {
-    return 'ListRoundwardModel(id: $id, smw_admit_id: $smw_admit_id, type_card: $type_card, item_name: $item_name, item_qty: $item_qty, unit_name: $unit_name, dose_qty: $dose_qty, meal_timing: $meal_timing, drug_instruction: $drug_instruction, take_time: $take_time, start_date_use: $start_date_use, end_date_use: $end_date_use, stock_out: $stock_out, remark: $remark, create_date: $create_date, create_by: $create_by, delete_date: $delete_date, delete_by: $delete_by, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, order_eid: $order_eid, order_date: $order_date, order_time: $order_time, drug_type_name: $drug_type_name, time_slot: $time_slot, unit_stock: $unit_stock, status: $status, update_date: $update_date, dose_qty_name: $dose_qty_name, update_by: $update_by, total_useable: $total_useable, used_count: $used_count, remaining: $remaining, data_trans: $data_trans)';
+    return 'ListRoundwardModel(id: $id, smw_admit_id: $smw_admit_id, type_card: $type_card, item_name: $item_name, item_qty: $item_qty, unit_name: $unit_name, dose_qty: $dose_qty, meal_timing: $meal_timing, drug_instruction: $drug_instruction, take_time: $take_time, start_date_use: $start_date_use, end_date_use: $end_date_use, stock_out: $stock_out, remark: $remark, create_date: $create_date, create_by: $create_by, delete_date: $delete_date, delete_by: $delete_by, order_item_id: $order_item_id, doctor_eid: $doctor_eid, item_code: $item_code, note_to_team: $note_to_team, caution: $caution, drug_description: $drug_description, order_eid: $order_eid, order_date: $order_date, order_time: $order_time, drug_type_name: $drug_type_name, time_slot: $time_slot, unit_stock: $unit_stock, status: $status, update_date: $update_date, dose_qty_name: $dose_qty_name, update_by: $update_by, total_useable: $total_useable, meal_take: $meal_take, start_date_imed: $start_date_imed, type_slot: $type_slot, set_slot: $set_slot, use_now: $use_now, schedule_mode_label: $schedule_mode_label, used_count: $used_count, remaining: $remaining, data_trans: $data_trans)';
   }
 
   @override
@@ -304,6 +340,12 @@ class ListRoundwardModel {
       other.dose_qty_name == dose_qty_name &&
       other.update_by == update_by &&
       other.total_useable == total_useable &&
+      other.meal_take == meal_take &&
+      other.start_date_imed == start_date_imed &&
+      other.type_slot == type_slot &&
+      other.set_slot == set_slot &&
+      other.use_now == use_now &&
+      other.schedule_mode_label == schedule_mode_label &&
       other.used_count == used_count &&
       other.remaining == remaining &&
       listEquals(other.data_trans, data_trans);
@@ -346,6 +388,12 @@ class ListRoundwardModel {
       dose_qty_name.hashCode ^
       update_by.hashCode ^
       total_useable.hashCode ^
+      meal_take.hashCode ^
+      start_date_imed.hashCode ^
+      type_slot.hashCode ^
+      set_slot.hashCode ^
+      use_now.hashCode ^
+      schedule_mode_label.hashCode ^
       used_count.hashCode ^
       remaining.hashCode ^
       data_trans.hashCode;

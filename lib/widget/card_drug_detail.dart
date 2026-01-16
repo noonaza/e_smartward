@@ -52,7 +52,7 @@ class DrugListWidgetState extends State<DrugListWidget> {
   String labelFromTypeSlot(String? t) {
     switch (t) {
       case 'weekly_once':
-        return 'สัปดาห์ละครั้ง';
+        return 'กำหนดรายสัปดาห์';
       case 'daily_custom':
         return 'กำหนดรายวัน';
       case 'monthly_custom':
@@ -65,7 +65,7 @@ class DrugListWidgetState extends State<DrugListWidget> {
   String _labelFromTypeSlotStd(String? t) {
     switch ((t ?? '').toUpperCase()) {
       case 'DAYS':
-        return 'สัปดาห์ละครั้ง';
+        return 'กำหนดรายสัปดาห์';
       case 'DATE':
         return 'กำหนดรายวัน';
       case 'D_M':

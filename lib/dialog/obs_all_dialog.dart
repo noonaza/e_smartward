@@ -14,9 +14,9 @@ class ObsAllDialogV2 extends StatefulWidget {
   final Map<String, String> headers;
 
   const ObsAllDialogV2({
-    Key? key,
+    super.key,
     required this.headers,
-  }) : super(key: key);
+  });
 
   @override
   State<ObsAllDialogV2> createState() => _ObsPickerMultiDialogState();
@@ -128,7 +128,7 @@ class _ObsPickerMultiDialogState extends State<ObsAllDialogV2> {
   }
 
   void _openCreateDialog() {
-    final parentContext = context; 
+    final parentContext = context;
 
     CreateObsDialogV2.show(
       context,
@@ -265,6 +265,11 @@ class _ObsPickerMultiDialogState extends State<ObsAllDialogV2> {
                       ),
                       subtitle: const Text('เพิ่มสังเกตอาการแบบกำหนดเอง'),
                       trailing: FilledButton.tonalIcon(
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.all(
+                            Colors.teal, 
+                          ),
+                        ),
                         icon: const Icon(Icons.add),
                         label: const Text('สร้างใหม่'),
                         onPressed: _openCreateDialog,

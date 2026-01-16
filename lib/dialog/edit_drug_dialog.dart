@@ -135,7 +135,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
   TextEditingController tDrugUnitQty = TextEditingController();
   TextEditingController tSearchDoctor = TextEditingController();
 
-  ScheduleMode _scheduleMode = ScheduleMode.weeklyOnce;
+  ScheduleMode? _scheduleMode;
   ScheduleResult? _schedule;
 
   static const _thaiWeekdays = [
@@ -176,13 +176,13 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
   };
 
   List<String> setDay = [
-    'สัปดาห์ละครั้ง',
+    'กำหนดรายสัปดาห์',
     'กำหนดรายวัน',
     'กำหนดรายเดือน',
     'ไม่กำหนด',
   ];
   Map<String, bool> selectedDay = {
-    'สัปดาห์ละครั้ง': false,
+    'กำหนดรายสัปดาห์': false,
     'กำหนดรายวัน': false,
     'กำหนดรายเดือน': false,
     'ไม่กำหมด': false,
@@ -232,7 +232,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
   }
 
   Map<ScheduleMode, String> kModeLabels = {
-    ScheduleMode.weeklyOnce: 'สัปดาห์ละครั้ง',
+    ScheduleMode.weeklyOnce: 'กำหนดรายสัปดาห์',
     ScheduleMode.dailyCustom: 'กำหนดรายวัน',
     ScheduleMode.monthlyCustom: 'กำหนดรายเดือน',
     ScheduleMode.all: 'ไม่กำหนด',
@@ -240,7 +240,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
   String labelFromTypeSlot(String? t) {
     switch (t) {
       case 'weekly_once':
-        return 'สัปดาห์ละครั้ง';
+        return 'กำหนดรายสัปดาห์';
       case 'daily_custom':
         return 'กำหนดรายวัน';
       case 'monthly_custom':
@@ -252,6 +252,8 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
     }
   }
 
+  bool get isPRN => selectedTimeSlot == 'เมื่อมีอาการ';
+
   DateTime _buildStartDateFromSchedule(
     ScheduleResult? s, {
     String? orderDate,
@@ -260,10 +262,8 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
     final now = DateTime.now();
 
     DateTime? init;
-    if (initialStart != null && initialStart.isNotEmpty) {
-      try {
-        init = DateFormat('yyyy-MM-dd HH:mm:ss').parseStrict(initialStart);
-      } catch (_) {}
+    if (initialStart != null && initialStart.trim().isNotEmpty) {
+      init = _parseStartDateUse(initialStart); // รองรับ HH:mm:ss และ HH:mm
     }
 
     DateTime? order;
@@ -364,7 +364,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
     Set<int> monthlyDays,
   }) _parseDrugSlot(String? setSlot, String? typeSlot) {
     final s = (setSlot ?? '').trim();
-    final t = (typeSlot ?? '').trim().toUpperCase();
+    final t = (typeSlot ?? '').trim().toLowerCase();
 
     if (s.isEmpty) {
       return (
@@ -376,24 +376,29 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
     }
 
     switch (t) {
-      case 'DAYS':
-      case 'WEEKLY':
-        return (
-          mode: ScheduleMode.weeklyOnce,
-          weeklyNames: _parseWeeklyNames(s),
-          dailyNote: null,
-          monthlyDays: {}
-        );
-      case 'DATE':
-      case 'DAILY':
+      case 'daily':
+      case 'date':
+      case 'daily_custom':
         return (
           mode: ScheduleMode.dailyCustom,
           weeklyNames: {},
           dailyNote: s,
           monthlyDays: {}
         );
-      case 'D_M':
-      case 'MONTHLY':
+
+      case 'weekly':
+      case 'days':
+      case 'weekly_once':
+        return (
+          mode: ScheduleMode.weeklyOnce,
+          weeklyNames: _parseWeeklyNames(s),
+          dailyNote: null,
+          monthlyDays: {}
+        );
+
+      case 'monthly':
+      case 'd_m':
+      case 'monthly_custom':
         final days = _parseMonthlyDays(_looksLikeList(s) ? s : '[$s]');
         return (
           mode: ScheduleMode.monthlyCustom,
@@ -401,6 +406,15 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
           dailyNote: null,
           monthlyDays: days
         );
+
+      case 'all':
+        return (
+          mode: ScheduleMode.all,
+          weeklyNames: {},
+          dailyNote: null,
+          monthlyDays: {}
+        );
+
       default:
         return (
           mode: ScheduleMode.weeklyOnce,
@@ -409,6 +423,18 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
           monthlyDays: {}
         );
     }
+  }
+
+  DateTime? _parseStartDateUse(String? s) {
+    if (s == null || s.trim().isEmpty) return null;
+    final v = s.trim();
+
+    for (final p in ['yyyy-MM-dd HH:mm:ss', 'yyyy-MM-dd HH:mm']) {
+      try {
+        return DateFormat(p).parseStrict(v);
+      } catch (_) {}
+    }
+    return null;
   }
 
   void checkIsEnablede() {
@@ -421,7 +447,11 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
   }
 
   bool _isScheduleDetailValid() {
-    switch (_scheduleMode) {
+    if (_scheduleMode == null || _schedule == null) {
+      return false;
+    }
+
+    switch (_scheduleMode!) {
       case ScheduleMode.weeklyOnce:
         return _schedule!.weekdayNames.isNotEmpty;
 
@@ -430,8 +460,9 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
 
       case ScheduleMode.monthlyCustom:
         return _schedule!.monthlyDays.isNotEmpty;
+
       case ScheduleMode.all:
-        return _schedule!.monthlyDays.isNotEmpty;
+        return true; // หรือ business rule ของคุณ
     }
   }
 
@@ -455,7 +486,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
   String toLabel(ScheduleMode m) {
     switch (m) {
       case ScheduleMode.weeklyOnce:
-        return 'สัปดาห์ละครั้ง';
+        return 'กำหนดรายสัปดาห์';
       case ScheduleMode.dailyCustom:
         return 'กำหนดรายวัน';
       case ScheduleMode.monthlyCustom:
@@ -486,7 +517,6 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
     tDrugCondition.text = widget.drug.drug_description ?? '';
     tDrugUnit.text = widget.drug.unit_name?.toString() ?? '';
     tnote.text = widget.drug.remark ?? '';
-    // tUseImed.text = widget.drug.start_date_use ?? '';
     tDrugQty.text = widget.drug.item_qty?.toString() ?? '';
     tDrugUnitQty.text = widget.drug.unit_name?.toString() ?? '';
     tdoctor.text = widget.drug.doctor_eid ?? '';
@@ -513,6 +543,18 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
       }
     }
 
+    selectStatus = {for (final k in setValueStatus) k: false};
+
+    const kUseNowLabel = 'ให้ยาทันที';
+
+    final useNowRaw = (widget.drug.use_now ?? '').toString().trim();
+    final isUseNow = useNowRaw == '1' || useNowRaw.toLowerCase() == 'true';
+
+    if (isUseNow && selectStatus.containsKey(kUseNowLabel)) {
+      selectStatus.updateAll((k, v) => false);
+      selectStatus[kUseNowLabel] = true;
+    }
+
     if (widget.drug.take_time != null) {
       final cleaned = widget.drug.take_time!
           .replaceAll(RegExp(r"[\[\]']"), '')
@@ -531,30 +573,38 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
 
     final parsed = _parseDrugSlot(widget.drug.set_slot, widget.drug.type_slot);
 
+    final startFromDb = _parseStartDateUse(widget.drug.start_date_use);
+
     _scheduleMode = parsed.mode;
     _schedule = ScheduleResult(
       mode: parsed.mode,
       modeLabel: toLabel(parsed.mode),
       weekdayNames: parsed.weeklyNames,
       dailyNote: parsed.dailyNote,
-      monthlyDate: null,
       monthlyDays: parsed.monthlyDays,
+      dailyDate: (parsed.mode == ScheduleMode.dailyCustom) ? startFromDb : null,
+      monthlyDate: null,
     );
 
-    // ปุ่มโหมด 3 ตัว
     selectedDay.updateAll((k, v) => false);
-    switch (_scheduleMode) {
-      case ScheduleMode.weeklyOnce:
-        selectedDay['สัปดาห์ละครั้ง'] = true;
-        break;
-      case ScheduleMode.dailyCustom:
-        selectedDay['กำหนดรายวัน'] = true;
-        break;
-      case ScheduleMode.monthlyCustom:
-        selectedDay['กำหนดรายเดือน'] = true;
-        break;
-      case ScheduleMode.all:
-        selectedDay['ไม่กำหนด'] = true;
+
+    final mode = _scheduleMode; // ScheduleMode?
+    if (mode == null) {
+    } else {
+      switch (mode) {
+        case ScheduleMode.weeklyOnce:
+          selectedDay['กำหนดรายสัปดาห์'] = true;
+          break;
+        case ScheduleMode.dailyCustom:
+          selectedDay['กำหนดรายวัน'] = true;
+          break;
+        case ScheduleMode.monthlyCustom:
+          selectedDay['กำหนดรายเดือน'] = true;
+          break;
+        case ScheduleMode.all:
+          selectedDay['ไม่กำหนด'] = true;
+          break;
+      }
     }
 
     selectedWeekdays.updateAll((k, v) => false);
@@ -603,14 +653,14 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final parsed = _parseDrugSlot(widget.drug.set_slot, widget.drug.type_slot);
+    _parseDrugSlot(widget.drug.set_slot, widget.drug.type_slot);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           CustomCloseButton(context),
-          const SizedBox(height: 5),
+          const SizedBox(height: 10),
           textField1('ชื่อยา', controller: tDrudName),
           const SizedBox(height: 10),
           Row(
@@ -668,7 +718,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
             ],
           ),
           const SizedBox(height: 10),
-          const SizedBox(height: 10),
+
           SizedBox(
             height: 40,
             child: DropdownButtonFormField<String>(
@@ -700,11 +750,11 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
               }).toList(),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           textField1('สรรพคุณ', controller: tDrugCondition),
           const SizedBox(height: 10),
           textField1('หมายเหตุอื่นๆ', controller: tnote),
-          const SizedBox(height: 15),
+          const SizedBox(height: 10),
           SizedBox(
             height: 35,
             child: Dropdown.lModel<DoctorModel>(
@@ -728,52 +778,53 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
             ),
           ),
           const SizedBox(height: 10),
-          SchedulePicker(
-            allowAll: false,
-            key: ValueKey(
-                'sched_${widget.drug.order_item_id ?? widget.indexDrug}'),
-            initialMode: _scheduleMode,
-            initialWeeklySelectedNames:
-                (_schedule?.weekdayNames.isNotEmpty == true)
-                    ? _schedule!.weekdayNames
-                    : parsed.weeklyNames,
-            initialDailyNote: _schedule?.dailyNote ?? parsed.dailyNote,
-            initialMonthlyDate: _schedule?.monthlyDate,
-            initialMonthlyDays: _schedule?.monthlyDays ?? parsed.monthlyDays,
-            initialDailyDate: _schedule?.dailyDate,
-            onChanged: (cfg) {
-              const engToThai = {
-                'Mon': 'จันทร์',
-                'Tue': 'อังคาร',
-                'Wed': 'พุธ',
-                'Thu': 'พฤหัสบดี',
-                'Fri': 'ศุกร์',
-                'Sat': 'เสาร์',
-                'Sun': 'อาทิตย์',
-              };
-              Set<String> toThaiSet(Iterable<String> names) =>
-                  names.map((n) => engToThai[n.trim()] ?? n.trim()).toSet();
+          // SchedulePicker(
+          //   allowAll: false,
+          //   key: ValueKey(
+          //     'sched_${widget.drug.order_item_id ?? widget.indexDrug}_${widget.drug.start_date_use ?? ""}',
+          //   ),
+          //   initialMode: _scheduleMode,
+          //   initialWeeklySelectedNames:
+          //       (_schedule?.weekdayNames.isNotEmpty == true)
+          //           ? _schedule!.weekdayNames
+          //           : parsed.weeklyNames,
+          //   initialDailyNote: _schedule?.dailyNote ?? parsed.dailyNote,
+          //   initialMonthlyDate: _schedule?.monthlyDate,
+          //   initialMonthlyDays: _schedule?.monthlyDays ?? parsed.monthlyDays,
+          //   initialDailyDate: _schedule?.dailyDate,
+          //   onChanged: (cfg) {
+          //     const engToThai = {
+          //       'Mon': 'จันทร์',
+          //       'Tue': 'อังคาร',
+          //       'Wed': 'พุธ',
+          //       'Thu': 'พฤหัสบดี',
+          //       'Fri': 'ศุกร์',
+          //       'Sat': 'เสาร์',
+          //       'Sun': 'อาทิตย์',
+          //     };
+          //     Set<String> toThaiSet(Iterable<String> names) =>
+          //         names.map((n) => engToThai[n.trim()] ?? n.trim()).toSet();
 
-              final normalized = cfg.mode == ScheduleMode.weeklyOnce
-                  ? toThaiSet(cfg.weekdayNames)
-                  : cfg.weekdayNames;
+          //     final normalized = cfg.mode == ScheduleMode.weeklyOnce
+          //         ? toThaiSet(cfg.weekdayNames)
+          //         : cfg.weekdayNames;
 
-              setState(() {
-                _scheduleMode = cfg.mode;
-                _schedule = ScheduleResult(
-                  mode: cfg.mode,
-                  modeLabel: kModeLabels[cfg.mode]!,
-                  weekdayNames: normalized,
-                  dailyNote: cfg.dailyNote,
-                  monthlyDate: cfg.monthlyDate,
-                  monthlyDays: cfg.monthlyDays,
-                  dailyDate: cfg.dailyDate,
-                );
-              });
-              checkIsEnabled();
-            },
-          ),
-          const SizedBox(height: 10),
+          //     setState(() {
+          //       _scheduleMode = cfg.mode;
+          //       _schedule = ScheduleResult(
+          //         mode: cfg.mode,
+          //         modeLabel: kModeLabels[cfg.mode]!,
+          //         weekdayNames: normalized,
+          //         dailyNote: cfg.dailyNote,
+          //         monthlyDate: cfg.monthlyDate,
+          //         monthlyDays: cfg.monthlyDays,
+          //         dailyDate: cfg.dailyDate,
+          //       );
+          //     });
+          //     checkIsEnabled();
+          //   },
+          // ),
+          // const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -845,6 +896,26 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
             ],
           ),
           const SizedBox(height: 15),
+
+          SchedulePicker(
+            allowAll: false,
+            key: ValueKey(
+                'create_sched_${isPRN ? 'prn' : 'normal'}_${_scheduleMode ?? 'none'}'),
+            initialMode: isPRN ? null : _scheduleMode,
+            initialWeeklySelectedNames: _schedule?.weekdayNames ?? const {},
+            initialDailyNote: _schedule?.dailyNote,
+            initialMonthlyDate: _schedule?.monthlyDate,
+            initialDailyDate: _schedule?.dailyDate,
+            initialMonthlyDays: _schedule?.monthlyDays ?? const <int>{},
+            onChanged: (cfg) {
+              setState(() {
+                _scheduleMode = cfg.mode;
+                _schedule = cfg;
+              });
+              checkIsEnabled();
+            },
+          ),
+          const SizedBox(height: 15),
           TimeSelection(
             time: time,
             timeList: timeList,
@@ -862,6 +933,9 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
 
                 if (selectedTimeSlot == 'เมื่อมีอาการ') {
                   selectedTakeTimes = [];
+
+                  _scheduleMode = null;
+                  _schedule = null;
                 } else {
                   selectedTakeTimes = [];
                   for (int i = 0;
@@ -871,9 +945,39 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                   }
                 }
               });
+
               checkIsEnabled();
             },
           ),
+          // TimeSelection(
+          //   time: time,
+          //   timeList: timeList,
+          //   initialTakeTimes: selectedTakeTimes,
+          //   initialTimeSlot: selectedTimeSlot,
+          //   onSelectionChanged: (selectedIndex, selectedList) {
+          //     setState(() {
+          //       final idx = (selectedIndex == null ||
+          //               selectedIndex < 0 ||
+          //               selectedIndex >= time.length)
+          //           ? 0
+          //           : selectedIndex;
+
+          //       selectedTimeSlot = time[idx];
+
+          //       if (selectedTimeSlot == 'เมื่อมีอาการ') {
+          //         selectedTakeTimes = [];
+          //       } else {
+          //         selectedTakeTimes = [];
+          //         for (int i = 0;
+          //             i < selectedList.length && i < timeList.length;
+          //             i++) {
+          //           if (selectedList[i]) selectedTakeTimes.add(timeList[i]);
+          //         }
+          //       }
+          //     });
+          //     checkIsEnabled();
+          //   },
+          // ),
           Padding(
             padding: const EdgeInsets.only(top: 20),
             child: IgnorePointer(
@@ -893,8 +997,8 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                   action: (controller) async {
                 final startDt = _buildStartDateFromSchedule(
                   _schedule,
-                  orderDate: widget.drug.order_date, // << สำคัญ: ส่งเข้ามาจริง
-                  initialStart: widget.drug.start_date_use, // ค่าที่ได้ครั้งแรก
+                  orderDate: widget.drug.order_date,
+                  initialStart: widget.drug.start_date_use,
                 );
 
                 String status = '0';
@@ -902,7 +1006,15 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                 if (selectStatus['ให้ยาทันที'] == true) {
                   status = '1';
                 }
-                final typeSlot = _typeSlotFromMode(_scheduleMode);
+                final bool isPRN = selectedTimeSlot == 'เมื่อมีอาการ';
+                final String typeSlot =
+                    isPRN ? 'ALL' : _typeSlotFromMode(_scheduleMode!);
+                final String? setSlot = (typeSlot == 'ALL')
+                    ? null
+                    : buildSetSlot(_schedule, weeklyAsNumber: false);
+                final String takeTime = (typeSlot == 'ALL')
+                    ? '[]'
+                    : "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]";
 
                 if (widget.screen == 'roundward') {
                   final data = ListDataCardModel(
@@ -917,8 +1029,11 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                     drug_description: tDrugCondition.text,
                     remark: tnote.text,
                     stock_out: 0,
-                    set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
-                    type_slot: _typeSlotFromMode(_scheduleMode),
+                    set_slot: setSlot,
+                    type_slot: typeSlot,
+                    take_time: takeTime,
+                    // set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                    // type_slot: _typeSlotFromMode(_scheduleMode),
                     schedule_mode_label:
                         _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
                     doctor_eid: selectedDoctor?.employee_id,
@@ -929,8 +1044,8 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                         .where((entry) => entry.value)
                         .map((entry) => entry.key)
                         .join(','),
-                    take_time:
-                        "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+                    // take_time:
+                    //     "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
                     time_slot: selectedTimeSlot,
                     order_item_id: widget.drug.order_item_id,
                   );
@@ -943,7 +1058,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                     dose_qty: data.dose_qty,
                     meal_timing: data.meal_timing,
                     drug_instruction: data.drug_instruction,
-                    take_time: data.take_time,
+                    // take_time: data.take_time,
                     start_date_use:
                         DateFormat('yyyy-MM-dd HH:mm').format(startDt),
                     end_date_use: data.end_date_use,
@@ -955,9 +1070,12 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                     time_slot: data.time_slot,
                     unit_stock: data.unit_stock,
                     status: data.status ?? 'Order',
-                    set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
-                    type_slot: _typeSlotFromMode(_scheduleMode),
+                    // set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                    // type_slot: _typeSlotFromMode(_scheduleMode),
                     tl_common_users_id: widget.lUserLogin?.first.id ?? 0,
+                    set_slot: setSlot,
+                    type_slot: typeSlot,
+                    take_time: takeTime,
                   );
 
                   await RoundWardApi().updateOrderData(
@@ -979,10 +1097,8 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                 } else {
                   final startDt = _buildStartDateFromSchedule(
                     _schedule,
-                    orderDate:
-                        widget.drug.order_date, // << สำคัญ: ส่งเข้ามาจริง
-                    initialStart:
-                        widget.drug.start_date_use, // ค่าที่ได้ครั้งแรก
+                    orderDate: widget.drug.order_date,
+                    initialStart: widget.drug.start_date_use,
                   );
 
                   final updatedDrug = ListDataCardModel(
@@ -997,11 +1113,14 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                     start_date_imed: widget.drug.order_date,
                     use_now: status,
                     stock_out: 0,
+                    set_slot: setSlot,
+                    type_slot: typeSlot,
+                    take_time: takeTime,
                     order_item_id: widget.drug.order_item_id,
                     order_eid: widget.drug.order_eid,
                     item_code: widget.drug.item_code,
-                    set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
-                    type_slot: _typeSlotFromMode(_scheduleMode),
+                    // set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                    // type_slot: _typeSlotFromMode(_scheduleMode),
                     schedule_mode_label:
                         _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
                     order_date: widget.drug.order_date,
@@ -1013,8 +1132,8 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
                         .where((entry) => entry.value)
                         .map((entry) => entry.key)
                         .join(','),
-                    take_time:
-                        "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+                    // take_time:
+                    //     "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
                     time_slot: selectedTimeSlot,
                   );
 
@@ -1038,12 +1157,9 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
         selectedTypeDrug != null &&
         selectedDoctor != null;
 
-    (selectedTimeSlot.isNotEmpty &&
-        (selectedTimeSlot == 'เมื่อมีอาการ' || selectedTakeTimes.isNotEmpty));
-    selectedTakeTimes.isNotEmpty;
-
     final mealOk = selectedValues.containsValue(true);
-    final scheduleOk = _isScheduleDetailValid();
+    final scheduleOk = isPRN ? true : _isScheduleDetailValid();
+
     final timeOk = _isTimeOk();
 
     final ok = hasBasics && mealOk && scheduleOk && timeOk;
@@ -1055,25 +1171,7 @@ class _EditDetailDialogState extends State<EditDrugDialog> {
 
   bool _isTimeOk() {
     if (selectedTimeSlot.isEmpty) return false;
-    if (selectedTimeSlot == 'เมื่อมีอาการ') return true; // ยกเว้นกรณีนี้
-    return selectedTakeTimes.isNotEmpty; // อื่นๆ ต้องมีเวลาอย่างน้อย 1
+    if (selectedTimeSlot == 'เมื่อมีอาการ') return true;
+    return selectedTakeTimes.isNotEmpty;
   }
-
-  // void checkIsEnabled() {
-  //   setState(() {
-  //     isEnabled = tDrudName.text.trim().isNotEmpty &&
-  //         tDrugQty.text.trim().isNotEmpty &&
-  //         tDrugUnitQty.text.trim().isNotEmpty &&
-  //         tDrugDose.text.trim().isNotEmpty &&
-  //         tDrugUnit.text.trim().isNotEmpty &&
-  //         selectedTypeDrug != null &&
-  //         selectedDoctor != null &&
-
-  //         // tDrugDoc.text.trim().isNotEmpty &&
-  //         selectedValues.containsValue(true) &&
-  //         (selectedTimeSlot.isNotEmpty &&
-  //             (selectedTimeSlot == 'เมื่อมีอาการ' ||
-  //                 selectedTakeTimes.isNotEmpty));
-  //   });
-  // }
 }

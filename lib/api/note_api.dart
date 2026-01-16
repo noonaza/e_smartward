@@ -354,6 +354,7 @@ class NoteApi {
                 save_by: card['save_by']?.toString(),
                 slot: card['slot']?.toString(),
                 levels: card['levels']?.toString(),
+                feed:card['feed']?.toString(),
                 col: card['col']?.toString(),
                 comment: card['comment']?.toString(),
                 status: card['status']?.toString(),
@@ -370,7 +371,7 @@ class NoteApi {
               create_by: body['create_by']?.toString(),
               create_by_name: body['create_by_name']?.toString(),
               slot: body['slot']?.toString(),
-              date_slot: body['date_slot']?.toString(),
+              date_slot: body['date_slot']?.toString(),             
               dataNote: cardList,
             )
           ];

@@ -21,6 +21,7 @@ import 'package:e_smartward/dialog/check_food_order.dart';
 import 'package:e_smartward/dialog/create_drug_dialog.dart';
 import 'package:e_smartward/dialog/create_food_dialog.dart';
 import 'package:e_smartward/dialog/create_obs_dialog_v1.dart';
+import 'package:e_smartward/dialog/create_obs_dialog_v2.dart';
 import 'package:e_smartward/dialog/progress_note_dialog.dart';
 import 'package:e_smartward/widget/card_roundward.dart';
 import 'package:e_smartward/widget/dropdown.dart';
@@ -1421,7 +1422,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                   final group =
                                                                       currentTab;
 
-                                                                  CreateObsDialogV1
+                                                                  CreateObsDialogV2
                                                                       .show(
                                                                     context,
                                                                     screen:
@@ -1519,13 +1520,11 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                     true;
 
                                                                 try {
-                                                              
                                                                   await Future.delayed(
                                                                       Duration(
                                                                           milliseconds:
                                                                               0));
 
-                                                             
                                                                   if (_tabController ==
                                                                           null ||
                                                                       lGroupTabs
@@ -1557,7 +1556,6 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                           _tabController!
                                                                               .index];
 
-                                                         
                                                                   final visitFromAn =
                                                                       (selectedAnModel?.visit_number ??
                                                                               '')
@@ -1603,7 +1601,6 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                     return;
                                                                   }
 
-                                                                  // 4) สร้าง tempPet ถ้าต้องใช้ฟังก์ชันแบบรับ ListPetModel
                                                                   final tempPet = (visitFromAdmit
                                                                               .isNotEmpty &&
                                                                           visitFromAdmit !=
@@ -1618,25 +1615,23 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                                     return;
                                                                   }
 
-                                                                  // 5) เปิด dialog (ฟังก์ชัน showNewOrderDialog ของคุณมี useRootNavigator อยู่แล้ว)
                                                                   await showNewOrderDialog(
                                                                     context,
-                                                                    tempPet, // ✅ ใส่ที่มี visit_id ชัวร์
+                                                                    tempPet,
                                                                     widget
                                                                         .headers,
-                                                                    selectedAnModel!, // mListAn_
+                                                                    selectedAnModel!,
                                                                     widget
                                                                         .lUserLogin
                                                                         .first,
-                                                                    selectedAnModel!, // selectedAnModel
-                                                                    currentTab, // selectedGroup
+                                                                    selectedAnModel!,
+                                                                    currentTab,
                                                                     (updatedData,
                                                                         hasNew) async {
-                                                                      // โหลดการ์ดใหม่ทุกแท็บหลังปิด dialog
                                                                       groupedCardData
                                                                           .clear();
                                                                       setState(
-                                                                          () {}); // กระตุกให้ UI ว่างก่อน
+                                                                          () {});
 
                                                                       for (final group
                                                                           in lGroupTabs) {
@@ -1727,7 +1722,6 @@ class _RoundWardScreenState extends State<RoundWardScreen>
           loadError = null;
         });
 
-        // ใช้ visit_number เป็น visit_id
         final visitId = ((mListAn_.visit_number ?? '').trim().isNotEmpty)
             ? mListAn_.visit_number!.trim()
             : ((mPetAdmit_.visit_id ?? '').trim());
@@ -1772,15 +1766,14 @@ class _RoundWardScreenState extends State<RoundWardScreen>
     await showDialog(
       context: context,
       barrierDismissible: false,
-      useRootNavigator: true, // ✅ ให้ขึ้นบน root navigator
+      useRootNavigator: true,
       builder: (ctx) {
-        // ✅ ใช้ ctx ภายใน dialog
         return StatefulBuilder(
           builder: (ctx, setState) {
             if (!requestedOnce) {
               requestedOnce = true;
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                refreshOrders(setState); 
+                refreshOrders(setState);
               });
             }
 
@@ -1879,8 +1872,17 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                 itemCount: orders.length,
                                 itemBuilder: (context, index) {
                                   final item = orders[index];
-                                  final isFood =
-                                      item.drug_type_name == '[PF]อาหารสัตว์';
+                                  final isFood = item.drug_type_name ==
+                                          '[PF]อาหารสัตว์' ||
+                                      item.drug_type_name == '[PS]อาหารพิเศษ' ||
+                                      item.drug_type_name ==
+                                          '[A03]อาหารเสริม+นม' ||
+                                      item.drug_type_name ==
+                                          '[A12]ผลิตภัณฑ์ใส่น้ำ อาหารและขวดนม' ||
+                                      item.drug_type_name ==
+                                          '[29]อาหารและเครื่องดื่ม' ||
+                                      item.drug_type_name ==
+                                          '[A01]อาหารสัตว์เลี้ยง';
                                   final isDrug = !isFood;
 
                                   return Card(
@@ -1937,7 +1939,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                 onPressed: () {
                                                   void openDrug() {
                                                     CheckDrugOrderDialog.show(
-                                                      ctx, 
+                                                      ctx,
                                                       AddOrder(item),
                                                       0,
                                                       (newDrug, _) async {
@@ -1951,7 +1953,8 @@ class _RoundWardScreenState extends State<RoundWardScreen>
                                                         await RoundWardApi()
                                                             .AddOrder(
                                                           ctx,
-                                                          headers_: headers_,
+                                                          headers_:
+                                                              widget.headers,
                                                           mUser: userLogin,
                                                           mPetAdmit_:
                                                               mPetAdmit_,
@@ -1980,7 +1983,7 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
                                                   void openFood() {
                                                     CheckFoodOrderDialog.show(
-                                                      ctx, 
+                                                      ctx,
                                                       AddOrder(item),
                                                       0,
                                                       (newFood, _) async {
@@ -2103,10 +2106,8 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
                                 final hasNew = orders.isNotEmpty;
 
-                                Navigator.of(ctx, rootNavigator: true)
-                                    .pop(); 
-                                Navigator.of(ctx, rootNavigator: true)
-                                    .pop(); 
+                                Navigator.of(ctx, rootNavigator: true).pop();
+                                Navigator.of(ctx, rootNavigator: true).pop();
 
                                 onRefresh(updatedData, hasNew);
                               },
@@ -2129,31 +2130,35 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
   DataAddOrderModel AddOrder(NewOrderModel e) {
     return DataAddOrderModel(
-      item_name: e.item_name,
-      type_card: e.item_type_name,
-      item_qty: e.item_qty?.toString(),
-      unit_name: e.unit_name,
-      dose_qty: e.dose_qty,
-      drug_instruction: e.drug_instruction,
-      take_time: '[]',
-      meal_timing: '',
-      start_date_use: e.start_date_use,
-      end_date_use: e.end_date_use,
-      stock_out: 0,
-      remark: '',
-      order_item_id: e.order_item_id?.toString(),
-      doctor_eid: e.doctor_eid,
-      item_code: e.item_code,
-      note_to_team: e.note_to_team,
-      caution: e.caution,
-      drug_description: e.drug_description,
-      order_eid: e.order_eid,
-      order_date: e.order_date,
-      order_time: e.order_time,
-      drug_type_name: e.drug_type_name,
-      unit_stock: '',
-      status: 'Order',
-    );
+        item_name: e.item_name,
+        type_card: e.item_type_name,
+        item_qty: e.item_qty?.toString(),
+        unit_name: e.unit_name,
+        dose_qty: e.dose_qty,
+        drug_instruction: e.drug_instruction,
+        take_time: '[]',
+        meal_timing: '',
+        start_date_use: e.start_date_use,
+        end_date_use: e.end_date_use,
+        stock_out: 0,
+        remark: '',
+        order_item_id: e.order_item_id?.toString(),
+        doctor_eid: e.doctor_eid,
+        item_code: e.item_code,
+        note_to_team: e.note_to_team,
+        caution: e.caution,
+        drug_description: e.drug_description,
+        order_eid: e.order_eid,
+        order_date: e.order_date,
+        order_time: e.order_time,
+        drug_type_name: e.drug_type_name,
+        unit_stock: '',
+        status: 'Order',
+        meal_take: e.meal_take,
+        start_date_imed: e.start_date_imed,
+        type_slot: e.type_slot,
+        set_slot: e.set_slot,
+        use_now: e.use_now);
   }
 
   Future<void> refreshGroupedData() async {
@@ -2174,7 +2179,6 @@ class _RoundWardScreenState extends State<RoundWardScreen>
 
     setState(() {});
   }
-
 
   Future<ImageInfo> _getImageInfo(String? url) async {
     if (url == null || url.trim().isEmpty || url.toLowerCase() == 'null') {

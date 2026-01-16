@@ -249,6 +249,7 @@ class RoundWardApi {
               caution: item['caution']?.toString(),
               drug_description: item['drug_description']?.toString(),
               order_eid: item['order_eid']?.toString(),
+              type_slot: item['type_slot']?.toString(),
               order_date: item['order_date']?.toString(),
               order_time: item['order_time']?.toString(),
               drug_type_name: item['drug_type_name']?.toString(),
@@ -256,6 +257,8 @@ class RoundWardApi {
               unit_stock: item['unit_stock']?.toString(),
               status: item['status']?.toString(),
               update_date: item['update_date']?.toString(),
+              set_slot: item['set_slot']?.toString(),
+              use_now: item['use_now']?.toString(),
               update_by: item['update_by']?.toString(),
               total_useable: item['total_useable']?.toString(),
               dose_qty_name: item['dose_qty_name']?.toString(),
@@ -504,10 +507,14 @@ class RoundWardApi {
       "drug_description": updatedDrug.drug_description ?? '',
       "drug_type_name": updatedDrug.drug_type_name ?? '',
       "time_slot": updatedDrug.time_slot ?? '',
-      ""
       "unit_stock": updatedDrug.unit_stock ?? '',
       "status": updatedDrug.status ?? 'Order',
       "tl_common_users_id": mUser.id,
+      "meal_take": updatedDrug.meal_take ?? '',
+      "start_date_imed": updatedDrug.start_date_imed ?? '',
+      "type_slot": updatedDrug.type_slot ?? '',
+      "set_slot": updatedDrug.set_slot ?? '',
+      "use_now": updatedDrug.use_now ?? '',
     };
 
     try {

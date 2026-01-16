@@ -25,6 +25,8 @@ class UpdateOrderModel {
   String? type_slot;
   String? status;
    String? meal_take;
+    String? start_date_imed;
+   String? use_now;
   int? tl_common_users_id;
   UpdateOrderModel({
     this.id,

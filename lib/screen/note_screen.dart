@@ -609,24 +609,40 @@ class _NoteScreenState extends State<NoteScreen> {
                   SizedBox(
                     height: MediaQuery.of(context).size.height,
                     child: ListView.builder(
-                      controller: _scrollController,
-                      scrollDirection: Axis.horizontal,
-                      itemCount: (newNote != null ? 1 : 0) + lDataNote.length,
-                      itemBuilder: (context, index) {
-                        final screenWidth = MediaQuery.of(context).size.width;
+                        controller: _scrollController,
+                        scrollDirection: Axis.horizontal,
+                        itemCount: (newNote != null ? 1 : 0) + lDataNote.length,
+                        itemBuilder: (context, index) {
+                          final screenWidth = MediaQuery.of(context).size.width;
 
-                        //>> ===== กรณีเป็นการ์ดใหม่ index == 0 ===== <<//
-                        if (newNote != null && index == 0) {
-                          remarkNewNote ??= TextEditingController(
-                              text: newNote!.remark ?? '');
-                          final bool allCardsHaveOrderId =
-                              newNote!.dataNote.every(
-                            (item) =>
-                                item.smw_admit_order_id != null &&
-                                item.smw_admit_order_id != 0,
-                          );
+                          //>> ===== กรณีเป็นการ์ดใหม่ index == 0 ===== <<//
+                          if (newNote != null && index == 0) {
+                            remarkNewNote ??= TextEditingController(
+                                text: newNote!.remark ?? '');
+                            final bool allCardsHaveOrderId =
+                                newNote!.dataNote.every(
+                              (item) =>
+                                  item.smw_admit_order_id != null &&
+                                  item.smw_admit_order_id != 0,
+                            );
 
-                          if (newNote!.dataNote.isEmpty) {
+                            if (newNote!.dataNote.isEmpty) {
+                              return Container(
+                                key: const ValueKey('new_note_card'),
+                                width: screenWidth * 0.50,
+                                margin: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color:
+                                      const Color.fromARGB(255, 155, 202, 202),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Center(
+                                  child: Text('ยังไม่มีรายการในบันทึกใหม่'),
+                                ),
+                              );
+                            }
+
                             return Container(
                               key: const ValueKey('new_note_card'),
                               width: screenWidth * 0.50,
@@ -636,697 +652,771 @@ class _NoteScreenState extends State<NoteScreen> {
                                 color: const Color.fromARGB(255, 155, 202, 202),
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: const Center(
-                                child: Text('ยังไม่มีรายการในบันทึกใหม่'),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Align(
+                                    alignment: Alignment.topRight,
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        color: Colors.white,
+                                        size: 25,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          newNote = null;
+                                          remarkNewNote?.dispose();
+                                          remarkNewNote = null;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.center,
+                                    child: text(
+                                      context,
+                                      "วันที่: ${newNote!.create_date?.isNotEmpty == true ? newNote!.create_date : DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}",
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Expanded(
+                                    child: ListView.builder(
+                                      itemCount: newNote?.dataNote.length,
+                                      itemBuilder: (context, subIndex) {
+                                        final card =
+                                            newNote!.dataNote[subIndex];
+                                        final matchedPet = lPetAdmit.firstWhere(
+                                          (pet) =>
+                                              pet.id == newNote!.smw_admit_id,
+                                          orElse: () => lPetAdmit.first,
+                                        );
+                                        return NewNoteCardWidget(
+                                          onRemove: () {
+                                            setState(() {
+                                              newNote!.dataNote.removeWhere(
+                                                  (e) => e == card);
+                                            });
+                                          },
+                                          visit: visit_id!,
+                                          dataNote: card,
+                                          foodName: card.item_name ?? '-',
+                                          method: card.drug_instruction ?? '-',
+                                          time: card.time_slot ?? '-',
+                                          amountStatus: card.meal_timing ?? '-',
+                                          isDone: card.status == '1',
+                                          isChecked:
+                                              card.pre_pare_status == '1',
+                                          typeCard: card.type_card ?? '',
+                                          onCheckboxChanged: (val) {
+                                            setState(() {
+                                              card.pre_pare_status =
+                                                  (val ?? false) ? '1' : '0';
+                                            });
+                                          },
+                                          onToggle: () {
+                                            setState(() {
+                                              card.status = (card.status == '1')
+                                                  ? '0'
+                                                  : '1';
+                                            });
+                                          },
+                                          onRefresh: () async {
+                                            //XXX3
+                                            // final updated = await NoteApi()
+                                            //     .loadNoteDetail(
+                                            //   context,
+                                            //   visitId: visit_id!,
+                                            //   headers_: widget.headers,
+                                            //   date_time: '',
+                                            // );
+                                            // setState(() {
+                                            //   lDataNote = updated;
+                                            // });
+                                          },
+                                          lUserLogin: widget.lUserLogin,
+                                          headers: widget.headers,
+                                          note: newNote!,
+                                          isDisabled: false,
+                                          lPetAdmit: lPetAdmit,
+                                          petAdmit: matchedPet,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 15),
+                                  textFieldNote(
+                                    context,
+                                    "หมายเหตุ",
+                                    controller: remarkNewNote!,
+                                    readOnly: false,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.save,
+                                          size: 18, color: Colors.teal),
+                                      const SizedBox(width: 6),
+                                      text(
+                                        context,
+                                        "ผู้บันทึก : ${newNote!.create_by_name ?? 'ยังไม่มีผู้บันทึก'}",
+                                        color: Colors.black,
+                                        fontSize: 13,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 15),
+                                  // if (newNote!.dataNote.any((e) {
+                                  //   final id = e.smw_transaction_order_id;
+                                  //   if (id == null) return false;
+                                  //   final s = id.toString().trim();
+                                  //   return s.isNotEmpty && s != '0';
+                                  // }))
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      actionSlider(
+                                        context,
+                                        'ยืนยันการให้อาหารและยา',
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.4,
+                                        height: 30.0,
+                                        togglecolor: allCardsHaveOrderId
+                                            ? Colors.green
+                                            : Colors.grey,
+                                        icons: Icons.check,
+                                        iconColor: Colors.white,
+                                        asController: ActionSliderController(),
+                                        action: (controller) async {
+                                          if (_isSubmitting) return;
+                                          _isSubmitting = true;
+
+                                          // _dismissSendingDialog();
+
+                                          final hasAnyOrderId =
+                                              newNote!.dataNote.any((e) {
+                                            final id =
+                                                e.smw_transaction_order_id;
+                                            if (id == null) return false;
+                                            final s = id.toString().trim();
+                                            return s.isNotEmpty && s != '0';
+                                          });
+                                          if (!hasAnyOrderId) {
+                                            AwesomeDialog(
+                                              context: context,
+                                              dialogType: DialogType.warning,
+                                              title: 'ยังไม่มีข้อมูลจะส่ง',
+                                              desc:
+                                                  'ไม่พบรายการที่บันทึกใหม่ กรุณาบันทึกรายการก่อนยืนยัน',
+                                              btnOkOnPress: () {},
+                                            ).show();
+                                            return;
+                                          }
+
+                                          final itemsWithCheckbox = newNote!
+                                              .dataNote
+                                              .where((item) =>
+                                                  item.type_card == 'Food' ||
+                                                  item.type_card == 'Drug')
+                                              .toList();
+
+                                          final isAllChecked =
+                                              itemsWithCheckbox.every(
+                                            (item) => (item.status ?? '')
+                                                .trim()
+                                                .isNotEmpty,
+                                          );
+
+                                          if (!isAllChecked) {
+                                            AwesomeDialog(
+                                              context: context,
+                                              dialogType: DialogType.warning,
+                                              title: 'กรุณาติ๊กสถานะให้ครบ',
+                                              desc:
+                                                  'มีรายการอาหาร/ยาที่ยังไม่เลือกสถานะ',
+                                              btnOkOnPress: () {},
+                                            ).show();
+                                            return;
+                                          }
+
+                                          final mNoteData =
+                                              CreateTransectionModel(
+                                            smw_admit_id:
+                                                newNote!.smw_admit_id ?? 0,
+                                            slot: newNote!.slot ?? '',
+                                            remark: remarkNewNote?.text ?? '',
+                                            date_slot: newNote!.date_slot ??
+                                                DateFormat('yyyy-MM-dd')
+                                                    .format(DateTime.now()),
+                                            tl_common_users_id:
+                                                widget.lUserLogin.first.id ?? 0,
+                                            dataNote:
+                                                newNote!.dataNote.map((item) {
+                                              final isObserve =
+                                                  item.type_card == 'Observe';
+                                              return DataTransectionModel(
+                                                smw_transaction_order_id: item
+                                                    .smw_transaction_order_id,
+                                                smw_admit_order_id:
+                                                    item.smw_admit_order_id ??
+                                                        0,
+                                                type_card: item.type_card ?? '',
+                                                item_name: item.item_name ?? '',
+                                                item_qty: item.item_qty ?? 0,
+                                                unit_name: item.unit_name ?? '',
+                                                dose_qty: item.dose_qty ?? '',
+                                                meel_status:
+                                                    item.meal_timing ?? '',
+                                                drug_instruction:
+                                                    item.drug_instruction ?? '',
+                                                remark: item.remark ?? '',
+                                                item_code: item.item_code ?? '',
+                                                note_to_team:
+                                                    item.note_to_team ?? '',
+                                                caution: item.caution,
+                                                drug_description:
+                                                    item.drug_description ?? '',
+                                                time_slot: item.time_slot ?? '',
+                                                pre_pare_status:
+                                                    item.pre_pare_status ?? '',
+                                                date_slot: item.date_slot ?? '',
+                                                slot: item.slot ?? '',
+                                                status: isObserve
+                                                    ? 'Complete'
+                                                    : (item.status ?? ''),
+                                                comment: item.comment,
+                                                file: item.file ?? [],
+                                              );
+                                            }).toList(),
+                                          );
+
+                                          await NoteApi().CreateTransection(
+                                            context,
+                                            headers_: widget.headers,
+                                            mNoteData: mNoteData,
+                                            mPetAdmit_: lPetAdmit.first,
+                                            mUser: widget.lUserLogin.first,
+                                          );
+
+                                          final updatedNotes =
+                                              await NoteApi().loadNoteDetail(
+                                            context,
+                                            visitId: visit_id!,
+                                            headers_: widget.headers,
+                                            date_time: '',
+                                          );
+
+                                          for (var note in updatedNotes) {
+                                            for (var item in note.dataNote) {
+                                              final files =
+                                                  await NoteApi().loadFile(
+                                                context,
+                                                orderId:
+                                                    item.smw_transaction_order_id ??
+                                                        0,
+                                                headers_: widget.headers,
+                                              );
+                                              item.file = files
+                                                  .map((f) => FileModel(
+                                                      path: f.path_file ?? '',
+                                                      remark: f.remark ?? ''))
+                                                  .toList();
+                                            }
+                                          }
+
+                                          setState(() {
+                                            lDataNote = updatedNotes;
+                                            lRemarkController = List.generate(
+                                              updatedNotes.length,
+                                              (i) => TextEditingController(
+                                                  text:
+                                                      updatedNotes[i].remark ??
+                                                          ''),
+                                            );
+                                            newNote = null;
+                                            remarkNewNote?.clear();
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  )
+                                ],
                               ),
                             );
                           }
 
+                          //>> ===== กรณีแสดงการ์ดปกติ ===== <<//
+                          final realIndex = newNote != null ? index - 1 : index;
+                          final note = lDataNote[realIndex];
+
+                          final bool allCardsHaveOrderId = note.dataNote.every(
+                            (item) =>
+                                item.smw_admit_order_id != null &&
+                                item.smw_admit_order_id != 0,
+                          );
+                          bool hasTransactionId(dynamic item) {
+                            final id = item.smw_transaction_order_id;
+                            if (id == null) return false;
+                            final v = (id is int)
+                                ? id
+                                : int.tryParse(id.toString()) ?? 0;
+                            return v != 0;
+                          }
+
+                          final itemsFoodDrug = note.dataNote
+                              .where((item) =>
+                                  item.type_card == 'Food' ||
+                                  item.type_card == 'Observe' ||
+                                  item.type_card == 'Drug')
+                              .toList();
+
+                          final bool allFoodDrugHaveId = itemsFoodDrug.isEmpty
+                              ? true
+                              : itemsFoodDrug.every(hasTransactionId);
+
+                          final bool canSlide =
+                              allCardsHaveOrderId && allFoodDrugHaveId;
+
                           return Container(
-                            key: const ValueKey('new_note_card'),
                             width: screenWidth * 0.50,
                             margin: const EdgeInsets.all(8),
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 155, 202, 202),
+                              color: (newNote == null && index == 0)
+                                  ? const Color.fromARGB(255, 155, 202, 202)
+                                  : Colors.grey,
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Align(
-                                  alignment: Alignment.topRight,
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.cancel,
-                                      color: Colors.white,
-                                      size: 25,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        newNote = null;
-                                        remarkNewNote?.dispose();
-                                        remarkNewNote = null;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                Align(
                                   alignment: Alignment.center,
                                   child: text(
                                     context,
-                                    "วันที่: ${newNote!.create_date?.isNotEmpty == true ? newNote!.create_date : DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}",
+                                    (newNote == null && index == 0)
+                                        ? "วันที่และเวลาปัจจุบัน : ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}"
+                                        : "วันที่: ${note.create_date ?? '-'}",
                                   ),
                                 ),
                                 const SizedBox(height: 5),
                                 Expanded(
-                                  child: ListView.builder(
-                                    itemCount: newNote?.dataNote.length,
-                                    itemBuilder: (context, subIndex) {
-                                      final card = newNote!.dataNote[subIndex];
-                                      final matchedPet = lPetAdmit.firstWhere(
-                                        (pet) =>
-                                            pet.id == newNote!.smw_admit_id,
-                                        orElse: () => lPetAdmit.first,
-                                      );
-                                      return NewNoteCardWidget(
-                                        onRemove: () {
-                                          setState(() {
-                                            newNote!.dataNote
-                                                .removeWhere((e) => e == card);
-                                          });
-                                        },
-                                        visit: visit_id!,
-                                        dataNote: card,
-                                        foodName: card.item_name ?? '-',
-                                        method: card.drug_instruction ?? '-',
-                                        time: card.time_slot ?? '-',
-                                        amountStatus: card.meal_timing ?? '-',
-                                        isDone: card.status == '1',
-                                        isChecked: card.pre_pare_status == '1',
-                                        typeCard: card.type_card ?? '',
-                                        onCheckboxChanged: (val) {
-                                          setState(() {
-                                            card.pre_pare_status =
-                                                (val ?? false) ? '1' : '0';
-                                          });
-                                        },
-                                        onToggle: () {
-                                          setState(() {
-                                            card.status = (card.status == '1')
-                                                ? '0'
-                                                : '1';
-                                          });
-                                        },
-                                        onRefresh: () async {
-                                          //XXX3
-                                          // final updated = await NoteApi()
-                                          //     .loadNoteDetail(
-                                          //   context,
-                                          //   visitId: visit_id!,
-                                          //   headers_: widget.headers,
-                                          //   date_time: '',
-                                          // );
-                                          // setState(() {
-                                          //   lDataNote = updated;
-                                          // });
-                                        },
-                                        lUserLogin: widget.lUserLogin,
-                                        headers: widget.headers,
-                                        note: newNote!,
-                                        isDisabled: false,
-                                        lPetAdmit: lPetAdmit,
-                                        petAdmit: matchedPet,
-                                      );
-                                    },
-                                  ),
+                                  child: note.dataNote.isEmpty
+                                      ? const SizedBox()
+                                      : ListView.builder(
+                                          itemCount: note.dataNote.length,
+                                          itemBuilder: (context, subIndex) {
+                                            final card =
+                                                note.dataNote[subIndex];
+                                            final matchedPet =
+                                                lPetAdmit.firstWhere(
+                                              (pet) =>
+                                                  pet.id == note.smw_admit_id,
+                                              orElse: () => lPetAdmit.first,
+                                            );
+
+                                            return CardNoteWidget(
+                                              dataNote: card,
+                                              lPetAdmit: lPetAdmit,
+                                              petAdmit: matchedPet,
+                                              foodName: card.item_name ?? '-',
+                                              method:
+                                                  card.drug_instruction ?? '-',
+                                              time: card.time_slot ?? '-',
+                                              amountStatus:
+                                                  card.meal_timing ?? '-',
+                                              isDone: card.status == '1',
+                                              isChecked:
+                                                  card.pre_pare_status == '1',
+                                              isDisabled: index != 0,
+                                              onRemove: () {
+                                                setState(() {
+                                                  note.dataNote.remove(card);
+                                                });
+                                              },
+                                              cb: (p0) {
+                                                note.dataNote[subIndex]
+                                                    .comment = p0;
+                                                setState(() {});
+                                              },
+                                              typeCard: card.type_card ?? '',
+                                              onCheckboxChanged: (val) {
+                                                setState(() {
+                                                  card.pre_pare_status =
+                                                      (val ?? false)
+                                                          ? '1'
+                                                          : '0';
+                                                });
+                                              },
+                                              onToggle: () {
+                                                setState(() {
+                                                  card.status =
+                                                      (card.status == '1')
+                                                          ? '0'
+                                                          : '1';
+                                                });
+                                              },
+                                              onRefresh: () async {
+                                                final updated = await NoteApi()
+                                                    .loadNoteDetail(
+                                                  context,
+                                                  visitId: visit_id!,
+                                                  headers_: widget.headers,
+                                                  date_time: '',
+                                                );
+                                                setState(() {
+                                                  lDataNote = updated;
+                                                });
+                                              },
+                                              lUserLogin: widget.lUserLogin,
+                                              headers: widget.headers,
+                                              note: note,
+                                              visit: visit_id!,
+                                            );
+                                          },
+                                        ),
                                 ),
                                 const SizedBox(height: 15),
                                 textFieldNote(
                                   context,
                                   "หมายเหตุ",
-                                  controller: remarkNewNote!,
-                                  readOnly: false,
+                                  controller: lRemarkController[realIndex],
+                                  readOnly: index != 0,
                                 ),
                                 const SizedBox(height: 10),
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     const Icon(Icons.save,
-                                        size: 18, color: Colors.teal),
+                                        size: 25, color: Colors.black),
                                     const SizedBox(width: 6),
                                     text(
                                       context,
-                                      "ผู้บันทึก : ${newNote!.create_by_name ?? 'ยังไม่มีผู้บันทึก'}",
+                                      "ผู้บันทึก : ${note.create_by_name ?? 'ยังไม่มีผู้บันทึก'}",
                                       color: Colors.black,
                                       fontSize: 13,
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 15),
-                                // if (newNote!.dataNote.any((e) {
-                                //   final id = e.smw_transaction_order_id;
-                                //   if (id == null) return false;
-                                //   final s = id.toString().trim();
-                                //   return s.isNotEmpty && s != '0';
-                                // }))
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    actionSlider(
-                                      context,
-                                      'ยืนยันการให้อาหารและยา',
-                                      width: MediaQuery.of(context).size.width *
-                                          0.4,
-                                      height: 30.0,
-                                      togglecolor: allCardsHaveOrderId
-                                          ? Colors.green
-                                          : Colors.grey,
-                                      icons: Icons.check,
-                                      iconColor: Colors.white,
-                                      asController: ActionSliderController(),
-                                      action: (controller) async {
-                                        if (_isSubmitting) return;
-                                        _isSubmitting = true;
 
-                                        // _dismissSendingDialog();
+                                // ===== ปุ่มสไลด์: สีเทา + เลื่อนไม่ได้ ถ้า id ยังไม่ครบ =====
+                                Center(
+                                  child: SizedBox(
+                                    child: lDataNote[realIndex].id != null
+                                        ? null
+                                        : IgnorePointer(
+                                            ignoring:
+                                                !canSlide, // ✅ กันการสไลด์จริง
+                                            child: Opacity(
+                                              opacity: canSlide ? 1.0 : 0.55,
+                                              child: actionSlider(
+                                                context,
+                                                'ยืนยันการให้อาหารและยา',
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.4,
+                                                height: 30.0,
+                                                togglecolor: canSlide
+                                                    ? Colors.green
+                                                    : Colors.grey,
+                                                icons: Icons.check,
+                                                iconColor: Colors.white,
+                                                asController:
+                                                    ActionSliderController(),
+                                                action: (controller) async {
+                                                  if (!canSlide) {
+                                                    controller.reset();
+                                                    AwesomeDialog(
+                                                      context: context,
+                                                      dialogType:
+                                                          DialogType.warning,
+                                                      animType: AnimType.scale,
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width *
+                                                              0.3,
+                                                      desc:
+                                                          'กรุณาบันทึกการ์ดอาหาร/ยาให้ครบทุกใบก่อนจึงจะยืนยันได้',
+                                                      btnOkOnPress: () {},
+                                                    ).show();
+                                                    return;
+                                                  }
 
-                                        final hasAnyOrderId =
-                                            newNote!.dataNote.any((e) {
-                                          final id = e.smw_transaction_order_id;
-                                          if (id == null) return false;
-                                          final s = id.toString().trim();
-                                          return s.isNotEmpty && s != '0';
-                                        });
-                                        if (!hasAnyOrderId) {
-                                          AwesomeDialog(
-                                            context: context,
-                                            dialogType: DialogType.warning,
-                                            title: 'ยังไม่มีข้อมูลจะส่ง',
-                                            desc:
-                                                'ไม่พบรายการที่บันทึกใหม่ กรุณาบันทึกรายการก่อนยืนยัน',
-                                            btnOkOnPress: () {},
-                                          ).show();
-                                          return;
-                                        }
+                                                  // ===== โค้ดเดิมของคุณต่อจากนี้ได้เลย =====
+                                                  if (note.smw_admit_id ==
+                                                          null ||
+                                                      note.smw_admit_id == 0) {
+                                                    controller.reset();
+                                                    AwesomeDialog(
+                                                      context: context,
+                                                      dialogType:
+                                                          DialogType.warning,
+                                                      animType: AnimType.scale,
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width *
+                                                              0.3,
+                                                      desc:
+                                                          'ไม่สามารถยืนยันได้ เนื่องจากยังไม่มี Admit ID',
+                                                      btnOkOnPress: () {},
+                                                    ).show();
+                                                    return;
+                                                  }
 
-                                        final itemsWithCheckbox = newNote!
-                                            .dataNote
-                                            .where((item) =>
-                                                item.type_card == 'Food' ||
-                                                item.type_card == 'Drug')
-                                            .toList();
+                                                  final itemsWithCheckbox = note
+                                                      .dataNote
+                                                      .where((item) =>
+                                                          item.type_card ==
+                                                              'Food' ||
+                                                          item.type_card ==
+                                                              'Drug')
+                                                      .toList();
 
-                                        final isAllChecked =
-                                            itemsWithCheckbox.every(
-                                          (item) => (item.status ?? '')
-                                              .trim()
-                                              .isNotEmpty,
-                                        );
+                                                  final isAllChecked =
+                                                      itemsWithCheckbox.every(
+                                                    (item) =>
+                                                        (item.status ?? '')
+                                                            .trim()
+                                                            .isNotEmpty,
+                                                  );
 
-                                        if (!isAllChecked) {
-                                          AwesomeDialog(
-                                            context: context,
-                                            dialogType: DialogType.warning,
-                                            title: 'กรุณาติ๊กสถานะให้ครบ',
-                                            desc:
-                                                'มีรายการอาหาร/ยาที่ยังไม่เลือกสถานะ',
-                                            btnOkOnPress: () {},
-                                          ).show();
-                                          return;
-                                        }
+                                                  final isCheckId =
+                                                      itemsWithCheckbox
+                                                              .isEmpty ||
+                                                          itemsWithCheckbox
+                                                              .where((e) =>
+                                                                  e.smw_transaction_order_id !=
+                                                                  null)
+                                                              .isNotEmpty;
 
-                                        final mNoteData =
-                                            CreateTransectionModel(
-                                          smw_admit_id:
-                                              newNote!.smw_admit_id ?? 0,
-                                          slot: newNote!.slot ?? '',
-                                          remark: remarkNewNote?.text ?? '',
-                                          date_slot: newNote!.date_slot ??
-                                              DateFormat('yyyy-MM-dd')
-                                                  .format(DateTime.now()),
-                                          tl_common_users_id:
-                                              widget.lUserLogin.first.id ?? 0,
-                                          dataNote:
-                                              newNote!.dataNote.map((item) {
-                                            final isObserve =
-                                                item.type_card == 'Observe';
-                                            return DataTransectionModel(
-                                              smw_transaction_order_id:
-                                                  item.smw_transaction_order_id,
-                                              smw_admit_order_id:
-                                                  item.smw_admit_order_id ?? 0,
-                                              type_card: item.type_card ?? '',
-                                              item_name: item.item_name ?? '',
-                                              item_qty: item.item_qty ?? 0,
-                                              unit_name: item.unit_name ?? '',
-                                              dose_qty: item.dose_qty ?? '',
-                                              meel_status:
-                                                  item.meal_timing ?? '',
-                                              drug_instruction:
-                                                  item.drug_instruction ?? '',
-                                              remark: item.remark ?? '',
-                                              item_code: item.item_code ?? '',
-                                              note_to_team:
-                                                  item.note_to_team ?? '',
-                                              caution: item.caution,
-                                              drug_description:
-                                                  item.drug_description ?? '',
-                                              time_slot: item.time_slot ?? '',
-                                              pre_pare_status:
-                                                  item.pre_pare_status ?? '',
-                                              date_slot: item.date_slot ?? '',
-                                              slot: item.slot ?? '',
-                                              status: isObserve
-                                                  ? 'Complete'
-                                                  : (item.status ?? ''),
-                                              comment: item.comment,
-                                              file: item.file ?? [],
-                                            );
-                                          }).toList(),
-                                        );
+                                                  if (!isAllChecked ||
+                                                      !isCheckId) {
+                                                    controller.reset();
+                                                    AwesomeDialog(
+                                                      context: context,
+                                                      dialogType:
+                                                          DialogType.warning,
+                                                      animType: AnimType.scale,
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width *
+                                                              0.3,
+                                                      desc:
+                                                          'กรุณาบันทึกข้อมูลให้ครบทุกรายการก่อนยืนยัน',
+                                                      btnOkOnPress: () {},
+                                                    ).show();
+                                                    return;
+                                                  }
 
-                                        await NoteApi().CreateTransection(
-                                          context,
-                                          headers_: widget.headers,
-                                          mNoteData: mNoteData,
-                                          mPetAdmit_: lPetAdmit.first,
-                                          mUser: widget.lUserLogin.first,
-                                        );
+                                                  final dialog = AwesomeDialog(
+                                                    context: context,
+                                                    customHeader: Lottie.asset(
+                                                      "assets/animations/Send1.json",
+                                                      repeat: true,
+                                                      width: 200,
+                                                      height: 100,
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                                    dialogType:
+                                                        DialogType.noHeader,
+                                                    animType: AnimType.scale,
+                                                    dismissOnTouchOutside:
+                                                        false,
+                                                    dismissOnBackKeyPress:
+                                                        false,
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.3,
+                                                    body: const Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        SizedBox(height: 10),
+                                                        Text(
+                                                          "กำลังส่งข้อมูล กรุณารอสักครู่...",
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: TextStyle(
+                                                              fontSize: 14),
+                                                        ),
+                                                        SizedBox(height: 10),
+                                                      ],
+                                                    ),
+                                                  );
 
-                                        final updatedNotes =
-                                            await NoteApi().loadNoteDetail(
-                                          context,
-                                          visitId: visit_id!,
-                                          headers_: widget.headers,
-                                          date_time: '',
-                                        );
+                                                  dialog.show();
 
-                                        for (var note in updatedNotes) {
-                                          for (var item in note.dataNote) {
-                                            final files =
-                                                await NoteApi().loadFile(
-                                              context,
-                                              orderId:
-                                                  item.smw_transaction_order_id ??
-                                                      0,
-                                              headers_: widget.headers,
-                                            );
-                                            item.file = files
-                                                .map((f) => FileModel(
-                                                    path: f.path_file ?? '',
-                                                    remark: f.remark ?? ''))
-                                                .toList();
-                                          }
-                                        }
+                                                  final mNoteData =
+                                                      CreateTransectionModel(
+                                                    smw_admit_id:
+                                                        note.smw_admit_id ?? 0,
+                                                    slot: note.slot ?? '',
+                                                    remark: lRemarkController[
+                                                            realIndex]
+                                                        .text,
+                                                    date_slot: note.date_slot ??
+                                                        DateFormat('yyyy-MM-dd')
+                                                            .format(
+                                                                DateTime.now()),
+                                                    tl_common_users_id: widget
+                                                            .lUserLogin
+                                                            .first
+                                                            .id ??
+                                                        0,
+                                                    dataNote: note.dataNote
+                                                        .map((item) {
+                                                      final isObserve =
+                                                          item.type_card ==
+                                                              'Observe';
+                                                      return DataTransectionModel(
+                                                        smw_transaction_order_id:
+                                                            item.smw_transaction_order_id,
+                                                        smw_admit_order_id:
+                                                            item.smw_admit_order_id ??
+                                                                0,
+                                                        type_card:
+                                                            item.type_card ??
+                                                                '',
+                                                        item_name:
+                                                            item.item_name ??
+                                                                '',
+                                                        item_qty:
+                                                            item.item_qty ?? 0,
+                                                        unit_name:
+                                                            item.unit_name ??
+                                                                '',
+                                                        dose_qty:
+                                                            item.dose_qty ?? '',
+                                                        meel_status:
+                                                            item.meal_timing ??
+                                                                '',
+                                                        drug_instruction:
+                                                            item.drug_instruction ??
+                                                                '',
+                                                        remark:
+                                                            item.remark ?? '',
+                                                        item_code:
+                                                            item.item_code ??
+                                                                '',
+                                                        note_to_team:
+                                                            item.note_to_team ??
+                                                                '',
+                                                        caution: item.caution,
+                                                        drug_description:
+                                                            item.drug_description ??
+                                                                '',
+                                                        time_slot:
+                                                            item.time_slot ??
+                                                                '',
+                                                        pre_pare_status:
+                                                            item.pre_pare_status ??
+                                                                '',
+                                                        date_slot:
+                                                            item.date_slot ??
+                                                                '',
+                                                        slot: item.slot ?? '',
+                                                        status: isObserve
+                                                            ? 'Complete'
+                                                            : (item.status ??
+                                                                ''),
+                                                        comment: item.comment,
+                                                        file: item.file ?? [],
+                                                      );
+                                                    }).toList(),
+                                                  );
 
-                                        setState(() {
-                                          lDataNote = updatedNotes;
-                                          lRemarkController = List.generate(
-                                            updatedNotes.length,
-                                            (i) => TextEditingController(
-                                                text: updatedNotes[i].remark ??
-                                                    ''),
-                                          );
-                                          newNote = null;
-                                          remarkNewNote?.clear();
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                )
+                                                  await NoteApi()
+                                                      .CreateTransection(
+                                                    context,
+                                                    headers_: widget.headers,
+                                                    mNoteData: mNoteData,
+                                                    mPetAdmit_: lPetAdmit.first,
+                                                    mUser:
+                                                        widget.lUserLogin.first,
+                                                  );
+
+                                                  final updatedNotes =
+                                                      await NoteApi()
+                                                          .loadNoteDetail(
+                                                    context,
+                                                    visitId: visit_id!,
+                                                    headers_: widget.headers,
+                                                    date_time: '',
+                                                  );
+
+                                                  for (var note
+                                                      in updatedNotes) {
+                                                    for (var item
+                                                        in note.dataNote) {
+                                                      final files =
+                                                          await NoteApi()
+                                                              .loadFile(
+                                                        context,
+                                                        orderId:
+                                                            item.smw_transaction_order_id ??
+                                                                0,
+                                                        headers_:
+                                                            widget.headers,
+                                                      );
+                                                      item.file = files
+                                                          .map((f) => FileModel(
+                                                                path:
+                                                                    f.path_file ??
+                                                                        '',
+                                                                remark:
+                                                                    f.remark ??
+                                                                        '',
+                                                              ))
+                                                          .toList();
+                                                    }
+                                                  }
+
+                                                  lDataNote = [];
+                                                  setState(() {});
+                                                  await Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 40));
+                                                  lDataNote = updatedNotes;
+
+                                                  lRemarkController =
+                                                      List.generate(
+                                                    updatedNotes.length,
+                                                    (index) =>
+                                                        TextEditingController(
+                                                      text: updatedNotes[index]
+                                                              .remark ??
+                                                          '',
+                                                    ),
+                                                  );
+
+                                                  setState(() {
+                                                    dialog.dismiss();
+                                                  });
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                  ),
+                                ),
                               ],
                             ),
                           );
-                        }
-
-                        //>> ===== กรณีแสดงการ์ดปกติ ===== <<//
-                        final realIndex = newNote != null ? index - 1 : index;
-                        final note = lDataNote[realIndex];
-
-                        final bool allCardsHaveOrderId = note.dataNote.every(
-                          (item) =>
-                              item.smw_admit_order_id != null &&
-                              item.smw_admit_order_id != 0,
-                        );
-
-                        return Container(
-                          width: screenWidth * 0.50,
-                          margin: const EdgeInsets.all(8),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: (newNote == null && index == 0)
-                                ? const Color.fromARGB(255, 155, 202, 202)
-                                : Colors.grey,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Align(
-                                alignment: Alignment.center,
-                                child: text(
-                                  context,
-                                  (newNote == null && index == 0)
-                                      ? "วันที่และเวลาปัจจุบัน : ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}"
-                                      : "วันที่: ${note.create_date ?? '-'}",
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Expanded(
-                                child: note.dataNote.isEmpty
-                                    ? const SizedBox()
-                                    : ListView.builder(
-                                        itemCount: note.dataNote.length,
-                                        itemBuilder: (context, subIndex) {
-                                          final card = note.dataNote[subIndex];
-                                          final matchedPet =
-                                              lPetAdmit.firstWhere(
-                                            (pet) =>
-                                                pet.id == note.smw_admit_id,
-                                            orElse: () => lPetAdmit.first,
-                                          );
-
-                                          return CardNoteWidget(
-                                            dataNote: card,
-                                            lPetAdmit: lPetAdmit,
-                                            petAdmit: matchedPet,
-                                            foodName: card.item_name ?? '-',
-                                            method:
-                                                card.drug_instruction ?? '-',
-                                            time: card.time_slot ?? '-',
-                                            amountStatus:
-                                                card.meal_timing ?? '-',
-                                            isDone: card.status == '1',
-                                            isChecked:
-                                                card.pre_pare_status == '1',
-                                            isDisabled: index != 0,
-                                            onRemove: () {
-                                              setState(() {
-                                                note.dataNote.remove(card);
-                                              });
-                                            },
-                                            cb: (p0) {
-                                              note.dataNote[subIndex].comment =
-                                                  p0;
-                                              setState(() {});
-                                            },
-                                            typeCard: card.type_card ?? '',
-                                            onCheckboxChanged: (val) {
-                                              setState(() {
-                                                card.pre_pare_status =
-                                                    (val ?? false) ? '1' : '0';
-                                              });
-                                            },
-                                            onToggle: () {
-                                              setState(() {
-                                                card.status =
-                                                    (card.status == '1')
-                                                        ? '0'
-                                                        : '1';
-                                              });
-                                            },
-                                            onRefresh: () async {
-                                              final updated = await NoteApi()
-                                                  .loadNoteDetail(
-                                                context,
-                                                visitId: visit_id!,
-                                                headers_: widget.headers,
-                                                date_time: '',
-                                              );
-                                              setState(() {
-                                                lDataNote = updated;
-                                              });
-                                            },
-                                            lUserLogin: widget.lUserLogin,
-                                            headers: widget.headers,
-                                            note: note,
-                                            visit: visit_id!,
-                                          );
-                                        },
-                                      ),
-                              ),
-                              const SizedBox(height: 15),
-                              textFieldNote(
-                                context,
-                                "หมายเหตุ",
-                                controller: lRemarkController[realIndex],
-                                readOnly: index != 0,
-                              ),
-                              const SizedBox(height: 10),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.save,
-                                      size: 25, color: Colors.black),
-                                  const SizedBox(width: 6),
-                                  text(
-                                    context,
-                                    "ผู้บันทึก : ${note.create_by_name ?? 'ยังไม่มีผู้บันทึก'}",
-                                    color: Colors.black,
-                                    fontSize: 13,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 15),
-                              Center(
-                                child: SizedBox(
-                                  child: lDataNote[realIndex].id != null
-                                      ? null
-                                      : actionSlider(
-                                          context,
-                                          'ยืนยันการให้อาหารและยา',
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.4,
-                                          height: 30.0,
-                                          togglecolor: allCardsHaveOrderId
-                                              ? Colors.green
-                                              : Colors.grey,
-                                          icons: Icons.check,
-                                          iconColor: Colors.white,
-                                          asController:
-                                              ActionSliderController(),
-                                          action: (controller) async {
-                                            if (note.smw_admit_id == null ||
-                                                note.smw_admit_id == 0) {
-                                              controller.reset();
-                                              AwesomeDialog(
-                                                context: context,
-                                                dialogType: DialogType.warning,
-                                                animType: AnimType.scale,
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.3,
-                                                desc:
-                                                    'ไม่สามารถยืนยันได้ เนื่องจากยังไม่มี Admit ID',
-                                                btnOkOnPress: () {},
-                                              ).show();
-                                              return;
-                                            }
-
-                                            final itemsWithCheckbox = note
-                                                .dataNote
-                                                .where(
-                                                  (item) =>
-                                                      item.type_card ==
-                                                          'Food' ||
-                                                      item.type_card == 'Drug',
-                                                )
-                                                .toList();
-
-                                            final isAllChecked =
-                                                itemsWithCheckbox.every(
-                                              (item) => (item.status ?? '')
-                                                  .trim()
-                                                  .isNotEmpty,
-                                            );
-
-                                            // bool isCheckId = true;
-                                            // if(itemsWithCheckbox
-                                            //     .where((e) =>
-                                            //         e.type_card == 'Food' || e.type_card == 'Drug').isNotEmpty)
-                                            //         {
-                                            //           isCheckId = itemsWithCheckbox
-                                            //     .where((e) =>
-                                            //         e.smw_transaction_order_id !=
-                                            //             null &&
-                                            //         e.type_card != 'Observe')
-                                            //     .isNotEmpty;
-                                            //         }
-
-                                            final isCheckId = itemsWithCheckbox
-                                                    .isEmpty ||
-                                                itemsWithCheckbox
-                                                    .where((e) =>
-                                                        e.smw_transaction_order_id !=
-                                                        null)
-                                                    .isNotEmpty;
-
-                                            if (!isAllChecked || !isCheckId) {
-                                              controller.reset();
-                                              AwesomeDialog(
-                                                context: context,
-                                                dialogType: DialogType.warning,
-                                                animType: AnimType.scale,
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.3,
-                                                desc:
-                                                    'กรุณาบันทึกข้อมูลให้ครบทุกรายการก่อนยืนยัน',
-                                                btnOkOnPress: () {},
-                                              ).show();
-                                              return;
-                                            }
-
-                                            final dialog = AwesomeDialog(
-                                              context: context,
-                                              customHeader: Lottie.asset(
-                                                "assets/animations/Send1.json",
-                                                repeat: true,
-                                                width: 200,
-                                                height: 100,
-                                                fit: BoxFit.contain,
-                                              ),
-                                              dialogType: DialogType.noHeader,
-                                              animType: AnimType.scale,
-                                              dismissOnTouchOutside: false,
-                                              dismissOnBackKeyPress: false,
-                                              width: MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.3,
-                                              body: const Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.center,
-                                                children: [
-                                                  SizedBox(height: 10),
-                                                  Text(
-                                                    "กำลังส่งข้อมูล กรุณารอสักครู่...",
-                                                    textAlign: TextAlign.center,
-                                                    style:
-                                                        TextStyle(fontSize: 14),
-                                                  ),
-                                                  SizedBox(height: 10),
-                                                ],
-                                              ),
-                                            );
-
-                                            dialog.show();
-
-                                            final mNoteData =
-                                                CreateTransectionModel(
-                                              smw_admit_id:
-                                                  note.smw_admit_id ?? 0,
-                                              slot: note.slot ?? '',
-                                              remark:
-                                                  lRemarkController[realIndex]
-                                                      .text,
-                                              date_slot: note.date_slot ??
-                                                  DateFormat('yyyy-MM-dd')
-                                                      .format(DateTime.now()),
-                                              tl_common_users_id:
-                                                  widget.lUserLogin.first.id ??
-                                                      0,
-                                              dataNote:
-                                                  note.dataNote.map((item) {
-                                                final isObserve =
-                                                    item.type_card == 'Observe';
-                                                return DataTransectionModel(
-                                                  smw_transaction_order_id: item
-                                                      .smw_transaction_order_id,
-                                                  smw_admit_order_id:
-                                                      item.smw_admit_order_id ??
-                                                          0,
-                                                  type_card:
-                                                      item.type_card ?? '',
-                                                  item_name:
-                                                      item.item_name ?? '',
-                                                  item_qty: item.item_qty ?? 0,
-                                                  unit_name:
-                                                      item.unit_name ?? '',
-                                                  dose_qty: item.dose_qty ?? '',
-                                                  meel_status:
-                                                      item.meal_timing ?? '',
-                                                  drug_instruction:
-                                                      item.drug_instruction ??
-                                                          '',
-                                                  remark: item.remark ?? '',
-                                                  item_code:
-                                                      item.item_code ?? '',
-                                                  note_to_team:
-                                                      item.note_to_team ?? '',
-                                                  caution: item.caution,
-                                                  drug_description:
-                                                      item.drug_description ??
-                                                          '',
-                                                  time_slot:
-                                                      item.time_slot ?? '',
-                                                  pre_pare_status:
-                                                      item.pre_pare_status ??
-                                                          '',
-                                                  date_slot:
-                                                      item.date_slot ?? '',
-                                                  slot: item.slot ?? '',
-                                                  status: isObserve
-                                                      ? 'Complete'
-                                                      : (item.status ?? ''),
-                                                  comment: item.comment,
-                                                  file: item.file ?? [],
-                                                );
-                                              }).toList(),
-                                            );
-
-                                            await NoteApi().CreateTransection(
-                                              context,
-                                              headers_: widget.headers,
-                                              mNoteData: mNoteData,
-                                              mPetAdmit_: lPetAdmit.first,
-                                              mUser: widget.lUserLogin.first,
-                                            );
-
-                                            final updatedNotes =
-                                                await NoteApi().loadNoteDetail(
-                                              context,
-                                              visitId: visit_id!,
-                                              headers_: widget.headers,
-                                              date_time: '',
-                                            );
-
-                                            for (var note in updatedNotes) {
-                                              for (var item in note.dataNote) {
-                                                final files =
-                                                    await NoteApi().loadFile(
-                                                  context,
-                                                  orderId:
-                                                      item.smw_transaction_order_id ??
-                                                          0,
-                                                  headers_: widget.headers,
-                                                );
-                                                item.file = files
-                                                    .map((f) => FileModel(
-                                                          path:
-                                                              f.path_file ?? '',
-                                                          remark:
-                                                              f.remark ?? '',
-                                                        ))
-                                                    .toList();
-                                              }
-                                            }
-
-                                            lDataNote = [];
-                                            setState(() {});
-                                            await Future.delayed(const Duration(
-                                                milliseconds: 40));
-                                            lDataNote = updatedNotes;
-
-                                            lRemarkController = List.generate(
-                                              updatedNotes.length,
-                                              (index) => TextEditingController(
-                                                text: updatedNotes[index]
-                                                        .remark ??
-                                                    '',
-                                              ),
-                                            );
-
-                                            setState(() {
-                                              dialog.dismiss();
-                                            });
-                                          },
-                                        ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                        }),
                   ),
               ]))),
               if (showCard &&
@@ -1407,7 +1497,6 @@ class _NoteScreenState extends State<NoteScreen> {
             ])));
   }
 
-  // ฟังก์ชันเช็คขนาดรูป
   Future<ImageInfo> _getImageInfo(String? url) async {
     if (url == null || url.trim().isEmpty || url.toLowerCase() == 'null') {
       throw Exception("No image");

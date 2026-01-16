@@ -6,6 +6,7 @@ import 'package:e_smartward/Model/list_an_model.dart';
 import 'package:e_smartward/Model/list_pet_model.dart';
 import 'package:e_smartward/Model/list_user_model.dart';
 import 'package:e_smartward/api/roundward_api.dart';
+import 'package:e_smartward/widget/admit_selectday.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -111,6 +112,9 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
   TextEditingController tDrugUnitQty = TextEditingController();
   TextEditingController tSearchDoctor = TextEditingController();
 
+  ScheduleMode? _scheduleMode;
+  ScheduleResult? _schedule; // ถ้าอยากเก็บรายละเอียดอื่น ๆ จากตัวเลือก
+
   List<String> typeDrug = [
     '[T]ยาเม็ด',
     '[L]ยาหยอด',
@@ -147,6 +151,34 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
     'กำหนดเอง',
     'เมื่อมีอาการ'
   ];
+
+  bool _isScheduleDetailValid() {
+    if (_scheduleMode == null || _schedule == null) {
+      return false;
+    }
+
+    switch (_scheduleMode!) {
+      case ScheduleMode.weeklyOnce:
+        return _schedule!.weekdayNames.isNotEmpty;
+
+      case ScheduleMode.dailyCustom:
+        return (_schedule!.dailyNote?.trim().isNotEmpty ?? false);
+
+      case ScheduleMode.monthlyCustom:
+        return _schedule!.monthlyDays.isNotEmpty;
+
+      case ScheduleMode.all:
+        return true; // หรือ business rule ของคุณ
+    }
+  }
+
+  Map<String, bool> selectStatusd = {
+    'ให้ยาทันที': false,
+  };
+  List<String> setValueStatusd = [
+    'ให้ยาทันที',
+  ];
+
   bool isEnabled = false;
   List<DropdownMenuItem<DoctorModel>> drugItems = [];
   bool hasNewOrders = false;
@@ -154,16 +186,95 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
 
   List<DoctorModel> ListDoctors = [];
 
+  DateTime? _parseStartDateUse(String? s) {
+    if (s == null || s.trim().isEmpty) return null;
+    final v = s.trim();
+
+    for (final p in ['yyyy-MM-dd HH:mm:ss', 'yyyy-MM-dd HH:mm']) {
+      try {
+        return DateFormat(p).parseStrict(v);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   List<String> timeList = List.generate(24, (index) {
     String formattedHour = index.toString().padLeft(2, '0');
     return '$formattedHour:00';
   });
+
+  DateTime _buildStartDateFromSchedule(
+    ScheduleResult? s, {
+    String? orderDate,
+    String? initialStart,
+  }) {
+    final now = DateTime.now();
+
+    DateTime? init;
+    if (initialStart != null && initialStart.trim().isNotEmpty) {
+      init = _parseStartDateUse(initialStart); // รองรับ HH:mm:ss และ HH:mm
+    }
+
+    DateTime? order;
+    if (orderDate != null && orderDate.isNotEmpty) {
+      try {
+        order = DateFormat('yyyy-MM-dd').parseStrict(orderDate);
+      } catch (_) {
+        try {
+          order = DateFormat('dd/MM/yyyy').parseStrict(orderDate);
+        } catch (_) {}
+      }
+    }
+
+    if (s?.mode == ScheduleMode.dailyCustom && s?.dailyDate != null) {
+      final d = s!.dailyDate!;
+
+      return DateTime(d.year, d.month, d.day, now.hour, now.minute, now.second);
+    }
+
+    if (order != null) {
+      return DateTime(
+          order.year, order.month, order.day, now.hour, now.minute, now.second);
+    }
+
+    return init ?? now;
+  }
 
   List<bool> selected = [];
   List<bool> selectedTimeList = [];
   int? selectedTimeIndex;
   String? selectedTypeDrug;
   String selectedTimeSlot = '';
+
+  String _typeSlotFromMode(ScheduleMode m) {
+    switch (m) {
+      case ScheduleMode.weeklyOnce:
+        return 'DAYS';
+      case ScheduleMode.dailyCustom:
+        return 'DATE';
+      case ScheduleMode.monthlyCustom:
+        return 'D_M';
+      case ScheduleMode.all:
+        return 'ALL';
+    }
+  }
+
+  bool get isPRN => selectedTimeSlot == 'เมื่อมีอาการ';
+
+  String labelFromTypeSlot(String? t) {
+    switch (t) {
+      case 'weekly_once':
+        return 'กำหนดรายสัปดาห์';
+      case 'daily_custom':
+        return 'กำหนดรายวัน';
+      case 'monthly_custom':
+        return 'กำหนดรายเดือน';
+      case 'all':
+        return 'ไม่กำหนด';
+      default:
+        return '-';
+    }
+  }
 
   @override
   void initState() {
@@ -445,40 +556,102 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
                           checkIsEnabled();
                         });
                   }).toList()),
-              Wrap(
-                spacing: 8.0,
-                children: setValueStatus.map((key) {
-                  final isSelected = selectStatus[key] ?? false;
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Wrap(
+                    spacing: 8.0,
+                    children: setValueStatus.map((key) {
+                      final isSelected = selectStatus[key] ?? false;
 
-                  return ChoiceChip(
-                    label: text(
-                      context,
-                      key,
-                      color: isSelected ? Colors.white : Colors.teal,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    selected: isSelected,
-                    selectedColor: const Color.fromARGB(255, 4, 138, 161),
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isSelected ? Colors.teal : Colors.teal.shade200,
-                      ),
-                    ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-                    onSelected: (selected) {
-                      setState(() {
-                        selectStatus.updateAll((key, value) => false);
-                        selectStatus[key] = selected;
-                      });
-                      checkIsEnabled();
-                    },
-                  );
-                }).toList(),
+                      return ChoiceChip(
+                        label: text(
+                          context,
+                          key,
+                          color: isSelected ? Colors.white : Colors.teal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        selected: isSelected,
+                        selectedColor: const Color.fromARGB(255, 4, 138, 161),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color:
+                                isSelected ? Colors.teal : Colors.teal.shade200,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 5),
+                        onSelected: (selected) {
+                          setState(() {
+                            selectStatus.updateAll((key, value) => false);
+                            selectStatus[key] = selected;
+                          });
+                          checkIsEnabled();
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(
+                    width: 5,
+                  ),
+                  Wrap(
+                    spacing: 8.0,
+                    children: setValueStatusd.map((key) {
+                      final isSelected = selectStatusd[key] ?? false;
+
+                      return ChoiceChip(
+                        label: text(
+                          context,
+                          key,
+                          color: isSelected ? Colors.white : Colors.teal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        selected: isSelected,
+                        selectedColor: const Color.fromARGB(255, 4, 138, 161),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color:
+                                isSelected ? Colors.teal : Colors.teal.shade200,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 5),
+                        onSelected: (selected) {
+                          setState(() {
+                            selectStatusd.updateAll((key, value) => false);
+                            selectStatusd[key] = selected;
+                          });
+                          checkIsEnabled();
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
             ],
+          ),
+          const SizedBox(height: 15),
+          SchedulePicker(
+            allowAll: false,
+            key: ValueKey(
+                'create_sched_${isPRN ? 'prn' : 'normal'}_${_scheduleMode ?? 'none'}'),
+            initialMode: isPRN ? null : _scheduleMode,
+            initialWeeklySelectedNames: _schedule?.weekdayNames ?? const {},
+            initialDailyNote: _schedule?.dailyNote,
+            initialMonthlyDate: _schedule?.monthlyDate,
+            initialDailyDate: _schedule?.dailyDate,
+            initialMonthlyDays: _schedule?.monthlyDays ?? const <int>{},
+            onChanged: (cfg) {
+              setState(() {
+                _scheduleMode = cfg.mode;
+                _schedule = cfg;
+              });
+              checkIsEnabled();
+            },
           ),
           const SizedBox(height: 15),
           TimeSelection(
@@ -488,15 +661,29 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
             initialTimeSlot: selectedTimeSlot,
             onSelectionChanged: (selectedIndex, selectedList) {
               setState(() {
-                selectedTimeSlot = time[selectedIndex ?? 0];
-                selectedTakeTimes = [];
+                final idx = (selectedIndex == null ||
+                        selectedIndex < 0 ||
+                        selectedIndex >= time.length)
+                    ? 0
+                    : selectedIndex;
 
-                for (int i = 0; i < selectedList.length; i++) {
-                  if (selectedList[i]) {
-                    selectedTakeTimes.add(timeList[i]);
+                selectedTimeSlot = time[idx];
+
+                if (selectedTimeSlot == 'เมื่อมีอาการ') {
+                  selectedTakeTimes = [];
+
+                  _scheduleMode = null;
+                  _schedule = null;
+                } else {
+                  selectedTakeTimes = [];
+                  for (int i = 0;
+                      i < selectedList.length && i < timeList.length;
+                      i++) {
+                    if (selectedList[i]) selectedTakeTimes.add(timeList[i]);
                   }
                 }
               });
+
               checkIsEnabled();
             },
           ),
@@ -517,16 +704,36 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
                   iconColor: Colors.white,
                   asController: ActionSliderController(),
                   action: (controller) async {
+                final startDt = _buildStartDateFromSchedule(
+                  _schedule,
+                  orderDate: widget.drug.order_date,
+                  initialStart: widget.drug.start_date_use,
+                );
+
+                String statusd = '0';
+
+                if (selectStatusd['ให้ยาทันที'] == true) {
+                  statusd = '1';
+                }
+                final bool isPRN = selectedTimeSlot == 'เมื่อมีอาการ';
+                final String typeSlot =
+                    isPRN ? 'ALL' : _typeSlotFromMode(_scheduleMode!);
+                final String? setSlot = (typeSlot == 'ALL')
+                    ? null
+                    : buildSetSlot(_schedule, weeklyAsNumber: false);
+                final String takeTime = (typeSlot == 'ALL')
+                    ? '[]'
+                    : "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]";
                 // final selectedStatusList = selectStatus.entries
                 //     .where((entry) => entry.value)
                 //     .map((entry) => entry.key)
                 //     .toList();
 
                 String status = 'Order';
-
                 if (selectStatus['รอของหมด'] == true) {
                   status = 'Pending';
                 }
+                // final typeSlot = _typeSlotFromMode(_scheduleMode!);
                 if (widget.screen == 'imedx') {
                   final newOrder = DataAddOrderModel(
                     item_name: tDrudName.text,
@@ -541,19 +748,30 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
                     item_code: widget.drug.item_code,
                     order_item_id: widget.drug.order_item_id,
                     drug_description: tDrugCondition.text,
-                    status: status,
+                    status: statusd,
                     remark: tnote.text,
                     stock_out: 0,
+                    use_now: status,
+                    schedule_mode_label:
+                        _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
                     doctor_eid: selectedDoctor?.employee_id,
-                    start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
-                        .format(DateTime.now()),
+                    start_date_use:
+                        DateFormat('yyyy-MM-dd HH:mm').format(startDt),
+                    // set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+                    // type_slot: _typeSlotFromMode(_scheduleMode!),
+                    start_date_imed:
+                        DateFormat('yyyy-MM-dd').format(DateTime.now()),
                     meal_timing: selectedValues.entries
                         .where((entry) => entry.value)
                         .map((entry) => entry.key)
                         .join(','),
-                    take_time:
-                        "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
+                    // take_time:
+                    //     "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
                     time_slot: selectedTimeSlot,
+
+                    set_slot: setSlot,
+                    type_slot: typeSlot,
+                    take_time: takeTime,
                   );
 
                   final lDataOrder = AddOrderDrug([newOrder]);
@@ -590,23 +808,56 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
   }
 
   void checkIsEnabled() {
-    setState(() {
-      isEnabled = tDrudName.text.trim().isNotEmpty &&
-          tDrugQty.text.trim().isNotEmpty &&
-          tDrugUnitQty.text.trim().isNotEmpty &&
-          tDrugDose.text.trim().isNotEmpty &&
-          tDrugUnit.text.trim().isNotEmpty &&
-          selectedTypeDrug != null &&
-          selectedDoctor != null &&
-          selectedValues.containsValue(true) &&
-          (selectedTimeSlot.isNotEmpty &&
-              (selectedTimeSlot == 'เมื่อมีอาการ' ||
-                  selectedTakeTimes.isNotEmpty));
-    });
+    final hasBasics = tDrudName.text.trim().isNotEmpty &&
+        tDrugQty.text.trim().isNotEmpty &&
+        tDrugUnitQty.text.trim().isNotEmpty &&
+        tDrugDose.text.trim().isNotEmpty &&
+        tDrugUnit.text.trim().isNotEmpty &&
+        selectedTypeDrug != null &&
+        selectedDoctor != null;
+
+    final mealOk = selectedValues.containsValue(true);
+    final scheduleOk = isPRN ? true : _isScheduleDetailValid();
+
+    final timeOk = _isTimeOk();
+
+    final ok = hasBasics && mealOk && scheduleOk && timeOk;
+
+    if (ok != isEnabled) {
+      setState(() => isEnabled = ok);
+    }
   }
 
+  bool _isTimeOk() {
+    if (selectedTimeSlot.isEmpty) return false;
+    if (selectedTimeSlot == 'เมื่อมีอาการ') return true;
+    return selectedTakeTimes.isNotEmpty;
+  }
+
+  // void checkIsEnabled() {
+  //   setState(() {
+  //     isEnabled = tDrudName.text.trim().isNotEmpty &&
+  //         tDrugQty.text.trim().isNotEmpty &&
+  //         tDrugUnitQty.text.trim().isNotEmpty &&
+  //         tDrugDose.text.trim().isNotEmpty &&
+  //         tDrugUnit.text.trim().isNotEmpty &&
+  //         selectedTypeDrug != null &&
+  //         selectedDoctor != null &&
+  //         selectedValues.containsValue(true) &&
+  //         (selectedTimeSlot.isNotEmpty &&
+  //             (selectedTimeSlot == 'เมื่อมีอาการ' ||
+  //                 selectedTakeTimes.isNotEmpty));
+  //   });
+  // }
+
   List<DataAddOrderModel> AddOrderDrug(List<DataAddOrderModel> lDrug) {
+    final startDt = _buildStartDateFromSchedule(
+      _schedule,
+      orderDate: widget.drug.order_date,
+      initialStart: widget.drug.start_date_use,
+    );
     return lDrug.map((e) {
+      final typeSlot = _typeSlotFromMode(_scheduleMode!);
       return DataAddOrderModel(
         item_name: e.item_name,
         type_card: 'Drug',
@@ -616,7 +867,7 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
         drug_instruction: e.drug_instruction,
         take_time: e.take_time ?? '[]',
         meal_timing: e.meal_timing ?? '',
-        start_date_use: e.start_date_use,
+        start_date_use: DateFormat('yyyy-MM-dd HH:mm').format(startDt),
         end_date_use: e.end_date_use,
         stock_out: 0,
         remark: e.remark ?? '',
@@ -629,6 +880,11 @@ class _CheckDrugOrderDialogState extends State<CheckDrugOrderDialog> {
         order_eid: e.order_eid,
         order_date: e.order_date,
         order_time: e.order_time,
+        set_slot: buildSetSlot(_schedule, weeklyAsNumber: false),
+        schedule_mode_label:
+            _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
+        type_slot: _typeSlotFromMode(_scheduleMode!),
+        start_date_imed: DateFormat('yyyy-MM-dd').format(DateTime.now()),
         time_slot: e.time_slot,
         drug_type_name: e.drug_type_name,
         unit_stock: e.unit_stock,

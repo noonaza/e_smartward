@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:action_slider/action_slider.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:e_smartward/widget/admit_selectday.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -30,7 +31,7 @@ class CheckFoodOrderDialog extends StatefulWidget {
   Function cbConfirm;
 
   CheckFoodOrderDialog({
-    Key? key,
+    super.key,
     required this.screen,
     required this.food,
     required this.headers,
@@ -41,7 +42,7 @@ class CheckFoodOrderDialog extends StatefulWidget {
     required this.mUser,
     required this.onConfirmed,
     required this.cbConfirm,
-  }) : super(key: key);
+  });
 
   @override
   State<CheckFoodOrderDialog> createState() => _CheckFoodOrderDialogState();
@@ -109,6 +110,8 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
   TextEditingController tFoodUnit = TextEditingController();
   TextEditingController tFoodUnitQty = TextEditingController();
   TextEditingController tSearchDoctor = TextEditingController();
+  ScheduleMode? _scheduleMode;
+  ScheduleResult? _schedule;
 
   List<String> typeDrug = [
     '[T]ยาเม็ด',
@@ -143,6 +146,30 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
     'กำหนดเอง',
     'เมื่อมีอาการ'
   ];
+
+  Map<String, bool> selectStatusd = {
+    'ให้อาหารทันที': false,
+  };
+  List<String> setValueStatusd = [
+    'ให้อาหารทันที',
+  ];
+
+  List<String> setValuef = [
+    'วางให้ทาน',
+    'ปั่น',
+    'แช่น้ำอุ่น',
+    'สอดท่อกรองอาหาร',
+    'ชั่งน้ำหนักอาหาร',
+  ];
+  Map<String, bool> selectedValuesf = {
+    'วางให้ทาน': false,
+    'ปั่น': false,
+    'แช่น้ำอุ่น': false,
+    'สอดท่อกรองอาหาร': false,
+    'ชั่งน้ำหนักอาหาร': false,
+  };
+
+  bool get isPRN => selectedTimeSlot == 'เมื่อมีอาการ';
   bool isEnabled = false;
   List<DropdownMenuItem<DoctorModel>> foodItems = [];
   bool hasNewOrders = false;
@@ -160,6 +187,103 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
   int? selectedTimeIndex;
   String? selectedTypeDrug;
   String selectedTimeSlot = '';
+
+  String _typeSlotFromMode(ScheduleMode m) {
+    switch (m) {
+      case ScheduleMode.weeklyOnce:
+        return 'DAYS';
+      case ScheduleMode.dailyCustom:
+        return 'DATE';
+      case ScheduleMode.monthlyCustom:
+        return 'D_M';
+      case ScheduleMode.all:
+        return 'ALL';
+    }
+  }
+
+  String labelFromTypeSlot(String? t) {
+    switch (t) {
+      case 'weekly_once':
+        return 'กำหนดรายสัปดาห์';
+      case 'daily_custom':
+        return 'กำหนดรายวัน';
+      case 'monthly_custom':
+        return 'กำหนดรายเดือน';
+      case 'all':
+        return 'ไม่กำหนด';
+      default:
+        return '-';
+    }
+  }
+
+  DateTime? _parseStartDateUse(String? s) {
+    if (s == null || s.trim().isEmpty) return null;
+    final v = s.trim();
+
+    for (final p in ['yyyy-MM-dd HH:mm:ss', 'yyyy-MM-dd HH:mm']) {
+      try {
+        return DateFormat(p).parseStrict(v);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  bool _isScheduleDetailValid() {
+    if (_scheduleMode == null || _schedule == null) {
+      return false;
+    }
+
+    switch (_scheduleMode!) {
+      case ScheduleMode.weeklyOnce:
+        return _schedule!.weekdayNames.isNotEmpty;
+
+      case ScheduleMode.dailyCustom:
+        return (_schedule!.dailyNote?.trim().isNotEmpty ?? false);
+
+      case ScheduleMode.monthlyCustom:
+        return _schedule!.monthlyDays.isNotEmpty;
+
+      case ScheduleMode.all:
+        return true;
+    }
+  }
+
+  DateTime _buildStartDateFromSchedule(
+    ScheduleResult? s, {
+    String? orderDate,
+    String? initialStart,
+  }) {
+    final now = DateTime.now();
+
+    DateTime? init;
+    if (initialStart != null && initialStart.trim().isNotEmpty) {
+      init = _parseStartDateUse(initialStart);
+    }
+
+    DateTime? order;
+    if (orderDate != null && orderDate.isNotEmpty) {
+      try {
+        order = DateFormat('yyyy-MM-dd').parseStrict(orderDate);
+      } catch (_) {
+        try {
+          order = DateFormat('dd/MM/yyyy').parseStrict(orderDate);
+        } catch (_) {}
+      }
+    }
+
+    if (s?.mode == ScheduleMode.dailyCustom && s?.dailyDate != null) {
+      final d = s!.dailyDate!;
+
+      return DateTime(d.year, d.month, d.day, now.hour, now.minute, now.second);
+    }
+
+    if (order != null) {
+      return DateTime(
+          order.year, order.month, order.day, now.hour, now.minute, now.second);
+    }
+
+    return init ?? now;
+  }
 
   @override
   void initState() {
@@ -197,16 +321,6 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
     checkIsEnabled();
   }
 
-  void checkNull() {
-    checkIsEnabled();
-    tFoodName.addListener(checkIsEnabled);
-    tFoodQty.addListener(checkIsEnabled);
-    tFoodUnitQty.addListener(checkIsEnabled);
-    tFoodDose.addListener(checkIsEnabled);
-    tFoodUnit.addListener(checkIsEnabled);
-    tFoodNote.addListener(checkIsEnabled);
-  }
-
   @override
   void dispose() {
     tFoodName.dispose();
@@ -221,8 +335,6 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // final bool isEnabled =
-    //     selectedTakeTimes.isNotEmpty || selectedTimeSlot == 'กำหนดเอง';
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -268,29 +380,42 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
           textField1('สรรพคุณ', controller: tFoodCondition),
           const SizedBox(height: 10),
           textField1('วิธีเตรียมอาหาร / หมายเหตุอื่นๆ', controller: tFoodNote),
-          // const SizedBox(height: 15),
-          // SizedBox(
-          //   height: 35,
-          //   child: Dropdown.lModel<DoctorModel>(
-          //     context: context,
-          //     value: selectedDoctor,
-          //     items: foodItems,
-          //     tController: tSearchDoctor,
-          //     isSelect: true,
-          //     validator: '',
-          //     width: double.infinity,
-          //     onChanged: (value) {
-          //       setState(() {
-          //         selectedDoctor = value;
-          //         checkIsEnabled();
-          //         tFoodDoctor.text =
-          //             '${value?.employee_id ?? ''} : ${value?.full_nameth ?? ''}';
-          //       });
-          //     },
-          //     hintLabel: 'เลือกชื่อแพทย์ที่ทำการสั่งยา',
-          //     labelInSearch: 'ค้นหาชื่อหรือรหัสแพทย์',
-          //   ),
-          // ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Wrap(
+                  spacing: 8.0,
+                  children: setValuef.map((key) {
+                    final isSelected = selectedValuesf[key] ?? false;
+
+                    return ChoiceChip(
+                        label: text(
+                          context,
+                          key,
+                          color: isSelected ? Colors.white : Colors.teal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        selected: isSelected,
+                        selectedColor: Color.fromARGB(255, 4, 138, 161),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color:
+                                isSelected ? Colors.teal : Colors.teal.shade200,
+                          ),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                        onSelected: (selected) {
+                          setState(() {
+                            selectedValuesf[key] = selected;
+                          });
+                          checkIsEnabled();
+                        });
+                  }).toList()),
+            ],
+          ),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -328,8 +453,68 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
                   );
                 }).toList(),
               ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Wrap(
+                    spacing: 8.0,
+                    children: setValueStatusd.map((key) {
+                      final isSelected = selectStatusd[key] ?? false;
+
+                      return ChoiceChip(
+                        label: text(
+                          context,
+                          key,
+                          color: isSelected ? Colors.white : Colors.teal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        selected: isSelected,
+                        selectedColor: const Color.fromARGB(255, 4, 138, 161),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color:
+                                isSelected ? Colors.teal : Colors.teal.shade200,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 5),
+                        onSelected: (selected) {
+                          setState(() {
+                            selectStatus.updateAll((key, value) => false);
+                            selectStatusd[key] = selected;
+                          });
+                          checkIsEnabled();
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ],
           ),
+          const SizedBox(height: 15),
+          SchedulePicker(
+            allowAll: false,
+            key: ValueKey(
+                'create_sched_${isPRN ? 'prn' : 'normal'}_${_scheduleMode ?? 'none'}'),
+            initialMode: isPRN ? null : _scheduleMode, // ✅ สำคัญ: PRN = null
+            initialWeeklySelectedNames: _schedule?.weekdayNames ??
+                const {}, // ✅ ใช้ _schedule ไม่ใช่ result
+            initialDailyNote: _schedule?.dailyNote,
+            initialMonthlyDate: _schedule?.monthlyDate,
+            initialDailyDate: _schedule?.dailyDate,
+            initialMonthlyDays: _schedule?.monthlyDays ?? const <int>{},
+            onChanged: (cfg) {
+              setState(() {
+                _scheduleMode = cfg.mode;
+                _schedule = cfg;
+              });
+              checkIsEnabled();
+            },
+          ),
+          const SizedBox(height: 10),
           const SizedBox(height: 10),
           TimeSelection(
             time: time,
@@ -338,15 +523,29 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
             initialTimeSlot: selectedTimeSlot,
             onSelectionChanged: (selectedIndex, selectedList) {
               setState(() {
-                selectedTimeIndex = selectedIndex;
-                selectedTimeSlot = time[selectedIndex ?? 0];
-                selectedTakeTimes = [];
-                for (int i = 0; i < selectedList.length; i++) {
-                  if (selectedList[i]) {
-                    selectedTakeTimes.add(timeList[i]);
+                final idx = (selectedIndex == null ||
+                        selectedIndex < 0 ||
+                        selectedIndex >= time.length)
+                    ? 0
+                    : selectedIndex;
+
+                selectedTimeSlot = time[idx];
+
+                if (selectedTimeSlot == 'เมื่อมีอาการ') {
+                  selectedTakeTimes = [];
+
+                  _scheduleMode = null;
+                  _schedule = null;
+                } else {
+                  selectedTakeTimes = [];
+                  for (int i = 0;
+                      i < selectedList.length && i < timeList.length;
+                      i++) {
+                    if (selectedList[i]) selectedTakeTimes.add(timeList[i]);
                   }
                 }
               });
+
               checkIsEnabled();
             },
           ),
@@ -367,6 +566,27 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
                   iconColor: Colors.white,
                   asController: ActionSliderController(),
                   action: (controller) async {
+                final startDt = _buildStartDateFromSchedule(
+                  _schedule,
+                  orderDate: widget.food.order_date,
+                  initialStart: widget.food.start_date_use,
+                );
+
+                String statusd = '0';
+
+                if (selectStatusd['ให้อาหารทันที'] == true) {
+                  statusd = '1';
+                }
+                final bool isPRN = selectedTimeSlot == 'เมื่อมีอาการ';
+                final String typeSlot =
+                    isPRN ? 'ALL' : _typeSlotFromMode(_scheduleMode!);
+                final String? setSlot = (typeSlot == 'ALL')
+                    ? null
+                    : buildSetSlot(_schedule, weeklyAsNumber: false);
+                final String takeTime = (typeSlot == 'ALL')
+                    ? '[]'
+                    : "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]";
+
                 String status = 'Order';
 
                 if (selectStatus['รอของหมด'] == true) {
@@ -378,7 +598,8 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
                     dose_qty: tFoodDose.text,
                     unit_name: tFoodUnit.text,
                     item_qty: tFoodQty.text,
-                    status: status,
+                    status: statusd,
+                    use_now: status,
                     unit_stock: tFoodUnitQty.text,
                     order_date: widget.food.order_date,
                     order_time: widget.food.order_time,
@@ -388,15 +609,20 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
                     remark: tFoodNote.text,
                     stock_out: 0,
                     doctor_eid: selectedDoctor?.employee_id,
-                    start_date_use: DateFormat('yyyy-MM-dd HH:mm:ss')
-                        .format(DateTime.now()),
-                    meal_timing: selectedValues.entries
+                    start_date_use:
+                        DateFormat('yyyy-MM-dd HH:mm').format(startDt),
+                    schedule_mode_label:
+                        _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
+                    start_date_imed:
+                        DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                    meal_timing: selectedValuesf.entries
                         .where((entry) => entry.value)
                         .map((entry) => entry.key)
                         .join(','),
-                    take_time:
-                        "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]",
                     time_slot: selectedTimeSlot,
+                    set_slot: setSlot,
+                    type_slot: typeSlot,
+                    take_time: takeTime,
                   );
 
                   final lDataOrder = AddOrderFood([newOrder]);
@@ -433,21 +659,56 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
   }
 
   void checkIsEnabled() {
-    setState(() {
-      isEnabled = tFoodName.text.trim().isNotEmpty &&
-          tFoodQty.text.trim().isNotEmpty &&
-          tFoodUnitQty.text.trim().isNotEmpty &&
-          tFoodDose.text.trim().isNotEmpty &&
-          tFoodNote.text.trim().isNotEmpty &&
-          tFoodUnit.text.trim().isNotEmpty &&
-          (selectedTimeSlot.isNotEmpty &&
-              (selectedTimeSlot == 'เมื่อมีอาการ' ||
-                  selectedTakeTimes.isNotEmpty));
-    });
+    bool isTimeOk() {
+      if (selectedTimeSlot.isEmpty) return false;
+      if (selectedTimeSlot == 'เมื่อมีอาการ') return true;
+      return selectedTakeTimes.isNotEmpty;
+    }
+
+    final hasBasics = tFoodName.text.trim().isNotEmpty &&
+        tFoodQty.text.trim().isNotEmpty &&
+        tFoodUnitQty.text.trim().isNotEmpty &&
+        tFoodDose.text.trim().isNotEmpty &&
+        tFoodUnit.text.trim().isNotEmpty;
+
+    final mealOk = selectedValuesf.containsValue(true);
+    final bool isPRNLocal = selectedTimeSlot == 'เมื่อมีอาการ';
+    final scheduleOk =
+        isPRNLocal ? true : (_scheduleMode != null && _isScheduleDetailValid());
+
+    final timeOk = isTimeOk();
+
+    final ok = hasBasics && mealOk && scheduleOk && timeOk;
+
+    if (ok != isEnabled) {
+      setState(() => isEnabled = ok);
+    }
   }
 
   List<DataAddOrderModel> AddOrderFood(List<DataAddOrderModel> lFood) {
+    final startDt = _buildStartDateFromSchedule(
+      _schedule,
+      orderDate: widget.food.order_date,
+      initialStart: widget.food.start_date_use,
+    );
+
+    String statusd = '0';
+
+    if (selectStatusd['ให้อาหารทันที'] == true) {
+      statusd = '1';
+    }
+    final bool isPRN = selectedTimeSlot == 'เมื่อมีอาการ';
+    final String typeSlot = isPRN ? 'ALL' : _typeSlotFromMode(_scheduleMode!);
+    final String? setSlot = (typeSlot == 'ALL')
+        ? null
+        : buildSetSlot(_schedule, weeklyAsNumber: false);
+    final String takeTime = (typeSlot == 'ALL')
+        ? '[]'
+        : "[${selectedTakeTimes.map((e) => "'$e'").join(',')}]";
+
+    if (selectStatus['รอของหมด'] == true) {}
     return lFood.map((e) {
+      // final typeSlot = _typeSlotFromMode(_scheduleMode);
       return DataAddOrderModel(
         item_name: e.item_name,
         type_card: 'Food',
@@ -455,18 +716,24 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
         unit_name: e.unit_name,
         dose_qty: e.dose_qty.toString(),
         drug_instruction: e.drug_instruction,
-        take_time: e.take_time ?? '[]',
-        meal_timing: e.meal_timing ?? '',
-        start_date_use: e.start_date_use,
+        // take_time: e.take_time ?? '[]',
+        meal_timing: selectedValuesf.entries
+            .where((entry) => entry.value)
+            .map((entry) => entry.key)
+            .join(','),
+        start_date_use: DateFormat('yyyy-MM-dd HH:mm').format(startDt),
         end_date_use: e.end_date_use,
         stock_out: 0,
         remark: e.remark ?? '',
         order_item_id: e.order_item_id,
-        // doctor_eid: e.doctor_eid,
         item_code: e.item_code,
+        use_now: statusd,
         note_to_team: e.note_to_team,
         caution: e.caution,
         drug_description: e.drug_description,
+        schedule_mode_label:
+            _schedule?.modeLabel ?? labelFromTypeSlot(typeSlot),
+        start_date_imed: DateFormat('yyyy-MM-dd').format(DateTime.now()),
         order_eid: e.order_eid,
         order_date: e.order_date,
         order_time: e.order_time,
@@ -474,6 +741,10 @@ class _CheckFoodOrderDialogState extends State<CheckFoodOrderDialog> {
         drug_type_name: e.drug_type_name,
         unit_stock: e.unit_stock,
         status: 'Order',
+
+        set_slot: setSlot,
+        type_slot: typeSlot,
+        take_time: takeTime,
       );
     }).toList();
   }

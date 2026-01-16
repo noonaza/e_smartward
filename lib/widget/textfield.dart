@@ -7,18 +7,25 @@ Widget textField1(
   required TextEditingController controller,
   bool readOnly = false,
   String? initialValue,
-  Function(dynamic val)? onChanged,
-  List<TextInputFormatter>? inputFormatters,  TextInputType? keyboardType,
+  ValueChanged<String>? onChanged,
+  List<TextInputFormatter>? inputFormatters,
+  TextInputType? keyboardType,
+  FocusNode? focusNode, 
+  int? maxLength,
+
 }) {
-  if (initialValue != null) {
+
+  if (initialValue != null && controller.text.isEmpty) {
     controller.text = initialValue;
   }
 
   return SizedBox(
-    height: 35,
+    height: 48,
     child: TextFormField(
       controller: controller,
       readOnly: readOnly,
+      focusNode: focusNode, 
+      maxLines: 1,
       style: const TextStyle(fontSize: 12, color: Colors.teal),
       decoration: InputDecoration(
         labelText: labelText,
@@ -29,131 +36,135 @@ Widget textField1(
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(10)),
         ),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        counterText: '',
       ),
       onChanged: onChanged,
-      keyboardType: TextInputType.text,
-      inputFormatters: inputFormatters, 
+      keyboardType: keyboardType ?? TextInputType.text,
+      inputFormatters: [
+        if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+        ...?inputFormatters,
+      ],
     ),
   );
 }
 
+
 Widget textFieldCalendar(
   String labelText, {
   required TextEditingController controller,
-  bool readOnly = false,
+  bool readOnly = true,
   String? initialValue,
   ValueChanged<String>? onChanged,
   List<TextInputFormatter>? inputFormatters,
-
-  // เพิ่มเติมเพื่อการตกแต่ง/พฤติกรรม
   String? hintText,
   Widget? prefixIcon,
-  Widget? trailingIcon,         // เช่น Icon(Icons.calendar_month)
-  VoidCallback? onTrailingTap,  // กดไอคอนท้าย
-  bool showClear = false,       // แสดงปุ่มล้างค่าอัตโนมัติ
-  VoidCallback? onClear,        // callback ตอนล้างค่า
-  VoidCallback? onTap,          // แตะที่ช่อง
+  Widget? trailingIcon,
+  VoidCallback? onTrailingTap,
+  bool showClear = false,
+  VoidCallback? onClear,
+  VoidCallback? onTap,
 }) {
-  // ตั้งค่าแรกเข้าเฉพาะตอนที่ยังไม่มีค่าใน controller
+  // ✅ กันการ set ทับทุก rebuild
   if (initialValue != null && controller.text.isEmpty) {
     controller.text = initialValue;
   }
 
   final baseBorder = OutlineInputBorder(
     borderRadius: const BorderRadius.all(Radius.circular(10)),
-    borderSide: BorderSide(color: const Color(0xFFB5D8F1), width: 1.2),
+    borderSide: const BorderSide(color: Color(0xFFB5D8F1), width: 1.2),
   );
 
-  // ทำให้ suffix เปลี่ยนตามข้อความ โดยไม่ต้องเป็น StatefulWidget
-  return SizedBox(
-    height: 42, // สูงขึ้นนิดให้ดูโปรกว่า
-    child: ValueListenableBuilder<TextEditingValue>(
-      valueListenable: controller,
-      builder: (context, value, _) {
-        final hasText = value.text.isNotEmpty;
+  return ValueListenableBuilder<TextEditingValue>(
+    valueListenable: controller,
+    builder: (context, value, _) {
+      final hasText = value.text.isNotEmpty;
 
-        // สร้าง suffix รวม: [Clear] + [Trailing]
-        final List<Widget> suffixChildren = [];
+      final suffixChildren = <Widget>[];
 
-        if (showClear && hasText) {
-          suffixChildren.add(
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.clear, size: 18, color: Colors.redAccent),
-              tooltip: 'ล้างค่า',
-              onPressed: () {
-                controller.clear();
-                onClear?.call();
-                onChanged?.call(''); // สื่อสารว่าเปลี่ยนเป็นค่าว่าง
-              },
-            ),
-          );
-        }
+      if (showClear && hasText) {
+        suffixChildren.add(
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.clear, size: 18, color: Colors.redAccent),
+            onPressed: () {
+              controller.clear();
+              onClear?.call();
+              onChanged?.call('');
+            },
+          ),
+        );
+      }
 
-        if (trailingIcon != null) {
-          suffixChildren.add(
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              icon: trailingIcon,
-              onPressed: onTrailingTap,
-              tooltip: 'ดำเนินการ',
-            ),
-          );
-        }
+      if (trailingIcon != null) {
+        suffixChildren.add(
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: trailingIcon,
+            onPressed: onTrailingTap ?? onTap,
+          ),
+        );
+      }
 
-        return TextFormField(
-          controller: controller,
-          readOnly: readOnly,
-          onTap: onTap,
-          style: const TextStyle(fontSize: 13, color: Colors.teal),
-          decoration: InputDecoration(
-            isDense: true,
-            labelText: labelText,
-            labelStyle: const TextStyle(
-              color: Color.fromARGB(255, 1, 99, 87),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-            hintText: hintText,
-            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-            prefixIcon: prefixIcon != null
-                ? Padding(
-                    padding: const EdgeInsetsDirectional.only(start: 4),
-                    child: prefixIcon,
-                  )
-                : null,
-            prefixIconConstraints:
-                const BoxConstraints(minWidth: 36, minHeight: 36),
+      return TextFormField(
+        controller: controller,
+        readOnly: readOnly,
+        onTap: onTap,
+        maxLines: 1,
+        textAlignVertical: TextAlignVertical.center, // ✅ สำคัญมาก กันตัวอักษรถูกตัด
+        style: const TextStyle(fontSize: 13, color: Colors.teal),
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: const TextStyle(
+            color: Color.fromARGB(255, 1, 99, 87),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+          hintText: hintText,
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
 
-            // รวมปุ่มด้านขวาใน Row (suffixIcon ต้องเป็น 1 widget)
-            suffixIcon: suffixChildren.isEmpty
-                ? null
-                : Row(
+          prefixIcon: prefixIcon != null
+              ? Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 4),
+                  child: prefixIcon,
+                )
+              : null,
+          prefixIconConstraints:
+              const BoxConstraints(minWidth: 36, minHeight: 36),
+
+          // ✅ ใส่ constraint ให้ suffix ไม่บีบ text
+          suffixIcon: suffixChildren.isEmpty
+              ? null
+              : ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 40, maxWidth: 120),
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: suffixChildren,
                   ),
+                ),
 
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          filled: true,
+          fillColor: Colors.white,
 
-            // ขอบสวย ๆ โทนเดียวกับระบบ
-            border: baseBorder,
-            enabledBorder: baseBorder,
-            focusedBorder: baseBorder.copyWith(
-              borderSide: const BorderSide(color: Color(0xFF22A699), width: 2),
-            ),
+          // ✅ อย่าล็อคสูง 42 แบบเดิม ให้ padding พอดีตอน label ลอย
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+
+          border: baseBorder,
+          enabledBorder: baseBorder,
+          focusedBorder: baseBorder.copyWith(
+            borderSide: const BorderSide(color: Color(0xFF22A699), width: 2),
           ),
-          onChanged: onChanged,
-          keyboardType: TextInputType.text,
-          inputFormatters: inputFormatters,
-        );
-      },
-    ),
+        ),
+        onChanged: onChanged,
+        keyboardType: TextInputType.text,
+        inputFormatters: inputFormatters,
+      );
+    },
   );
 }
-
 
 
 Widget textFieldNote(

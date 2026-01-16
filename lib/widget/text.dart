@@ -2,23 +2,31 @@ import 'package:flutter/material.dart';
 
 text(
   BuildContext context,
-  String label,{
+  String label, {
   Color? color,
   FontWeight? fontWeight,
   TextAlign? textAlign,
   double? fontSize,
   TextOverflow? overflow,
   int? maxLines,
+  TextDecoration? decoration,
+  Color? decorationColor,
+  TextDecorationStyle? decorationStyle,
 }) {
   final width = MediaQuery.of(context).size.width;
   double size = 14 / 1920;
 
   return Text(
     label,
+    textAlign: textAlign,
     style: TextStyle(
-        fontSize: fontSize ?? (width * size < 14 ? 14 : width * size),
-        color: color,
-        fontWeight: fontWeight),
+      fontSize: fontSize ?? (width * size < 14 ? 14 : width * size),
+      color: color,
+      fontWeight: fontWeight,
+      decoration: decoration,
+      decorationColor: decorationColor,
+      decorationStyle: decorationStyle,
+    ),
     overflow: overflow,
     maxLines: maxLines,
   );

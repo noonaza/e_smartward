@@ -15,16 +15,15 @@ class ObsListWidget extends StatefulWidget {
   final VoidCallback onAdd;
   final VoidCallback onCopy;
 
-  const ObsListWidget({
-    super.key,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onAdd,
-    required this.onCopy,
-    required this.lDataObs,
-    required this.headers,
-    required this.lSettingTime,
-  });
+  const ObsListWidget(
+      {super.key,
+      required this.onEdit,
+      required this.onDelete,
+      required this.onAdd,
+      required this.onCopy,
+      required this.lDataObs,
+      required this.headers,
+      required this.lSettingTime});
 
   @override
   _ObsListWidgetState createState() => _ObsListWidgetState();
@@ -46,36 +45,70 @@ class _ObsListWidgetState extends State<ObsListWidget> {
     return {};
   }
 
-  // String labelFromTypeSlot(String? t) {
-  //   switch (t) {
-  //     case 'weekly_once':
-  //       return 'สัปดาห์ละครั้ง';
-  //     case 'daily_custom':
-  //       return 'กำหนดรายวัน';
-  //     case 'monthly_custom':
-  //       return 'กำหนดรายเดือน';
-  //     default:
-  //       return '-';
-  //   }
-  // }
+  /// แปลง set_slot ให้เป็น List<String> รองรับทั้ง
+  /// ["Tue","Wed"] และ ['Tue','Wed'] และ list จริง
+  List<String> normalizeSetSlot(dynamic raw) {
+    if (raw == null) return [];
 
-  String labelFromTypeSlot(String? t) {
-    switch (t) {
-      case 'weekly_once':
-        return 'สัปดาห์ละครั้ง';
-      case 'daily_custom':
-        return 'กำหนดรายวัน';
-      case 'monthly_custom':
-        return 'กำหนดรายเดือน';
+    if (raw is List) {
+      return raw
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+
+    var s = raw.toString().trim();
+    if (s.isEmpty || s.toLowerCase() == 'null') return [];
+
+    // ให้ jsonDecode อ่านได้
+    s = s.replaceAll("'", '"');
+
+    try {
+      final decoded = jsonDecode(s);
+      if (decoded is List) {
+        return decoded
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+    } catch (_) {
+      // ถ้า decode ไม่ได้ ใช้ split ธรรมดา
+    }
+
+    return s
+        .replaceAll('[', '')
+        .replaceAll(']', '')
+        .replaceAll('"', '')
+        .split(RegExp(r'\s*,\s*'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+  }
+
+  /// normalize type_slot ให้เป็นค่า std: DAYS / DATE / D_M / ALL
+  String _normalizeTypeSlot(String? raw) {
+    final s = (raw ?? '').trim().toUpperCase();
+
+    switch (s) {
+      case 'WEEKLY_ONCE':
+      case 'DAYS':
+        return 'DAYS';
+      case 'DAILY_CUSTOM':
+      case 'DATE':
+        return 'DATE';
+      case 'MONTHLY_CUSTOM':
+      case 'D_M':
+        return 'D_M';
+      case 'ALL':
       default:
-        return '-';
+        return 'ALL';
     }
   }
 
   String _labelFromTypeSlotStd(String? t) {
     switch ((t ?? '').toUpperCase()) {
       case 'DAYS':
-        return 'สัปดาห์ละครั้ง';
+        return 'กำหนดรายสัปดาห์';
       case 'DATE':
         return 'กำหนดรายวัน';
       case 'D_M':
@@ -84,31 +117,6 @@ class _ObsListWidgetState extends State<ObsListWidget> {
       default:
         return 'ไม่กำหนด';
     }
-  }
-
-  List<String> parseSetSlotDays(String? raw) {
-    if (raw == null) return const [];
-    var s = raw.trim();
-    if (s.isEmpty || s.toLowerCase() == 'null' || s == '-') return const [];
-    // ให้ JSON-friendly: ' -> "  และ ; -> ,
-    s = s.replaceAll("'", '"').replaceAll(';', ',');
-    try {
-      final d = jsonDecode(s);
-      if (d is List) {
-        return d
-            .map((e) => (e ?? '').toString().trim())
-            .where((e) => e.isNotEmpty)
-            .toList();
-      }
-    } catch (_) {}
-    return s
-        .replaceAll('[', '')
-        .replaceAll(']', '')
-        .replaceAll('"', '')
-        .split(RegExp(r'\s*[,;]\s*'))
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
   }
 
   @override
@@ -122,7 +130,7 @@ class _ObsListWidgetState extends State<ObsListWidget> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Color(0xFFFFE9E2),
+                color: const Color(0xFFFFE9E2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: widget.lDataObs.isEmpty
@@ -132,10 +140,6 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                       itemBuilder: (context, index) {
                         final obs = widget.lDataObs[index];
                         final isDisabled = widget.lDataObs[index].id != null;
-
-                        final obsDays = parseSetSlotDays(obs.set_slot);
-                        final showObsDays = obsDays.isNotEmpty &&
-                            !(obs.time_slot?.contains("เมื่อมีอาการ") ?? false);
 
                         final Map<String, dynamic> setValue =
                             _safeDecodeSetValue(obs.set_value);
@@ -150,15 +154,15 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                           }
                           if (v is String) {
                             final s = v.trim();
-
-                            final decoded = jsonDecode(s);
-                            if (decoded is List) {
-                              return decoded
-                                  .map((e) => e.toString().trim())
-                                  .where((e) => e.isNotEmpty)
-                                  .toList();
-                            }
-
+                            try {
+                              final decoded = jsonDecode(s);
+                              if (decoded is List) {
+                                return decoded
+                                    .map((e) => e.toString().trim())
+                                    .where((e) => e.isNotEmpty)
+                                    .toList();
+                              }
+                            } catch (_) {}
                             return s
                                 .replaceAll('[', '')
                                 .replaceAll(']', '')
@@ -173,7 +177,6 @@ class _ObsListWidgetState extends State<ObsListWidget> {
 
                         final List<String> levels =
                             parseToList(setValue['level']);
-
                         final List<String> cols = parseToList(setValue['col']);
 
                         final List<String> displayItems = [];
@@ -230,14 +233,20 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                           return 'กำหนดเอง';
                         }
 
-                        final String typeSlot = (obs is ListDataCardModel)
-                            ? (obs.type_slot ?? 'ALL')
-                            : ((obs).type_slot ?? 'ALL');
-                        final scheduleLabel =
-                            (obs.schedule_mode_label != null &&
-                                    obs.schedule_mode_label!.trim().isNotEmpty)
-                                ? obs.schedule_mode_label!
-                                : _labelFromTypeSlotStd(typeSlot);
+                        final String rawTypeSlot =
+                            (obs.type_slot ?? '').toString().trim();
+                        final String normTypeSlot =
+                            _normalizeTypeSlot(rawTypeSlot);
+                        final days = normalizeSetSlot(obs.set_slot);
+
+                        final String scheduleLabel = (obs.schedule_mode_label !=
+                                    null &&
+                                obs.schedule_mode_label!.trim().isNotEmpty &&
+                                obs.schedule_mode_label != 'ไม่กำหนด')
+                            ? obs.schedule_mode_label!
+                            : _labelFromTypeSlotStd(normTypeSlot);
+
+                        // ------------------------------------------------
 
                         return GestureDetector(
                           onTap: isDisabled ? null : () => widget.onEdit(obs),
@@ -282,47 +291,55 @@ class _ObsListWidgetState extends State<ObsListWidget> {
                                           const SizedBox(height: 4),
                                           const SizedBox(height: 4),
                                           text(
-                                              context, "กำหนด : $scheduleLabel",
-                                              color: const Color.fromARGB(
-                                                  255, 215, 116, 114)),
+                                            context,
+                                            "กำหนด : $scheduleLabel",
+                                            color: const Color.fromARGB(
+                                                255, 215, 116, 114),
+                                          ),
                                           const SizedBox(height: 4),
-                                          showObsDays
+                                          days.isNotEmpty
                                               ? SizedBox(
-                                                  width: double.infinity,
                                                   child: Wrap(
                                                     spacing: 8,
                                                     runSpacing: 8,
-                                                    children:
-                                                        obsDays.map((day) {
-                                                      return Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(right: 0),
-                                                        child: Container(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
-                                                                  horizontal:
-                                                                      12,
-                                                                  vertical: 6),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: const Color
-                                                                .fromARGB(255,
-                                                                215, 116, 114),
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        15),
+                                                    children: days
+                                                        .map(
+                                                          (day) => Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    right: 0),
+                                                            child: Container(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                      horizontal:
+                                                                          12,
+                                                                      vertical:
+                                                                          6),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: Color
+                                                                    .fromARGB(
+                                                                        255,
+                                                                        175,
+                                                                        94,
+                                                                        93),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            15),
+                                                              ),
+                                                              child: text(
+                                                                context,
+                                                                day,
+                                                                color: Colors
+                                                                    .white,
+                                                              ),
+                                                            ),
                                                           ),
-                                                          child: text(
-                                                            context,
-                                                            color: Colors.white,
-                                                            day,
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }).toList(),
+                                                        )
+                                                        .toList(),
                                                   ),
                                                 )
                                               : const SizedBox.shrink(),

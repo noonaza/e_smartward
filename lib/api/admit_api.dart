@@ -78,14 +78,12 @@ class AdmitApi {
 
                   item['drug_type_name']?.toString().trim();
 
-
                   return ListDataCardModel(
                     id: item['id'],
                     base_drug_usage_code: item['base_drug_usage_code'],
                     caution: int.tryParse(item['caution']?.toString() ?? '0'),
                     doctor_eid: item['doctor_eid'],
                     dose_qty: item['dose_qty'],
-           
                     dose_unit_name: item['dose_unit_name'],
                     drug_description: item['drug_description'],
                     drug_instruction: item['drug_instruction'],
@@ -105,7 +103,6 @@ class AdmitApi {
                     order_item_id: item['order_item_id'],
                     order_time: item['order_time'],
                     set_slot: item['set_slot'],
-
                     start_date_imed: item['start_date_imed'],
                     type_slot:
                         item['type_slot']?.toString().trim().toUpperCase(),
@@ -128,7 +125,6 @@ class AdmitApi {
                     unit_name: item['unit_name'],
                     time_slot: item['time_slot'],
                     unit_stock: item['unit_stock'],
-
                     status: item['status'],
                     update_date: item['update_date'],
                     update_by: item['update_by'],
@@ -182,14 +178,12 @@ class AdmitApi {
             final col = rawCol.toString().split(':').first;
 
             return ListDataObsDetailModel(
-
               code: item['code'],
               set_name: item['set_name'],
               set_value: jsonEncode({'obs': obs, 'col': col}),
               create_by: item['create_by'],
               create_date: item['create_date'],
               remark: item['remark'],
-
               update_by: item['update_by'],
               update_date: item['update_date'],
               delete_by: item['delete_by'],
@@ -262,11 +256,11 @@ class AdmitApi {
   Future CreateCardV2(
     BuildContext context, {
     required Map<String, String> headers_,
-    required ListPetModel mPetAdmit_, 
-    required List<ListDataCardModel> lDataCardDrug_, 
-    required List<ListDataCardModel> lDataCardFood_, 
-    required List<GetObsModel> lDataObs_, 
-    required ListUserModel mUser, 
+    required ListPetModel mPetAdmit_,
+    required List<ListDataCardModel> lDataCardDrug_,
+    required List<ListDataCardModel> lDataCardFood_,
+    required List<GetObsModel> lDataObs_,
+    required ListUserModel mUser,
     required String message,
   }) async {
     final List<ListDataCardModel> lDataObs = [];
@@ -279,7 +273,6 @@ class AdmitApi {
           ? detailFromSetValue
           : (obs.set_name ?? '');
 
-
       final Map<String, dynamic> instr = {
         "detail": itemName,
         "level": setValue['level'] ?? 0,
@@ -291,7 +284,6 @@ class AdmitApi {
 
       final String safeTypeSlot = _normTypeSlot(obs.type_slot);
       final List<String>? normSetSlot = _normSetSlotForSend(obs.set_slot);
-      final String scheduleLabel = labelFromStdType(safeTypeSlot);
 
       final int cautionVal = (setValue['col'] is num)
           ? (setValue['col'] as num).toInt()
@@ -300,6 +292,15 @@ class AdmitApi {
       final List<String> levelList = _normalizeLevelList(setValue['level']);
 
       final String levelJson = jsonEncode(levelList);
+
+      String buildLegacySetSlot(List<String> days) {
+        final joined = days.map((e) => "'$e'").join(',');
+        return "[$joined]"; // => ['Tue','Thu']
+      }
+
+      final setSlotLegacy = (normSetSlot == null || normSetSlot.isEmpty)
+          ? null
+          : buildLegacySetSlot(normSetSlot);
 
       final dataCardNew = ListDataCardModel(
         item_name: detailFromSetValue,
@@ -312,10 +313,10 @@ class AdmitApi {
         drug_description: levelJson,
         remark: obs.remark,
         caution: cautionVal,
+        time_slot: obs.time_slot,
         type_slot: safeTypeSlot,
-        schedule_mode_label: scheduleLabel,
         meal_timing: obs.meal_timing,
-        set_slot: normSetSlot != null ? jsonEncode(normSetSlot) : null, 
+        set_slot: setSlotLegacy,
         note_to_team: "",
         drug_type_name: "OBS",
       );
@@ -349,7 +350,6 @@ class AdmitApi {
       );
 
       if (response.data['code'] == 1) {
-   
       } else if (response.data['code'] == 401) {
         dialog.token(context, response.data['message']);
       } else {
@@ -433,7 +433,7 @@ class AdmitApi {
                 : labelFromTypeSlot(safeTypeSlot);
           })();
 
-          final setSlotNorm = _normSetSlotForRead(item['set_slot']);
+          _normSetSlotForRead(item['set_slot']);
           final takeTimeRaw = item['take_time'];
           final takeTimeStr = _toJsonStringNullable(takeTimeRaw);
 
@@ -444,10 +444,11 @@ class AdmitApi {
             remark: item['remark']?.toString(),
             take_time: takeTimeStr,
             time_slot: item['time_slot']?.toString(),
-            type_slot: safeTypeSlot,
             schedule_mode_label: scheduleLabel,
-            set_slot: setSlotNorm,
+            set_slot: item['set_slot'],
             set_key: item['set_key'],
+            start_date_use: item['start_date_use'],
+            type_slot: item['type_slot']?.toString().trim().toUpperCase(),
             key_special: item['key_special'],
             create_by: item['create_by'],
             create_date: item['create_date'],
@@ -457,9 +458,7 @@ class AdmitApi {
             delete_date: item['delete_date'],
           );
 
-       
-          debugPrint(
-              'LOAD OBS ← type_slot=${model.type_slot} set_slot=${model.set_slot} label=${model.schedule_mode_label}');
+         
           return model;
         }).toList();
       } else if (data is Map && data['code'] == 401) {
@@ -702,13 +701,11 @@ class AdmitApi {
     }
   }
 
-
   String computeScheduleLabel({
     required String? typeSlot,
     String? timeSlot,
     String? setSlot,
   }) {
-
     if (timeSlot?.contains('เมื่อมีอาการ') == true) return 'เมื่อมีอาการ';
 
     final t = normTypeSlot(typeSlot);
@@ -723,7 +720,7 @@ class AdmitApi {
           .where((e) => e.isNotEmpty)
           .toList();
     }
-   
+
     var s = raw.toString().trim();
     if (s.isEmpty || s.toLowerCase() == 'null') return const [];
 
@@ -737,7 +734,6 @@ class AdmitApi {
             .toList();
       }
     } catch (_) {
-  
       return s
           .replaceAll('[', '')
           .replaceAll(']', '')
